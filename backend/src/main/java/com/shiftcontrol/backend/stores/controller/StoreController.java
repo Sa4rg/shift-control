@@ -1,9 +1,15 @@
 package com.shiftcontrol.backend.stores.controller;
 
+import com.shiftcontrol.backend.stores.dto.CreateStoreRequest;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.stores.service.StoreService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -21,5 +27,11 @@ public class StoreController {
     @GetMapping
     public List<Store> findAll() {
         return storeService.findAll();
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Store create(@Valid @RequestBody CreateStoreRequest request) {
+        return storeService.createStore(request);
     }
 }

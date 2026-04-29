@@ -38,7 +38,7 @@ public class Store {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected Store() {
+    public Store() {
     }
 
     public UUID getId() { return id; }
