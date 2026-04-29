@@ -1,7 +1,8 @@
 package com.shiftcontrol.backend.stores.controller;
 
+import com.shiftcontrol.backend.shared.response.ApiResponse;
 import com.shiftcontrol.backend.stores.dto.CreateStoreRequest;
-import com.shiftcontrol.backend.stores.model.Store;
+import com.shiftcontrol.backend.stores.dto.StoreResponse;
 import com.shiftcontrol.backend.stores.service.StoreService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,13 +26,18 @@ public class StoreController {
     }
 
     @GetMapping
-    public List<Store> findAll() {
-        return storeService.findAll();
+    public ApiResponse<List<StoreResponse>> findAll() {
+        List<StoreResponse> stores = storeService.findAll()
+                .stream()
+                .map(StoreResponse::fromEntity)
+                .toList();
+        return ApiResponse.ok("Stores retrieved successfully", stores);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Store create(@Valid @RequestBody CreateStoreRequest request) {
-        return storeService.createStore(request);
+    public ApiResponse<StoreResponse> create(@Valid @RequestBody CreateStoreRequest request) {
+        StoreResponse response = StoreResponse.fromEntity(storeService.createStore(request));
+        return ApiResponse.ok("Store created successfully", response);
     }
 }
