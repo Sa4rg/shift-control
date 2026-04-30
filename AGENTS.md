@@ -152,6 +152,13 @@ Testing is mandatory.
 2. Implement the minimum code.
 3. Refactor safely.
 
+**When a test fails:**
+
+- The test is telling the truth — fix the production code, not the test.
+- Only modify a test when the business requirement itself has changed.
+- Never weaken assertions or remove checks just to make a test pass.
+- A failing test is a signal; suppressing it hides the real problem.
+
 **Use:**
 
 - JUnit 5 for unit tests.

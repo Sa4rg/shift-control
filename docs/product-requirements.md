@@ -90,6 +90,8 @@ Stores staff and admin users.
 
 Represents store information.
 
+Stores can be created, updated, searched, listed, and deactivated. Inactive stores are hidden by default but can be included for admin review.
+
 ### Shifts
 
 Represents staff work sessions.

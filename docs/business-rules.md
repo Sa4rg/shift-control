@@ -11,6 +11,27 @@ A staff member belongs to exactly one store.
 ### BR-STORE-003
 An admin can view all stores.
 
+### BR-STORE-004
+Store names must be unique.
+
+### BR-STORE-005
+Store names and addresses must be trimmed before saving.
+
+### BR-STORE-006
+Stores must not be physically deleted.
+
+### BR-STORE-007
+Stores are deactivated by setting active to false.
+
+### BR-STORE-008
+Store listing returns only active stores by default.
+
+### BR-STORE-009
+Inactive stores can be included explicitly using includeInactive=true.
+
+### BR-STORE-010
+Stores can be searched by name or address.
+
 ---
 
 # Users and Roles
@@ -38,6 +59,36 @@ The system must never reveal whether a username exists during authentication.
 
 ### BR-USER-006
 Inactive users cannot authenticate.
+
+### BR-USER-007
+STAFF users must be created by an ADMIN user.
+
+### BR-USER-008
+STAFF users must belong to an active store.
+
+### BR-USER-009
+ADMIN users are global and must not belong to a store.
+
+### BR-USER-010
+STAFF PINs must contain exactly 6 digits.
+
+### BR-USER-011
+ADMIN passwords must contain at least 8 characters.
+
+### BR-USER-012
+User listing returns only active users by default.
+
+### BR-USER-013
+Inactive users can be included explicitly using includeInactive=true.
+
+### BR-USER-014
+Users must not be physically deleted.
+
+### BR-USER-015
+Users are deactivated by setting active to false.
+
+### BR-USER-016
+PIN hashes and password hashes must never be exposed in API responses.
 
 ---
 
