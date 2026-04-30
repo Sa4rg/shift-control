@@ -57,10 +57,11 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    protected User() {
+    public User() {
     }
 
     public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getUsername() { return username; }
