@@ -7,6 +7,7 @@ import com.shiftcontrol.backend.stores.service.StoreService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/stores")
@@ -32,6 +34,12 @@ public class StoreController {
                 .map(StoreResponse::fromEntity)
                 .toList();
         return ApiResponse.ok("Stores retrieved successfully", stores);
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<StoreResponse> findById(@PathVariable UUID id) {
+        StoreResponse response = StoreResponse.fromEntity(storeService.getById(id));
+        return ApiResponse.ok("Store retrieved successfully", response);
     }
 
     @PostMapping

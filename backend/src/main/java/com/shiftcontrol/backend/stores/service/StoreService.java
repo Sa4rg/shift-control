@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class StoreService {
@@ -20,6 +21,11 @@ public class StoreService {
 
     public List<Store> findAll() {
         return storeRepository.findAll();
+    }
+
+    public Store getById(UUID id) {
+        return storeRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Store not found"));
     }
 
     public Store createStore(CreateStoreRequest request) {
