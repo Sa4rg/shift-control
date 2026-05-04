@@ -92,6 +92,34 @@ PIN hashes and password hashes must never be exposed in API responses.
 
 ---
 
+# Auth
+
+### BR-AUTH-001
+STAFF users authenticate with username and PIN.
+
+### BR-AUTH-002
+ADMIN users authenticate with username and password.
+
+### BR-AUTH-003
+Invalid login attempts must always return "Invalid credentials" without revealing whether the username, role, status, or credential was wrong.
+
+### BR-AUTH-004
+Authenticated requests use Bearer JWT access tokens.
+
+### BR-AUTH-005
+Admin endpoints require ADMIN role.
+
+### BR-AUTH-006
+General API endpoints require an authenticated STAFF or ADMIN user.
+
+### BR-AUTH-007
+Inactive users cannot authenticate.
+
+### BR-AUTH-008
+Refresh tokens, email verification, and trusted devices are planned for a later auth hardening phase.
+
+---
+
 # Shifts
 
 ### BR-SHIFT-001
