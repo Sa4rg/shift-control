@@ -197,6 +197,42 @@ The system does not manage inventory in the MVP.
 ### BR-SALE-017
 The system does not manage customers in the MVP.
 
+### BR-SALE-001
+Only active STAFF users with an open shift can create sales.
+
+### BR-SALE-002
+Sales must contain at least one item and at least one payment.
+
+### BR-SALE-003
+Sale subtotal is calculated by the backend as the sum of item quantity multiplied by unit price.
+
+### BR-SALE-004
+Sale final total must be greater than 0.
+
+### BR-SALE-005
+Payment total must exactly match sale final total.
+
+### BR-SALE-006
+LOYALTY_CARD discount applies a fixed 20.00 EUR discount.
+
+### BR-SALE-007
+LOYALTY_CARD discount can only be applied when sale subtotal is at least 25.00 EUR.
+
+### BR-SALE-008
+VOUCHER_10_PERCENT discount applies 10% over the sale subtotal.
+
+### BR-SALE-009
+Sales are not physically deleted. They are cancelled by setting status to CANCELLED.
+
+### BR-SALE-010
+Cancelling a sale requires a reason.
+
+### BR-SALE-011
+Cancelled sales cannot be marked as invoiced.
+
+### BR-SALE-012
+Already invoiced sales cannot be invoiced again.
+
 ---
 
 # Discounts
@@ -220,6 +256,15 @@ A sale total cannot be zero.
 
 ### BR-DISCOUNT-005
 The final total after discounts must match payment totals.
+
+### BR-SALE-LOYALTY-001
+The loyalty card discount applies a fixed 20 EUR discount.
+
+### BR-SALE-LOYALTY-002
+The loyalty card discount can only be applied when the sale subtotal is greater than or equal to 25 EUR.
+
+### BR-SALE-LOYALTY-003
+A sale final total must always be greater than 0.
 
 ---
 
