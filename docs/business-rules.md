@@ -235,6 +235,58 @@ Already invoiced sales cannot be invoiced again.
 
 ---
 
+# Clousures
+
+### BR-SHIFT-CLOSURE-001
+Only an open shift can be closed.
+
+### BR-SHIFT-CLOSURE-002
+A shift can only have one closure.
+
+### BR-SHIFT-CLOSURE-003
+A shift can be closed by the shift owner or by an active ADMIN user.
+
+### BR-SHIFT-CLOSURE-004
+Cancelled sales must be ignored when calculating shift closure totals.
+
+### BR-SHIFT-CLOSURE-005
+Shift closure totals are calculated using ACTIVE sales only.
+
+### BR-SHIFT-CLOSURE-006
+totalCash is calculated from CASH payments of ACTIVE sales.
+
+### BR-SHIFT-CLOSURE-007
+totalMb is calculated from MB payments of ACTIVE sales.
+
+### BR-SHIFT-CLOSURE-008
+totalGlovoOnline is calculated from GLOVO_ONLINE payments of ACTIVE sales.
+
+### BR-SHIFT-CLOSURE-009
+totalGlovoCash is calculated from GLOVO_CASH payments of ACTIVE sales.
+
+### BR-SHIFT-CLOSURE-010
+cashToWithdraw is calculated as totalCash + totalGlovoCash.
+
+### BR-SHIFT-CLOSURE-011
+expectedPhysicalCash is calculated as store.baseCashAmount + cashToWithdraw.
+
+### BR-SHIFT-CLOSURE-012
+cashDifference is calculated as confirmedCashAmount - expectedPhysicalCash.
+
+### BR-SHIFT-CLOSURE-013
+mbDifference is calculated as confirmedMbAmount - totalMb.
+
+### BR-SHIFT-CLOSURE-014
+If cashDifference and mbDifference are both zero, the closure status is CLOSED_OK.
+
+### BR-SHIFT-CLOSURE-015
+If cashDifference or mbDifference is not zero, the closure status is CLOSED_WITH_INCIDENT.
+
+### BR-SHIFT-CLOSURE-016
+When a shift is closed, its status changes from OPEN to CLOSED and closedAt/closedBy are recorded.
+
+----
+
 # Discounts
 
 ### BR-DISCOUNT-001
