@@ -1,6 +1,7 @@
 package com.shiftcontrol.backend.sales.repository;
 
 import com.shiftcontrol.backend.sales.model.Sale;
+import com.shiftcontrol.backend.sales.model.SaleStatus;
 import com.shiftcontrol.backend.shifts.model.Shift;
 
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -16,4 +17,6 @@ public interface SaleRepository extends JpaRepository<Sale, UUID> {
     Optional<Sale> findWithDetailsById(UUID id);
 
     List<Sale> findByShiftOrderByCreatedAtDesc(Shift shift);
+
+    List<Sale> findByShiftAndStatus(Shift shift, SaleStatus status);
 }
