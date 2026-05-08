@@ -4,6 +4,8 @@ import com.shiftcontrol.backend.shared.response.ApiResponse;
 import com.shiftcontrol.backend.shifts.dto.OpenShiftRequest;
 import com.shiftcontrol.backend.shifts.dto.ShiftResponse;
 import com.shiftcontrol.backend.shifts.service.ShiftService;
+import com.shiftcontrol.backend.closures.dto.CloseShiftRequest;
+import com.shiftcontrol.backend.closures.dto.ShiftClosureResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -83,5 +85,20 @@ public class ShiftController {
                 .toList();
 
         return ApiResponse.ok("Shifts retrieved successfully", response);
+    }
+
+    @PostMapping("/{id}/close")
+    public ApiResponse<ShiftClosureResponse> closeShift(
+            @PathVariable UUID id,
+            Authentication authentication,
+            @Valid @RequestBody CloseShiftRequest request
+    ) {
+        UUID closedByUserId = UUID.fromString(authentication.getName());
+
+        ShiftClosureResponse response = ShiftClosureResponse.fromEntity(
+                shiftService.closeShift(id, closedByUserId, request)
+        );
+
+        return ApiResponse.ok("Shift closed successfully", response);
     }
 }
