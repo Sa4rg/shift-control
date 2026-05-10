@@ -71,4 +71,34 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
             @Param("from") Instant from,
             @Param("to") Instant to
     );
+
+    @Query("""
+        SELECT i FROM Incident i
+        LEFT JOIN FETCH i.shift directShift
+        LEFT JOIN FETCH directShift.staff
+        LEFT JOIN FETCH directShift.store
+        LEFT JOIN FETCH i.closure closure
+        LEFT JOIN FETCH closure.shift closureShift
+        LEFT JOIN FETCH closureShift.staff
+        LEFT JOIN FETCH closureShift.store
+        LEFT JOIN FETCH i.sale sale
+        LEFT JOIN FETCH sale.shift saleShift
+        LEFT JOIN FETCH saleShift.staff
+        LEFT JOIN FETCH saleShift.store
+        LEFT JOIN FETCH i.reportedBy
+        LEFT JOIN FETCH i.resolvedBy
+        WHERE i.createdAt >= :from
+        AND i.createdAt < :to
+        AND (
+                directShift.store.id = :storeId
+                OR closureShift.store.id = :storeId
+                OR saleShift.store.id = :storeId
+        )
+        ORDER BY i.createdAt ASC
+        """)
+        List<Incident> findIncidentsWithContextByStoreAndCreatedAtBetween(
+                @Param("storeId") UUID storeId,
+                @Param("from") Instant from,
+                @Param("to") Instant to
+        );
 }
