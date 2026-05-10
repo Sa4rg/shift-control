@@ -437,6 +437,7 @@ Resolved incidents cannot be resolved again.
 ### BR-INCIDENT-012
 If multiple contexts are provided, they must belong to the same operational context.
 
+
 ---
 
 # Weekly Admin Review
@@ -455,6 +456,48 @@ Weekly reviews can be completed with incidents when totals do not match.
 
 ### BR-ADMIN-004
 Admins cannot directly edit historical shift closures.
+
+### BR-WEEKLY-REVIEW-001
+Weekly reports are calculated by store and weekStart.
+
+### BR-WEEKLY-REVIEW-002
+Weekly report weekEnd is calculated as weekStart plus 6 days.
+
+### BR-WEEKLY-REVIEW-003
+Weekly reports group shift closures by staff.
+
+### BR-WEEKLY-REVIEW-004
+Weekly reports include only closures whose shift closedAt is within the requested week range.
+
+### BR-WEEKLY-REVIEW-005
+Weekly report totals are calculated from shift closure totals.
+
+### BR-WEEKLY-REVIEW-006
+Incident count is calculated from incidents related to the staff operational context during the requested week.
+
+### BR-WEEKLY-REVIEW-007
+Only ADMIN users can access weekly admin reports.
+
+### BR-WEEKLY-REVIEW-008
+Only ADMIN users can create weekly admin reviews.
+
+### BR-WEEKLY-REVIEW-009
+A weekly admin review stores a snapshot of calculated weekly totals.
+
+### BR-WEEKLY-REVIEW-010
+The frontend does not submit weekly review totals. Totals are calculated by the backend.
+
+### BR-WEEKLY-REVIEW-011
+A weekly admin review cannot be created if the selected staff has no closure summary for that week.
+
+### BR-WEEKLY-REVIEW-012
+A weekly admin review cannot be duplicated for the same store, staff, and weekStart.
+
+### BR-WEEKLY-REVIEW-013
+Weekly admin review status can be REVIEWED_OK or REVIEWED_WITH_INCIDENT.
+
+### BR-WEEKLY-REVIEW-014
+Admins do not edit old shift closures directly. Weekly reviews preserve administrative review history.
 
 ---
 
