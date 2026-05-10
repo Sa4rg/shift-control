@@ -5,6 +5,7 @@ import com.shiftcontrol.backend.auth.dto.AuthResponse;
 import com.shiftcontrol.backend.auth.dto.AuthenticatedUserResponse;
 import com.shiftcontrol.backend.auth.dto.StaffLoginRequest;
 import com.shiftcontrol.backend.shared.exception.BusinessException;
+import com.shiftcontrol.backend.shared.exception.NotFoundException;
 import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
@@ -12,6 +13,8 @@ import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.UUID;
 
 @Service
 public class AuthService {
@@ -83,5 +86,16 @@ public class AuthService {
                 accessTokenExpirationSeconds,
                 AuthenticatedUserResponse.fromEntity(user)
         );
+    }
+
+    public AuthenticatedUserResponse getCurrentUser(UUID authenticatedUserId) {
+        User user = userRepository.findById(authenticatedUserId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        if (!user.isActive()) {
+            throw new BusinessException("User is inactive");
+        }
+
+        return AuthenticatedUserResponse.fromEntity(user);
     }
 }

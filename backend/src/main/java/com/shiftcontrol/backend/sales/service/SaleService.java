@@ -209,12 +209,16 @@ public class SaleService {
     }
 
     @Transactional(readOnly = true)
-    public Sale getById(UUID id) {
+    public Sale getById(UUID id, UUID authenticatedUserId, Role authenticatedRole) {
         Sale sale = saleRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new NotFoundException("Sale not found"));
         Hibernate.initialize(sale.getItems());
         Hibernate.initialize(sale.getDiscounts());
         Hibernate.initialize(sale.getPayments());
+        if (authenticatedRole != Role.ADMIN
+                && !sale.getStaff().getId().equals(authenticatedUserId)) {
+            throw new BusinessException("You are not allowed to access this sale");
+        }
         return sale;
     }
 
@@ -249,13 +253,18 @@ public class SaleService {
     }
 
     @Transactional
-    public Sale markAsInvoiced(UUID id) {
+    public Sale markAsInvoiced(UUID id, UUID authenticatedUserId, Role authenticatedRole) {
         Sale sale = saleRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new NotFoundException("Sale not found"));
 
         Hibernate.initialize(sale.getItems());
         Hibernate.initialize(sale.getDiscounts());
         Hibernate.initialize(sale.getPayments());
+
+        if (authenticatedRole != Role.ADMIN
+                && !sale.getStaff().getId().equals(authenticatedUserId)) {
+            throw new BusinessException("You are not allowed to access this sale");
+        }
 
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new BusinessException("Cancelled sale cannot be invoiced");
@@ -272,7 +281,7 @@ public class SaleService {
     }
 
     @Transactional
-    public Sale cancelSale(UUID id, CancelSaleRequest request) {
+    public Sale cancelSale(UUID id, CancelSaleRequest request, UUID authenticatedUserId, Role authenticatedRole) {
         Sale sale = saleRepository.findWithDetailsById(id)
                 .orElseThrow(() -> new NotFoundException("Sale not found"));
 
@@ -280,8 +289,17 @@ public class SaleService {
         Hibernate.initialize(sale.getDiscounts());
         Hibernate.initialize(sale.getPayments());
 
+        if (authenticatedRole != Role.ADMIN
+                && !sale.getStaff().getId().equals(authenticatedUserId)) {
+            throw new BusinessException("You are not allowed to access this sale");
+        }
+
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new BusinessException("Sale is already cancelled");
+        }
+
+        if (sale.getShift().getStatus() == ShiftStatus.CLOSED) {
+            throw new BusinessException("Closed shift sale cannot be cancelled");
         }
 
         Instant now = Instant.now();

@@ -7,6 +7,7 @@ import com.shiftcontrol.backend.sales.dto.SaleResponse;
 import com.shiftcontrol.backend.sales.dto.CancelSaleRequest;
 import com.shiftcontrol.backend.sales.service.SaleService;
 import com.shiftcontrol.backend.shared.response.ApiResponse;
+import com.shiftcontrol.backend.users.model.Role;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -49,9 +50,15 @@ public class SaleController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<SaleResponse> getById(@PathVariable UUID id) {
+    public ApiResponse<SaleResponse> getById(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        UUID authenticatedUserId = UUID.fromString(authentication.getName());
+        Role authenticatedRole = extractRole(authentication);
+
         SaleResponse response = SaleResponse.fromEntity(
-                saleService.getById(id)
+                saleService.getById(id, authenticatedUserId, authenticatedRole)
         );
 
         return ApiResponse.ok("Sale retrieved successfully", response);
@@ -77,9 +84,15 @@ public class SaleController {
     }
 
     @PatchMapping("/{id}/invoice")
-    public ApiResponse<SaleResponse> markAsInvoiced(@PathVariable UUID id) {
+    public ApiResponse<SaleResponse> markAsInvoiced(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        UUID authenticatedUserId = UUID.fromString(authentication.getName());
+        Role authenticatedRole = extractRole(authentication);
+
         SaleResponse response = SaleResponse.fromEntity(
-                saleService.markAsInvoiced(id)
+                saleService.markAsInvoiced(id, authenticatedUserId, authenticatedRole)
         );
 
         return ApiResponse.ok("Sale marked as invoiced successfully", response);
@@ -87,13 +100,26 @@ public class SaleController {
 
     @PatchMapping("/{id}/cancel")
     public ApiResponse<SaleResponse> cancelSale(
+            Authentication authentication,
             @PathVariable UUID id,
             @Valid @RequestBody CancelSaleRequest request
     ) {
+        UUID authenticatedUserId = UUID.fromString(authentication.getName());
+        Role authenticatedRole = extractRole(authentication);
+
         SaleResponse response = SaleResponse.fromEntity(
-                saleService.cancelSale(id, request)
+                saleService.cancelSale(id, request, authenticatedUserId, authenticatedRole)
         );
 
         return ApiResponse.ok("Sale cancelled successfully", response);
+    }
+
+    private Role extractRole(Authentication authentication) {
+        String authority = authentication.getAuthorities()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Authenticated user has no role"))
+                .getAuthority();
+        return Role.valueOf(authority.replace("ROLE_", ""));
     }
 }
