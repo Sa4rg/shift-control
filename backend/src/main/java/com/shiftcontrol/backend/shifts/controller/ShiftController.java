@@ -59,9 +59,21 @@ public class ShiftController {
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ShiftResponse> getById(@PathVariable UUID id) {
+    public ApiResponse<ShiftResponse> getById(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        UUID authenticatedUserId = UUID.fromString(authentication.getName());
+
+        String authority = authentication.getAuthorities()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Authenticated user has no role"))
+                .getAuthority();
+        Role authenticatedRole = Role.valueOf(authority.replace("ROLE_", ""));
+
         ShiftResponse response = ShiftResponse.fromEntity(
-                shiftService.getById(id)
+                shiftService.getById(id, authenticatedUserId, authenticatedRole)
         );
 
         return ApiResponse.ok("Shift retrieved successfully", response);

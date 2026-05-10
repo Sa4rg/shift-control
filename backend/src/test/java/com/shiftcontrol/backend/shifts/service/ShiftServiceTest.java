@@ -298,17 +298,50 @@ class ShiftServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void should_return_shift_by_id() {
+    void should_return_shift_by_id_for_admin() {
         // Arrange
         UUID shiftId = UUID.randomUUID();
+        User admin = adminUser();
         Shift shift = new Shift();
         when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
 
         // Act
-        Shift result = shiftService.getById(shiftId);
+        Shift result = shiftService.getById(shiftId, admin.getId(), Role.ADMIN);
 
         // Assert
         assertThat(result).isSameAs(shift);
+    }
+
+    @Test
+    void should_return_shift_by_id_for_owner_staff() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = openShift(staff, store);
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+
+        // Act
+        Shift result = shiftService.getById(shiftId, staff.getId(), Role.STAFF);
+
+        // Assert
+        assertThat(result).isSameAs(shift);
+    }
+
+    @Test
+    void should_throw_when_staff_accesses_other_staff_shift() {
+        // Arrange
+        Store store = activeStore();
+        User owner = activeStaffWithStore(store);
+        User otherStaff = anotherActiveStaffWithStore(store);
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = openShift(owner, store);
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+
+        // Act + Assert
+        assertThatThrownBy(() -> shiftService.getById(shiftId, otherStaff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("You are not allowed to access this shift");
     }
 
     @Test
@@ -318,7 +351,7 @@ class ShiftServiceTest {
         when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.getById(shiftId))
+        assertThatThrownBy(() -> shiftService.getById(shiftId, UUID.randomUUID(), Role.ADMIN))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Shift not found");
     }

@@ -110,9 +110,14 @@ public class ShiftService {
     }
 
     @Transactional(readOnly = true)
-    public Shift getById(UUID id) {
-        return shiftRepository.findByIdWithDetails(id)
+    public Shift getById(UUID id, UUID authenticatedUserId, Role authenticatedRole) {
+        Shift shift = shiftRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new NotFoundException("Shift not found"));
+        if (authenticatedRole != Role.ADMIN
+                && !shift.getStaff().getId().equals(authenticatedUserId)) {
+            throw new BusinessException("You are not allowed to access this shift");
+        }
+        return shift;
     }
 
     @Transactional(readOnly = true)

@@ -19,8 +19,7 @@ import com.shiftcontrol.backend.shared.exception.BusinessException;
 import com.shiftcontrol.backend.shared.exception.NotFoundException;
 import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.shifts.model.ShiftStatus;
-import com.shiftcontrol.backend.shifts.model.ShiftType;
-import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
+import com.shiftcontrol.backend.shifts.model.ShiftType;import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
@@ -453,18 +452,56 @@ class SaleServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void should_return_sale_by_id() {
+    void should_return_sale_by_id_for_admin() {
         // Arrange
-        UUID saleId = UUID.randomUUID();
+        Store store = activeStore();
+        User admin = adminUser();
         Sale sale = new Sale();
+        User saleOwner = activeStaffWithStore(store);
+        sale.setStaff(saleOwner);
+        UUID saleId = UUID.randomUUID();
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
 
         // Act
-        Sale result = saleService.getById(saleId);
+        Sale result = saleService.getById(saleId, admin.getId(), Role.ADMIN);
 
         // Assert
         assertThat(result).isSameAs(sale);
         verify(saleRepository).findWithDetailsById(saleId);
+    }
+
+    @Test
+    void should_return_sale_by_id_for_owner_staff() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        Sale sale = new Sale();
+        sale.setStaff(staff);
+        UUID saleId = UUID.randomUUID();
+        when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+
+        // Act
+        Sale result = saleService.getById(saleId, staff.getId(), Role.STAFF);
+
+        // Assert
+        assertThat(result).isSameAs(sale);
+    }
+
+    @Test
+    void should_throw_when_staff_accesses_other_staff_sale() {
+        // Arrange
+        Store store = activeStore();
+        User owner = activeStaffWithStore(store);
+        User otherStaff = activeStaffWithStore(store);
+        Sale sale = new Sale();
+        sale.setStaff(owner);
+        UUID saleId = UUID.randomUUID();
+        when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.getById(saleId, otherStaff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("You are not allowed to access this sale");
     }
 
     @Test
@@ -474,7 +511,7 @@ class SaleServiceTest {
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThatThrownBy(() -> saleService.getById(saleId))
+        assertThatThrownBy(() -> saleService.getById(saleId, UUID.randomUUID(), Role.ADMIN))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Sale not found");
 
@@ -566,22 +603,46 @@ class SaleServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void should_mark_sale_as_invoiced() {
+    void should_mark_sale_as_invoiced_for_owner_staff() {
         // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
         UUID saleId = UUID.randomUUID();
         Sale sale = new Sale();
+        sale.setStaff(staff);
         sale.setStatus(SaleStatus.ACTIVE);
         sale.setInvoiceStatus(InvoiceStatus.PENDING);
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
         when(saleRepository.save(sale)).thenReturn(sale);
 
         // Act
-        Sale result = saleService.markAsInvoiced(saleId);
+        Sale result = saleService.markAsInvoiced(saleId, staff.getId(), Role.STAFF);
 
         // Assert
         assertThat(result.getInvoiceStatus()).isEqualTo(InvoiceStatus.INVOICED);
         assertThat(result.getUpdatedAt()).isNotNull();
         verify(saleRepository).save(sale);
+    }
+
+    @Test
+    void should_throw_when_staff_marks_other_staff_sale_as_invoiced() {
+        // Arrange
+        Store store = activeStore();
+        User owner = activeStaffWithStore(store);
+        User otherStaff = activeStaffWithStore(store);
+        UUID saleId = UUID.randomUUID();
+        Sale sale = new Sale();
+        sale.setStaff(owner);
+        sale.setStatus(SaleStatus.ACTIVE);
+        sale.setInvoiceStatus(InvoiceStatus.PENDING);
+        when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId, otherStaff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("You are not allowed to access this sale");
+
+        verify(saleRepository, never()).save(any(Sale.class));
     }
 
     @Test
@@ -591,7 +652,7 @@ class SaleServiceTest {
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId))
+        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId, UUID.randomUUID(), Role.ADMIN))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Sale not found");
 
@@ -601,6 +662,7 @@ class SaleServiceTest {
     @Test
     void should_throw_when_cancelled_sale_is_marked_as_invoiced() {
         // Arrange
+        User admin = adminUser();
         UUID saleId = UUID.randomUUID();
         Sale sale = new Sale();
         sale.setStatus(SaleStatus.CANCELLED);
@@ -608,7 +670,7 @@ class SaleServiceTest {
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
 
         // Act + Assert
-        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId))
+        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId, admin.getId(), Role.ADMIN))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Cancelled sale cannot be invoiced");
 
@@ -618,6 +680,7 @@ class SaleServiceTest {
     @Test
     void should_throw_when_sale_is_already_invoiced() {
         // Arrange
+        User admin = adminUser();
         UUID saleId = UUID.randomUUID();
         Sale sale = new Sale();
         sale.setStatus(SaleStatus.ACTIVE);
@@ -625,7 +688,7 @@ class SaleServiceTest {
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
 
         // Act + Assert
-        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId))
+        assertThatThrownBy(() -> saleService.markAsInvoiced(saleId, admin.getId(), Role.ADMIN))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Sale is already invoiced");
 
@@ -637,10 +700,15 @@ class SaleServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void should_cancel_active_sale() {
+    void should_cancel_sale_for_owner_staff_when_shift_is_open() {
         // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        Shift openShift = openShiftFor(staff, store);
         UUID saleId = UUID.randomUUID();
         Sale sale = new Sale();
+        sale.setStaff(staff);
+        sale.setShift(openShift);
         sale.setStatus(SaleStatus.ACTIVE);
         sale.setInvoiceStatus(InvoiceStatus.PENDING);
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
@@ -649,7 +717,7 @@ class SaleServiceTest {
         CancelSaleRequest request = new CancelSaleRequest("  Customer mistake  ");
 
         // Act
-        saleService.cancelSale(saleId, request);
+        saleService.cancelSale(saleId, request, staff.getId(), Role.STAFF);
 
         // Assert
         assertThat(sale.getStatus()).isEqualTo(SaleStatus.CANCELLED);
@@ -657,6 +725,56 @@ class SaleServiceTest {
         assertThat(sale.getCancelledAt()).isNotNull();
         assertThat(sale.getUpdatedAt()).isNotNull();
         verify(saleRepository).save(sale);
+    }
+
+    @Test
+    void should_throw_when_staff_cancels_other_staff_sale() {
+        // Arrange
+        Store store = activeStore();
+        User owner = activeStaffWithStore(store);
+        User otherStaff = activeStaffWithStore(store);
+        Shift openShift = openShiftFor(owner, store);
+        UUID saleId = UUID.randomUUID();
+        Sale sale = new Sale();
+        sale.setStaff(owner);
+        sale.setShift(openShift);
+        sale.setStatus(SaleStatus.ACTIVE);
+        when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+
+        CancelSaleRequest request = new CancelSaleRequest("Trying to cancel");
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.cancelSale(saleId, request, otherStaff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("You are not allowed to access this sale");
+
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_throw_when_cancelling_sale_from_closed_shift() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        Shift closedShift = new Shift();
+        closedShift.setStaff(staff);
+        closedShift.setStore(store);
+        closedShift.setStatus(ShiftStatus.CLOSED);
+        UUID saleId = UUID.randomUUID();
+        Sale sale = new Sale();
+        sale.setStaff(staff);
+        sale.setShift(closedShift);
+        sale.setStatus(SaleStatus.ACTIVE);
+        when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+
+        CancelSaleRequest request = new CancelSaleRequest("Cancel attempt");
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.cancelSale(saleId, request, staff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Closed shift sale cannot be cancelled");
+
+        verify(saleRepository, never()).save(any(Sale.class));
     }
 
     @Test
@@ -668,7 +786,7 @@ class SaleServiceTest {
         CancelSaleRequest request = new CancelSaleRequest("Some reason");
 
         // Act + Assert
-        assertThatThrownBy(() -> saleService.cancelSale(saleId, request))
+        assertThatThrownBy(() -> saleService.cancelSale(saleId, request, UUID.randomUUID(), Role.ADMIN))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Sale not found");
 
@@ -678,6 +796,7 @@ class SaleServiceTest {
     @Test
     void should_throw_when_sale_is_already_cancelled() {
         // Arrange
+        User admin = adminUser();
         UUID saleId = UUID.randomUUID();
         Sale sale = new Sale();
         sale.setStatus(SaleStatus.CANCELLED);
@@ -686,7 +805,7 @@ class SaleServiceTest {
         CancelSaleRequest request = new CancelSaleRequest("Some reason");
 
         // Act + Assert
-        assertThatThrownBy(() -> saleService.cancelSale(saleId, request))
+        assertThatThrownBy(() -> saleService.cancelSale(saleId, request, admin.getId(), Role.ADMIN))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Sale is already cancelled");
 

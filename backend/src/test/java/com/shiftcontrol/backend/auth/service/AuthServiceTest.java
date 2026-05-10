@@ -4,6 +4,7 @@ import com.shiftcontrol.backend.auth.dto.AdminLoginRequest;
 import com.shiftcontrol.backend.auth.dto.AuthResponse;
 import com.shiftcontrol.backend.auth.dto.StaffLoginRequest;
 import com.shiftcontrol.backend.shared.exception.BusinessException;
+import com.shiftcontrol.backend.shared.exception.NotFoundException;
 import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
@@ -248,5 +249,60 @@ class AuthServiceTest {
                 .hasMessage("Invalid credentials");
 
         verify(jwtService, never()).generateAccessToken(user);
+    }
+
+    // -------------------------------------------------------------------------
+    // getCurrentUser tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_return_current_user() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+        user.setUsername("ana.staff");
+        user.setRole(Role.STAFF);
+        user.setActive(true);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act
+        var response = authService.getCurrentUser(userId);
+
+        // Assert
+        assertThat(response.id()).isEqualTo(userId);
+        assertThat(response.username()).isEqualTo("ana.staff");
+        assertThat(response.role()).isEqualTo(Role.STAFF);
+    }
+
+    @Test
+    void should_throw_not_found_when_current_user_missing() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.getCurrentUser(userId))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("User not found");
+    }
+
+    @Test
+    void should_throw_when_current_user_is_inactive() {
+        // Arrange
+        UUID userId = UUID.randomUUID();
+        User user = new User();
+        user.setId(userId);
+        user.setUsername("ana.staff");
+        user.setRole(Role.STAFF);
+        user.setActive(false);
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        // Act + Assert
+        assertThatThrownBy(() -> authService.getCurrentUser(userId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("User is inactive");
     }
 }
