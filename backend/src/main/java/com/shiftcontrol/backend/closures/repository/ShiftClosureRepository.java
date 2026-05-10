@@ -50,4 +50,21 @@ public interface ShiftClosureRepository extends JpaRepository<ShiftClosure, UUID
                 @Param("from") Instant from,
                 @Param("to") Instant to
         );
+
+        @Query("""
+        SELECT c FROM ShiftClosure c
+        JOIN FETCH c.shift s
+        JOIN FETCH s.staff
+        JOIN FETCH s.store
+        JOIN FETCH c.closedBy
+        WHERE s.store.id = :storeId
+        AND s.closedAt >= :from
+        AND s.closedAt < :to
+        ORDER BY s.closedAt ASC
+        """)
+        List<ShiftClosure> findClosuresWithDetailsByStoreAndClosedAtBetween(
+                @Param("storeId") UUID storeId,
+                @Param("from") Instant from,
+                @Param("to") Instant to
+        );
 }
