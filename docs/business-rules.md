@@ -401,6 +401,42 @@ Incidents must remain immutable after creation.
 ### BR-INCIDENT-005
 Incidents must remain auditable.
 
+### BR-INCIDENT-001
+Incidents are created with status OPEN.
+
+### BR-INCIDENT-002
+Incidents must be related to at least one context: shift, closure, or sale.
+
+### BR-INCIDENT-003
+STAFF users can create incidents only for their own shift, closure, or sale context.
+
+### BR-INCIDENT-004
+ADMIN users can create incidents for any valid shift, closure, or sale context.
+
+### BR-INCIDENT-005
+Only ADMIN users can list incidents globally.
+
+### BR-INCIDENT-006
+ADMIN users can view any incident.
+
+### BR-INCIDENT-007
+STAFF users can view incidents they reported or incidents related to their own shift, closure, or sale context.
+
+### BR-INCIDENT-008
+Only ADMIN users can resolve incidents.
+
+### BR-INCIDENT-009
+Only OPEN incidents can be resolved.
+
+### BR-INCIDENT-010
+Incidents can be resolved even if their related shift is already CLOSED.
+
+### BR-INCIDENT-011
+Resolved incidents cannot be resolved again.
+
+### BR-INCIDENT-012
+If multiple contexts are provided, they must belong to the same operational context.
+
 ---
 
 # Weekly Admin Review
