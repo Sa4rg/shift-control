@@ -3,6 +3,7 @@ package com.shiftcontrol.backend.stores.dto;
 import com.shiftcontrol.backend.stores.model.Store;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.UUID;
 
 public record StoreResponse(
@@ -10,7 +11,10 @@ public record StoreResponse(
         String name,
         String address,
         BigDecimal baseCashAmount,
-        boolean active
+        boolean active,
+        UUID deactivatedById,
+        String deactivatedByName,
+        Instant deactivatedAt
 ) {
     public static StoreResponse fromEntity(Store store) {
         return new StoreResponse(
@@ -18,7 +22,10 @@ public record StoreResponse(
                 store.getName(),
                 store.getAddress(),
                 store.getBaseCashAmount(),
-                store.isActive()
+                store.isActive(),
+                store.getDeactivatedBy() != null ? store.getDeactivatedBy().getId() : null,
+                store.getDeactivatedBy() != null ? store.getDeactivatedBy().getUsername() : null,
+                store.getDeactivatedAt()
         );
     }
 }

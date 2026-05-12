@@ -5,6 +5,9 @@ import com.shiftcontrol.backend.shared.exception.NotFoundException;
 import com.shiftcontrol.backend.stores.dto.CreateStoreRequest;
 import com.shiftcontrol.backend.stores.dto.UpdateStoreRequest;
 import com.shiftcontrol.backend.stores.repository.StoreRepository;
+import com.shiftcontrol.backend.users.model.Role;
+import com.shiftcontrol.backend.users.model.User;
+import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -31,6 +34,9 @@ class StoreServiceTest {
 
     @Mock
     private StoreRepository storeRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private StoreService storeService;
@@ -277,9 +283,10 @@ class StoreServiceTest {
     }
 
     @Test
-    void should_deactivate_active_store() {
+    void should_deactivate_store_and_set_audit_fields() {
         // Arrange
         UUID storeId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
 
         Store active = new Store();
         active.setId(storeId);
@@ -288,47 +295,87 @@ class StoreServiceTest {
         active.setBaseCashAmount(new BigDecimal("103.00"));
         active.setActive(true);
 
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setFullName("Admin User");
+        admin.setUsername("admin");
+        admin.setRole(Role.ADMIN);
+        admin.setActive(true);
+
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(active));
-        when(storeRepository.save(any(Store.class))).thenReturn(active);
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(storeRepository.save(any(Store.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        Store result = storeService.deactivateStore(storeId);
+        Store result = storeService.deactivateStore(storeId, adminId);
 
         // Assert
         verify(storeRepository).save(active);
         assertThat(result.isActive()).isFalse();
+        assertThat(result.getDeactivatedBy()).isSameAs(admin);
+        assertThat(result.getDeactivatedAt()).isNotNull();
+        assertThat(result.getUpdatedAt()).isNotNull();
+    }
+
+    @Test
+    void should_throw_when_deactivated_by_user_not_found() {
+        // Arrange
+        UUID storeId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+
+        Store active = new Store();
+        active.setId(storeId);
+        active.setActive(true);
+
+        when(storeRepository.findById(storeId)).thenReturn(Optional.of(active));
+        when(userRepository.findById(adminId)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> storeService.deactivateStore(storeId, adminId))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("User not found");
+
+        verify(storeRepository, never()).save(any());
+    }
+
+    @Test
+    void should_throw_when_deactivating_already_inactive_store() {
+        // Arrange
+        UUID storeId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+
+        Store inactive = new Store();
+        inactive.setId(storeId);
+        inactive.setActive(false);
+
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(Role.ADMIN);
+        admin.setActive(true);
+
+        when(storeRepository.findById(storeId)).thenReturn(Optional.of(inactive));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+
+        // Act + Assert
+        assertThatThrownBy(() -> storeService.deactivateStore(storeId, adminId))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Store is already inactive");
+
+        verify(storeRepository, never()).save(any());
     }
 
     @Test
     void should_throw_not_found_when_deactivating_missing_store() {
         // Arrange
         UUID storeId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThatThrownBy(() -> storeService.deactivateStore(storeId))
+        assertThatThrownBy(() -> storeService.deactivateStore(storeId, adminId))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("Store not found");
-
-        verify(storeRepository, never()).save(any());
-    }
-
-    @Test
-    void should_throw_business_exception_when_store_is_already_inactive() {
-        // Arrange
-        UUID storeId = UUID.randomUUID();
-
-        Store inactive = new Store();
-        inactive.setId(storeId);
-        inactive.setActive(false);
-
-        when(storeRepository.findById(storeId)).thenReturn(Optional.of(inactive));
-
-        // Act + Assert
-        assertThatThrownBy(() -> storeService.deactivateStore(storeId))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Store is already inactive");
 
         verify(storeRepository, never()).save(any());
     }

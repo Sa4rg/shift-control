@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public interface SaleRepository extends JpaRepository<Sale, UUID> {
 
-    @EntityGraph(attributePaths = {"shift", "staff", "store"})
+    @EntityGraph(attributePaths = {"shift", "staff", "store", "cancelledBy"})
     Optional<Sale> findWithDetailsById(UUID id);
 
     List<Sale> findByShiftOrderByCreatedAtDesc(Shift shift);

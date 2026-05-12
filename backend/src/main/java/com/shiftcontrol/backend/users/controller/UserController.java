@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.UUID;
@@ -50,8 +51,16 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    public ApiResponse<UserResponse> deactivateUser(@PathVariable UUID id) {
-        UserResponse response = UserResponse.fromEntity(userService.deactivateUser(id));
+    public ApiResponse<UserResponse> deactivateUser(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        UUID deactivatedByUserId = UUID.fromString(authentication.getName());
+
+        UserResponse response = UserResponse.fromEntity(
+                userService.deactivateUser(id, deactivatedByUserId)
+        );
+
         return ApiResponse.ok("User deactivated successfully", response);
     }
 

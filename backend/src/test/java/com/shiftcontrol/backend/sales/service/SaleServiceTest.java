@@ -712,6 +712,7 @@ class SaleServiceTest {
         sale.setStatus(SaleStatus.ACTIVE);
         sale.setInvoiceStatus(InvoiceStatus.PENDING);
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
         when(saleRepository.save(any(Sale.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CancelSaleRequest request = new CancelSaleRequest("  Customer mistake  ");
@@ -724,6 +725,38 @@ class SaleServiceTest {
         assertThat(sale.getCancelledReason()).isEqualTo("Customer mistake");
         assertThat(sale.getCancelledAt()).isNotNull();
         assertThat(sale.getUpdatedAt()).isNotNull();
+        assertThat(sale.getCancelledBy()).isSameAs(staff);
+        verify(saleRepository).save(sale);
+    }
+
+    @Test
+    void should_cancel_sale_for_admin_and_set_cancelled_by() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        User admin = adminUser();
+        Shift openShift = openShiftFor(staff, store);
+        UUID saleId = UUID.randomUUID();
+        Sale sale = new Sale();
+        sale.setStaff(staff);
+        sale.setShift(openShift);
+        sale.setStatus(SaleStatus.ACTIVE);
+        sale.setInvoiceStatus(InvoiceStatus.PENDING);
+        when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
+        when(saleRepository.save(any(Sale.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CancelSaleRequest request = new CancelSaleRequest("  Admin override  ");
+
+        // Act
+        saleService.cancelSale(saleId, request, admin.getId(), Role.ADMIN);
+
+        // Assert
+        assertThat(sale.getStatus()).isEqualTo(SaleStatus.CANCELLED);
+        assertThat(sale.getCancelledReason()).isEqualTo("Admin override");
+        assertThat(sale.getCancelledAt()).isNotNull();
+        assertThat(sale.getUpdatedAt()).isNotNull();
+        assertThat(sale.getCancelledBy()).isSameAs(admin);
         verify(saleRepository).save(sale);
     }
 
@@ -766,6 +799,7 @@ class SaleServiceTest {
         sale.setShift(closedShift);
         sale.setStatus(SaleStatus.ACTIVE);
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+        when(userRepository.findById(staff.getId())).thenReturn(Optional.of(staff));
 
         CancelSaleRequest request = new CancelSaleRequest("Cancel attempt");
 
@@ -801,6 +835,7 @@ class SaleServiceTest {
         Sale sale = new Sale();
         sale.setStatus(SaleStatus.CANCELLED);
         when(saleRepository.findWithDetailsById(saleId)).thenReturn(Optional.of(sale));
+        when(userRepository.findById(admin.getId())).thenReturn(Optional.of(admin));
 
         CancelSaleRequest request = new CancelSaleRequest("Some reason");
 

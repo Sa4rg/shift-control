@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.UUID;
@@ -62,8 +63,16 @@ public class StoreController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    public ApiResponse<StoreResponse> deactivate(@PathVariable UUID id) {
-        StoreResponse response = StoreResponse.fromEntity(storeService.deactivateStore(id));
+    public ApiResponse<StoreResponse> deactivateStore(
+            Authentication authentication,
+            @PathVariable UUID id
+    ) {
+        UUID deactivatedByUserId = UUID.fromString(authentication.getName());
+
+        StoreResponse response = StoreResponse.fromEntity(
+                storeService.deactivateStore(id, deactivatedByUserId)
+        );
+
         return ApiResponse.ok("Store deactivated successfully", response);
     }
 }

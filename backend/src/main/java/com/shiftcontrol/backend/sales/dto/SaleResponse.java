@@ -26,6 +26,8 @@ public record SaleResponse(
         Instant createdAt,
         Instant updatedAt,
         Instant cancelledAt,
+        UUID cancelledById,
+        String cancelledByName,
         List<SaleItemResponse> items,
         List<SaleDiscountResponse> discounts,
         List<SalePaymentResponse> payments
@@ -48,6 +50,8 @@ public record SaleResponse(
                 sale.getCreatedAt(),
                 sale.getUpdatedAt(),
                 sale.getCancelledAt(),
+                sale.getCancelledBy() != null ? sale.getCancelledBy().getId() : null,
+                sale.getCancelledBy() != null ? sale.getCancelledBy().getFullName() : null,
                 sale.getItems().stream().map(SaleItemResponse::fromEntity).toList(),
                 sale.getDiscounts().stream().map(SaleDiscountResponse::fromEntity).toList(),
                 sale.getPayments().stream().map(SalePaymentResponse::fromEntity).toList()

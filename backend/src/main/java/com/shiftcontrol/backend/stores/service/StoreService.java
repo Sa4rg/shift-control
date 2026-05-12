@@ -6,7 +6,10 @@ import com.shiftcontrol.backend.stores.dto.CreateStoreRequest;
 import com.shiftcontrol.backend.stores.dto.UpdateStoreRequest;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.stores.repository.StoreRepository;
+import com.shiftcontrol.backend.users.model.User;
+import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -16,9 +19,11 @@ import java.util.UUID;
 public class StoreService {
 
     private final StoreRepository storeRepository;
+    private final UserRepository userRepository;
 
-    public StoreService(StoreRepository storeRepository) {
+    public StoreService(StoreRepository storeRepository, UserRepository userRepository) {
         this.storeRepository = storeRepository;
+        this.userRepository = userRepository;
     }
 
     public List<Store> findAll() {
@@ -77,15 +82,21 @@ public class StoreService {
         return storeRepository.save(store);
     }
 
-    public Store deactivateStore(UUID id) {
+    @Transactional
+    public Store deactivateStore(UUID id, UUID deactivatedById) {
         Store store = storeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Store not found"));
+
+        User deactivatedBy = userRepository.findById(deactivatedById)
+                .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!store.isActive()) {
             throw new BusinessException("Store is already inactive");
         }
 
         store.setActive(false);
+        store.setDeactivatedBy(deactivatedBy);
+        store.setDeactivatedAt(Instant.now());
         store.setUpdatedAt(Instant.now());
         return storeRepository.save(store);
     }

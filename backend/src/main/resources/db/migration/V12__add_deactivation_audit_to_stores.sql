@@ -1,0 +1,3 @@
+ALTER TABLE stores
+ADD COLUMN deactivated_by UUID REFERENCES users(id),
+ADD COLUMN deactivated_at TIMESTAMP WITH TIME ZONE;

@@ -517,6 +517,24 @@ The system must track:
 ### BR-AUDIT-003
 Critical financial information must never be physically deleted.
 
+### BR-AUDIT-001
+Sale cancellations must record cancelledBy and cancelledAt.
+
+### BR-AUDIT-002
+Store deactivations must record deactivatedBy and deactivatedAt.
+
+### BR-AUDIT-003
+User deactivations must record deactivatedBy and deactivatedAt.
+
+### BR-AUDIT-004
+Shift closures must record closedBy and closedAt.
+
+### BR-AUDIT-005
+Incident resolution must record resolvedBy and resolvedAt.
+
+### BR-AUDIT-006
+Weekly admin reviews must record reviewedBy.
+
 ---
 
 # Connectivity
