@@ -3,6 +3,7 @@ package com.shiftcontrol.backend.users.dto;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public record UserResponse(
@@ -12,7 +13,10 @@ public record UserResponse(
         String email,
         Role role,
         UUID storeId,
-        boolean active
+        boolean active,
+        UUID deactivatedById,
+        String deactivatedByName,
+        Instant deactivatedAt
 ) {
     public static UserResponse fromEntity(User user) {
         return new UserResponse(
@@ -22,7 +26,10 @@ public record UserResponse(
                 user.getEmail(),
                 user.getRole(),
                 user.getStore() != null ? user.getStore().getId() : null,
-                user.isActive()
+                user.isActive(),
+                user.getDeactivatedBy() != null ? user.getDeactivatedBy().getId() : null,
+                user.getDeactivatedBy() != null ? user.getDeactivatedBy().getUsername() : null,
+                user.getDeactivatedAt()
         );
     }
 }

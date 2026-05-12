@@ -320,33 +320,69 @@ class UserServiceTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void should_deactivate_active_user() {
+    void should_deactivate_user_and_set_audit_fields() {
         // Arrange
-        UUID userId = UUID.randomUUID();
-        User user = new User();
-        user.setId(userId);
-        user.setActive(true);
+        UUID targetUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        User target = new User();
+        target.setId(targetUserId);
+        target.setFullName("Ana Costa");
+        target.setRole(Role.STAFF);
+        target.setActive(true);
+
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setFullName("Carlos Admin");
+        admin.setRole(Role.ADMIN);
+        admin.setActive(true);
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(target));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
 
         // Act
-        User result = userService.deactivateUser(userId);
+        User result = userService.deactivateUser(targetUserId, adminId);
 
         // Assert
+        verify(userRepository).save(target);
         assertThat(result.isActive()).isFalse();
+        assertThat(result.getDeactivatedBy()).isSameAs(admin);
+        assertThat(result.getDeactivatedAt()).isNotNull();
         assertThat(result.getUpdatedAt()).isNotNull();
-        verify(userRepository).save(user);
+    }
+
+    @Test
+    void should_throw_when_deactivated_by_user_not_found() {
+        // Arrange
+        UUID targetUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+
+        User target = new User();
+        target.setId(targetUserId);
+        target.setActive(true);
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(target));
+        when(userRepository.findById(adminId)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> userService.deactivateUser(targetUserId, adminId))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("User not found");
+
+        verify(userRepository, never()).save(any());
     }
 
     @Test
     void should_throw_not_found_when_deactivating_missing_user() {
         // Arrange
-        UUID userId = UUID.randomUUID();
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+        UUID targetUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThatThrownBy(() -> userService.deactivateUser(userId))
+        assertThatThrownBy(() -> userService.deactivateUser(targetUserId, adminId))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("User not found");
 
@@ -356,15 +392,23 @@ class UserServiceTest {
     @Test
     void should_throw_business_exception_when_user_is_already_inactive() {
         // Arrange
-        UUID userId = UUID.randomUUID();
-        User user = new User();
-        user.setId(userId);
-        user.setActive(false);
+        UUID targetUserId = UUID.randomUUID();
+        UUID adminId = UUID.randomUUID();
 
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        User inactive = new User();
+        inactive.setId(targetUserId);
+        inactive.setActive(false);
+
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setRole(Role.ADMIN);
+        admin.setActive(true);
+
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(inactive));
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
 
         // Act + Assert
-        assertThatThrownBy(() -> userService.deactivateUser(userId))
+        assertThatThrownBy(() -> userService.deactivateUser(targetUserId, adminId))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("User is already inactive");
 

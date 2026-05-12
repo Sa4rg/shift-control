@@ -1,5 +1,10 @@
 package com.shiftcontrol.backend.stores.model;
 
+import com.shiftcontrol.backend.users.model.User;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,6 +37,13 @@ public class Store {
     @Column(name = "active", nullable = false)
     private boolean active;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deactivated_by")
+    private User deactivatedBy;
+
+    @Column(name = "deactivated_at")
+    private Instant deactivatedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -52,6 +64,21 @@ public class Store {
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public Instant getCreatedAt() { return createdAt; }
+    public User getDeactivatedBy() {
+        return deactivatedBy;
+    }
+
+    public void setDeactivatedBy(User deactivatedBy) {
+        this.deactivatedBy = deactivatedBy;
+    }
+
+    public Instant getDeactivatedAt() {
+        return deactivatedAt;
+    }
+
+    public void setDeactivatedAt(Instant deactivatedAt) {
+        this.deactivatedAt = deactivatedAt;
+    }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }

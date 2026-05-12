@@ -11,6 +11,7 @@ import com.shiftcontrol.backend.users.model.User;
 import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -34,8 +35,12 @@ public class UserService {
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
-    public User deactivateUser(UUID id) {
+    @Transactional
+    public User deactivateUser(UUID id, UUID deactivatedByUserId) {
         User user = userRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        User deactivatedBy = userRepository.findById(deactivatedByUserId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
         if (!user.isActive()) {
@@ -43,7 +48,10 @@ public class UserService {
         }
 
         user.setActive(false);
+        user.setDeactivatedBy(deactivatedBy);
+        user.setDeactivatedAt(Instant.now());
         user.setUpdatedAt(Instant.now());
+
         return userRepository.save(user);
     }
 

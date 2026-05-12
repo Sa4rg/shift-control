@@ -294,6 +294,9 @@ public class SaleService {
             throw new BusinessException("You are not allowed to access this sale");
         }
 
+        User cancelledBy = userRepository.findById(authenticatedUserId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new BusinessException("Sale is already cancelled");
         }
@@ -306,6 +309,7 @@ public class SaleService {
 
         sale.setStatus(SaleStatus.CANCELLED);
         sale.setCancelledReason(request.reason().trim());
+        sale.setCancelledBy(cancelledBy);
         sale.setCancelledAt(now);
         sale.setUpdatedAt(now);
 

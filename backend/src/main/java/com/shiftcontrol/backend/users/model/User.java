@@ -51,6 +51,13 @@ public class User {
     @Column(name = "active", nullable = false)
     private boolean active;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deactivated_by")
+    private User deactivatedBy;
+
+    @Column(name = "deactivated_at")
+    private Instant deactivatedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -82,4 +89,8 @@ public class User {
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+    public User getDeactivatedBy() { return deactivatedBy; }
+    public void setDeactivatedBy(User deactivatedBy) { this.deactivatedBy = deactivatedBy; }
+    public Instant getDeactivatedAt() { return deactivatedAt; }
+    public void setDeactivatedAt(Instant deactivatedAt) { this.deactivatedAt = deactivatedAt; }
 }
