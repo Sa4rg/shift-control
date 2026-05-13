@@ -1,18 +1,19 @@
 package com.shiftcontrol.backend.integration;
 
-import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.stores.model.Store;
-import com.shiftcontrol.backend.stores.repository.StoreRepository;
-import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
-import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.math.BigDecimal;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Date;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -21,15 +22,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class SecurityIntegrationTest extends IntegrationTestBase {
-
-    @Autowired
-    private StoreRepository storeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private JwtService jwtService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -73,7 +65,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     void should_return_403_when_staff_accesses_admin_endpoint() throws Exception {
         // Arrange
         Store store = createStore();
-        User staff = createActiveStaff(store, passwordEncoder.encode("123456"));
+        User staff = createStaffWithUsername(store, "sec.staff." + UUID.randomUUID(), passwordEncoder.encode("123456"));
         String staffToken = jwtService.generateAccessToken(staff);
         UUID randomStoreId = UUID.randomUUID();
 
@@ -95,7 +87,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     void should_allow_admin_to_access_admin_endpoint() throws Exception {
         // Arrange
         Store store = createStore();
-        User admin = createActiveAdmin(passwordEncoder.encode("adminpass"));
+        User admin = createAdminWithUsername("test.admin." + UUID.randomUUID(), passwordEncoder.encode("adminpass"));
         String adminToken = jwtService.generateAccessToken(admin);
 
         // Act + Assert
@@ -117,7 +109,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
         // Arrange
         Store store = createStore();
         String username = "sec.staff." + UUID.randomUUID();
-        createActiveStaffWithUsername(store, username, passwordEncoder.encode("123456"));
+        createStaffWithUsername(store, username, passwordEncoder.encode("123456"));
 
         // Act + Assert — send a wrong but format-valid 6-digit PIN
         mockMvc.perform(post("/api/auth/staff/login")
@@ -141,7 +133,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     void should_return_generic_error_for_invalid_admin_login() throws Exception {
         // Arrange
         String username = "sec.admin." + UUID.randomUUID();
-        createActiveAdminWithUsername(username, passwordEncoder.encode("correctpass"));
+        createAdminWithUsername(username, passwordEncoder.encode("correctpass"));
 
         // Act + Assert
         mockMvc.perform(post("/api/auth/admin/login")
@@ -214,7 +206,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     void should_return_current_staff_user() throws Exception {
         // Arrange
         Store store = createStore();
-        User staff = createActiveStaffWithUsername(store, "sec.me.staff." + UUID.randomUUID(),
+        User staff = createStaffWithUsername(store, "sec.me.staff." + UUID.randomUUID(),
                 passwordEncoder.encode("123456"));
         String staffToken = jwtService.generateAccessToken(staff);
 
@@ -239,7 +231,7 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     @Test
     void should_return_current_admin_user() throws Exception {
         // Arrange
-        User admin = createActiveAdminWithUsername("sec.me.admin." + UUID.randomUUID(),
+        User admin = createAdminWithUsername("sec.me.admin." + UUID.randomUUID(),
                 passwordEncoder.encode("adminpass"));
         String adminToken = jwtService.generateAccessToken(admin);
 
@@ -289,90 +281,42 @@ class SecurityIntegrationTest extends IntegrationTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Helper methods
+    // Test 13: expired JWT token returns 401
+    //
+    // The JwtAuthenticationFilter catches ExpiredJwtException, clears the
+    // security context and continues the filter chain. Spring Security's
+    // AuthenticationEntryPoint then returns 401 "Unauthorized".
     // -------------------------------------------------------------------------
 
-    private Store createStore() {
-        Instant now = Instant.now();
-        Store store = new Store();
-        store.setName("Sec Store " + UUID.randomUUID());
-        store.setAddress("Sec Address");
-        store.setBaseCashAmount(new BigDecimal("103.00"));
-        store.setActive(true);
-        store.setCreatedAt(now);
-        store.setUpdatedAt(now);
-        return storeRepository.save(store);
+    @Test
+    void should_return_401_when_token_is_expired() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staff = createStaff(store);
+
+        // Build an expired JWT manually using the same test secret.
+        // issuedAt = 2 hours ago, expiration = 1 hour ago.
+        SecretKey key = Keys.hmacShaKeyFor(
+                "test-jwt-secret-must-be-at-least-32-bytes-long"
+                        .getBytes(StandardCharsets.UTF_8));
+        Instant issuedAt = Instant.now().minusSeconds(7200);
+        Instant expiredAt = issuedAt.plusSeconds(3600); // still in the past
+
+        String expiredToken = Jwts.builder()
+                .subject(staff.getId().toString())
+                .claim("username", staff.getUsername())
+                .claim("role", staff.getRole().name())
+                .issuedAt(Date.from(issuedAt))
+                .expiration(Date.from(expiredAt))
+                .signWith(key)
+                .compact();
+
+        // Act + Assert
+        mockMvc.perform(get("/api/shifts/current")
+                        .header("Authorization", "Bearer " + expiredToken))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Unauthorized"));
     }
 
-    private User createActiveStaff(Store store, String encodedPin) {
-        return createActiveStaffWithUsername(store, "sec.staff." + UUID.randomUUID(), encodedPin);
-    }
-
-    private User createActiveStaffWithUsername(Store store, String username, String encodedPin) {
-        Instant now = Instant.now();
-        User staff = new User();
-        staff.setFullName("Sec Staff");
-        staff.setUsername(username);
-        staff.setEmail(null);
-        staff.setPinHash(encodedPin);
-        staff.setPasswordHash(null);
-        staff.setRole(Role.STAFF);
-        staff.setStore(store);
-        staff.setActive(true);
-        staff.setCreatedAt(now);
-        staff.setUpdatedAt(now);
-        return userRepository.save(staff);
-    }
-
-    private User createInactiveStaffWithUsername(Store store, String username, String encodedPin) {
-        Instant now = Instant.now();
-        User staff = new User();
-        staff.setFullName("Sec Inactive Staff");
-        staff.setUsername(username);
-        staff.setEmail(null);
-        staff.setPinHash(encodedPin);
-        staff.setPasswordHash(null);
-        staff.setRole(Role.STAFF);
-        staff.setStore(store);
-        staff.setActive(false);
-        staff.setCreatedAt(now);
-        staff.setUpdatedAt(now);
-        return userRepository.save(staff);
-    }
-
-    private User createActiveAdmin(String encodedPassword) {
-        return createActiveAdminWithUsername("sec.admin." + UUID.randomUUID(), encodedPassword);
-    }
-
-    private User createActiveAdminWithUsername(String username, String encodedPassword) {
-        Instant now = Instant.now();
-        User admin = new User();
-        admin.setFullName("Sec Admin");
-        admin.setUsername(username);
-        admin.setEmail(null);
-        admin.setPinHash(null);
-        admin.setPasswordHash(encodedPassword);
-        admin.setRole(Role.ADMIN);
-        admin.setStore(null);
-        admin.setActive(true);
-        admin.setCreatedAt(now);
-        admin.setUpdatedAt(now);
-        return userRepository.save(admin);
-    }
-
-    private User createInactiveAdminWithUsername(String username, String encodedPassword) {
-        Instant now = Instant.now();
-        User admin = new User();
-        admin.setFullName("Sec Inactive Admin");
-        admin.setUsername(username);
-        admin.setEmail(null);
-        admin.setPinHash(null);
-        admin.setPasswordHash(encodedPassword);
-        admin.setRole(Role.ADMIN);
-        admin.setStore(null);
-        admin.setActive(false);
-        admin.setCreatedAt(now);
-        admin.setUpdatedAt(now);
-        return userRepository.save(admin);
-    }
 }

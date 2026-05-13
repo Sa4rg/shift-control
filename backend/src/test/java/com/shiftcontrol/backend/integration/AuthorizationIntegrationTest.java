@@ -1,24 +1,13 @@
 package com.shiftcontrol.backend.integration;
 
-import com.shiftcontrol.backend.sales.model.InvoiceStatus;
 import com.shiftcontrol.backend.sales.model.Sale;
 import com.shiftcontrol.backend.sales.model.SaleStatus;
-import com.shiftcontrol.backend.sales.repository.SaleRepository;
-import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.shifts.model.Shift;
-import com.shiftcontrol.backend.shifts.model.ShiftStatus;
-import com.shiftcontrol.backend.shifts.model.ShiftType;
-import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
 import com.shiftcontrol.backend.stores.model.Store;
-import com.shiftcontrol.backend.stores.repository.StoreRepository;
-import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
-import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -28,21 +17,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class AuthorizationIntegrationTest extends IntegrationTestBase {
-
-    @Autowired
-    private StoreRepository storeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ShiftRepository shiftRepository;
-
-    @Autowired
-    private SaleRepository saleRepository;
-
-    @Autowired
-    private JwtService jwtService;
 
     // -------------------------------------------------------------------------
     // Test 1: STAFF cannot create a store
@@ -111,7 +85,7 @@ class AuthorizationIntegrationTest extends IntegrationTestBase {
         User staffA = createStaff(store);
         User staffB = createStaff(store);
         Shift shiftA = createOpenShift(staffA, store);
-        Sale sale = createSale(store, staffA, shiftA);
+        Sale sale = createSale(store, staffA, shiftA, SaleStatus.ACTIVE, Instant.now());
 
         String staffBToken = jwtService.generateAccessToken(staffB);
 
@@ -145,85 +119,4 @@ class AuthorizationIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.message").value("You are not allowed to access this shift"));
     }
 
-    // -------------------------------------------------------------------------
-    // Helper methods
-    // -------------------------------------------------------------------------
-
-    private Store createStore() {
-        Instant now = Instant.now();
-        Store store = new Store();
-        store.setName("Auth Store " + UUID.randomUUID());
-        store.setAddress("Auth Address");
-        store.setBaseCashAmount(new BigDecimal("103.00"));
-        store.setActive(true);
-        store.setCreatedAt(now);
-        store.setUpdatedAt(now);
-        return storeRepository.save(store);
-    }
-
-    private User createAdmin() {
-        Instant now = Instant.now();
-        User admin = new User();
-        admin.setFullName("Auth Admin");
-        admin.setUsername("auth.admin." + UUID.randomUUID());
-        admin.setEmail(null);
-        admin.setPinHash(null);
-        admin.setPasswordHash("hashed-password");
-        admin.setRole(Role.ADMIN);
-        admin.setStore(null);
-        admin.setActive(true);
-        admin.setCreatedAt(now);
-        admin.setUpdatedAt(now);
-        return userRepository.save(admin);
-    }
-
-    private User createStaff(Store store) {
-        Instant now = Instant.now();
-        User staff = new User();
-        staff.setFullName("Auth Staff");
-        staff.setUsername("auth.staff." + UUID.randomUUID());
-        staff.setEmail(null);
-        staff.setPinHash("hashed-pin");
-        staff.setPasswordHash(null);
-        staff.setRole(Role.STAFF);
-        staff.setStore(store);
-        staff.setActive(true);
-        staff.setCreatedAt(now);
-        staff.setUpdatedAt(now);
-        return userRepository.save(staff);
-    }
-
-    private Shift createOpenShift(User staff, Store store) {
-        Instant now = Instant.now();
-        Shift shift = new Shift();
-        shift.setStaff(staff);
-        shift.setStore(store);
-        shift.setType(ShiftType.DAY);
-        shift.setStatus(ShiftStatus.OPEN);
-        shift.setOpenedAt(now);
-        shift.setClosedAt(null);
-        shift.setClosedBy(null);
-        shift.setCreatedAt(now);
-        shift.setUpdatedAt(now);
-        return shiftRepository.save(shift);
-    }
-
-    private Sale createSale(Store store, User staff, Shift shift) {
-        Instant now = Instant.now();
-        Sale sale = new Sale();
-        sale.setStore(store);
-        sale.setStaff(staff);
-        sale.setShift(shift);
-        sale.setStatus(SaleStatus.ACTIVE);
-        sale.setInvoiceStatus(InvoiceStatus.PENDING);
-        sale.setSubtotalAmount(new BigDecimal("10.00"));
-        sale.setDiscountTotalAmount(new BigDecimal("0.00"));
-        sale.setFinalTotalAmount(new BigDecimal("10.00"));
-        sale.setNote(null);
-        sale.setCancelledReason(null);
-        sale.setCreatedAt(now);
-        sale.setUpdatedAt(now);
-        sale.setCancelledAt(null);
-        return saleRepository.save(sale);
-    }
 }

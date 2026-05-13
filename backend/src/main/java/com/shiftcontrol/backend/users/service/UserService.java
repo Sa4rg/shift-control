@@ -30,6 +30,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional(readOnly = true)
     public User getById(UUID id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -55,6 +56,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     public List<User> listUsers(Role role, boolean includeInactive) {
         if (role == null) {
             return includeInactive ? userRepository.findAll() : userRepository.findByActiveTrue();

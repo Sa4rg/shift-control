@@ -1,27 +1,11 @@
 package com.shiftcontrol.backend.integration;
 
 import com.shiftcontrol.backend.closures.model.ClosureStatus;
-import com.shiftcontrol.backend.closures.model.ShiftClosure;
-import com.shiftcontrol.backend.closures.repository.ShiftClosureRepository;
-import com.shiftcontrol.backend.incidents.model.Incident;
-import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
-import com.shiftcontrol.backend.incidents.model.IncidentStatus;
-import com.shiftcontrol.backend.incidents.model.IncidentType;
-import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
-import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.shifts.model.Shift;
-import com.shiftcontrol.backend.shifts.model.ShiftStatus;
-import com.shiftcontrol.backend.shifts.model.ShiftType;
-import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
 import com.shiftcontrol.backend.stores.model.Store;
-import com.shiftcontrol.backend.stores.repository.StoreRepository;
-import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
-import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -30,24 +14,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class WeeklyReportIntegrationTest extends IntegrationTestBase {
-
-    @Autowired
-    private StoreRepository storeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ShiftRepository shiftRepository;
-
-    @Autowired
-    private ShiftClosureRepository shiftClosureRepository;
-
-    @Autowired
-    private IncidentRepository incidentRepository;
-
-    @Autowired
-    private JwtService jwtService;
 
     // -------------------------------------------------------------------------
     // Test 1: admin receives weekly report grouped by staff with correct totals
@@ -160,131 +126,30 @@ class WeeklyReportIntegrationTest extends IntegrationTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Helper methods
+    // Test 4: GET /api/admin/reports/weekly — missing required storeId param
+    //
+    // @RequestParam UUID storeId (required = true by default) → Spring throws
+    // MissingServletRequestParameterException. The ExceptionHandlerExceptionResolver
+    // fires before DefaultHandlerExceptionResolver and routes to the catch-all
+    // @ExceptionHandler(Exception.class) in GlobalExceptionHandler → HTTP 500.
+    // NOTE: this is a gap in GlobalExceptionHandler; storeId validation should be
+    // made explicit (e.g. handled by a dedicated MissingServletRequestParameterException
+    // handler returning 400) in a future task.
     // -------------------------------------------------------------------------
 
-    private Store createStore() {
-        Instant now = Instant.now();
+    @Test
+    void should_return_error_when_store_id_param_is_missing() throws Exception {
+        // Arrange
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
 
-        Store store = new Store();
-        store.setName("Weekly Report Store " + UUID.randomUUID());
-        store.setAddress("Weekly Report Address");
-        store.setBaseCashAmount(new BigDecimal("103.00"));
-        store.setActive(true);
-        store.setCreatedAt(now);
-        store.setUpdatedAt(now);
-
-        return storeRepository.save(store);
+        // Act + Assert — storeId omitted; weekStart still provided
+        mockMvc.perform(get("/api/admin/reports/weekly")
+                        .param("weekStart", "2026-05-04")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value("Unexpected internal error"));
     }
 
-    private User createAdmin() {
-        Instant now = Instant.now();
-
-        User admin = new User();
-        admin.setFullName("Weekly Report Admin");
-        admin.setUsername("weekly.admin." + UUID.randomUUID());
-        admin.setEmail(null);
-        admin.setPinHash(null);
-        admin.setPasswordHash("test-password-hash");
-        admin.setRole(Role.ADMIN);
-        admin.setStore(null);
-        admin.setActive(true);
-        admin.setCreatedAt(now);
-        admin.setUpdatedAt(now);
-
-        return userRepository.save(admin);
-    }
-
-    private User createStaff(Store store, String fullName) {
-        Instant now = Instant.now();
-
-        User staff = new User();
-        staff.setFullName(fullName);
-        staff.setUsername("weekly.staff." + UUID.randomUUID());
-        staff.setEmail(null);
-        staff.setPinHash("test-pin-hash");
-        staff.setPasswordHash(null);
-        staff.setRole(Role.STAFF);
-        staff.setStore(store);
-        staff.setActive(true);
-        staff.setCreatedAt(now);
-        staff.setUpdatedAt(now);
-
-        return userRepository.save(staff);
-    }
-
-    private Shift createClosedShift(User staff, Store store, User closedBy, Instant closedAt) {
-        Instant now = Instant.now();
-
-        Shift shift = new Shift();
-        shift.setStaff(staff);
-        shift.setStore(store);
-        shift.setType(ShiftType.DAY);
-        shift.setStatus(ShiftStatus.CLOSED);
-        shift.setOpenedAt(closedAt.minusSeconds(3600));
-        shift.setClosedAt(closedAt);
-        shift.setClosedBy(closedBy);
-        shift.setCreatedAt(now);
-        shift.setUpdatedAt(now);
-
-        return shiftRepository.save(shift);
-    }
-
-    private ShiftClosure createClosure(
-            Shift shift,
-            User closedBy,
-            String totalCash,
-            String totalMb,
-            String totalGlovoOnline,
-            String totalGlovoCash,
-            String totalSales,
-            String pendingInvoiceTotal,
-            String cashDifference,
-            String mbDifference,
-            ClosureStatus status
-    ) {
-        Instant now = Instant.now();
-
-        ShiftClosure closure = new ShiftClosure();
-        closure.setShift(shift);
-        closure.setClosedBy(closedBy);
-        closure.setTotalCash(new BigDecimal(totalCash));
-        closure.setTotalMb(new BigDecimal(totalMb));
-        closure.setTotalGlovoOnline(new BigDecimal(totalGlovoOnline));
-        closure.setTotalGlovoCash(new BigDecimal(totalGlovoCash));
-        closure.setTotalSales(new BigDecimal(totalSales));
-        closure.setPendingInvoiceTotal(new BigDecimal(pendingInvoiceTotal));
-        closure.setCashToWithdraw(new BigDecimal("0.00"));
-        closure.setExpectedPhysicalCash(new BigDecimal("0.00"));
-        closure.setConfirmedCashAmount(new BigDecimal("0.00"));
-        closure.setConfirmedMbAmount(new BigDecimal("0.00"));
-        closure.setCashDifference(new BigDecimal(cashDifference));
-        closure.setMbDifference(new BigDecimal(mbDifference));
-        closure.setStatus(status);
-        closure.setNote(null);
-        closure.setCreatedAt(now);
-        closure.setUpdatedAt(now);
-
-        return shiftClosureRepository.save(closure);
-    }
-
-    private Incident createIncident(User reportedBy, Shift shift, Instant createdAt) {
-        Incident incident = new Incident();
-        incident.setReportedBy(reportedBy);
-        incident.setShift(shift);
-        incident.setClosure(null);
-        incident.setSale(null);
-        incident.setResolvedBy(null);
-        incident.setType(IncidentType.OPERATIONAL_NOTE);
-        incident.setStatus(IncidentStatus.OPEN);
-        incident.setSeverity(IncidentSeverity.LOW);
-        incident.setTitle("Weekly test incident");
-        incident.setDescription("Incident for weekly report test.");
-        incident.setResolutionNote(null);
-        incident.setCreatedAt(createdAt);
-        incident.setUpdatedAt(createdAt);
-        incident.setResolvedAt(null);
-
-        return incidentRepository.save(incident);
-    }
 }
