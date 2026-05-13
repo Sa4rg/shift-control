@@ -26,10 +26,12 @@ public class StoreService {
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
     public List<Store> findAll() {
         return storeRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Store> searchStores(String search, boolean includeInactive) {
         if (search == null || search.isBlank()) {
             return includeInactive ? storeRepository.findAll() : storeRepository.findByActiveTrue();
@@ -40,6 +42,7 @@ public class StoreService {
                 : storeRepository.searchActiveByNameOrAddress(term);
     }
 
+    @Transactional(readOnly = true)
     public Store getById(UUID id) {
         return storeRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Store not found"));

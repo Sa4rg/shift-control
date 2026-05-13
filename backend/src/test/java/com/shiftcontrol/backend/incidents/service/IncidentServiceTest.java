@@ -24,10 +24,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -119,20 +120,7 @@ class IncidentServiceTest {
         return new ResolveIncidentRequest(note);
     }
 
-    /**
-     * Sets the 'id' field of a JPA entity via reflection.
-     * Used for Shift and Sale, which do not expose a public setId().
-     */
-    private static void setEntityId(Object entity, UUID id) {
-        try {
-            Field field = entity.getClass().getDeclaredField("id");
-            field.setAccessible(true);
-            field.set(entity, id);
-        } catch (Exception e) {
-            throw new RuntimeException(
-                    "Failed to set id via reflection on " + entity.getClass().getSimpleName(), e);
-        }
-    }
+
 
     // -------------------------------------------------------------------------
     // createIncident tests
@@ -235,10 +223,10 @@ class IncidentServiceTest {
         UUID otherShiftIdValue = UUID.randomUUID();
 
         Shift shift = new Shift();
-        setEntityId(shift, shiftIdValue);
+        ReflectionTestUtils.setField(shift, "id", shiftIdValue);
 
         Shift otherShift = new Shift();
-        setEntityId(otherShift, otherShiftIdValue);
+        ReflectionTestUtils.setField(otherShift, "id", otherShiftIdValue);
 
         ShiftClosure closure = closureForShift(otherShift);
         UUID closureId = UUID.randomUUID();

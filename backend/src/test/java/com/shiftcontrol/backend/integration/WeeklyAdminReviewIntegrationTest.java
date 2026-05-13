@@ -1,21 +1,12 @@
 package com.shiftcontrol.backend.integration;
 
 import com.shiftcontrol.backend.closures.model.ClosureStatus;
-import com.shiftcontrol.backend.closures.model.ShiftClosure;
-import com.shiftcontrol.backend.closures.repository.ShiftClosureRepository;
 import com.shiftcontrol.backend.reviews.model.WeeklyAdminReview;
 import com.shiftcontrol.backend.reviews.model.WeeklyAdminReviewStatus;
 import com.shiftcontrol.backend.reviews.repository.WeeklyAdminReviewRepository;
-import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.shifts.model.Shift;
-import com.shiftcontrol.backend.shifts.model.ShiftStatus;
-import com.shiftcontrol.backend.shifts.model.ShiftType;
-import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
 import com.shiftcontrol.backend.stores.model.Store;
-import com.shiftcontrol.backend.stores.repository.StoreRepository;
-import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
-import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -33,12 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class WeeklyAdminReviewIntegrationTest extends IntegrationTestBase {
 
-    @Autowired private StoreRepository storeRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private ShiftRepository shiftRepository;
-    @Autowired private ShiftClosureRepository shiftClosureRepository;
     @Autowired private WeeklyAdminReviewRepository weeklyAdminReviewRepository;
-    @Autowired private JwtService jwtService;
 
     private static final LocalDate WEEK_START = LocalDate.of(2026, 5, 4);
 
@@ -295,105 +281,6 @@ class WeeklyAdminReviewIntegrationTest extends IntegrationTestBase {
         review.setCreatedAt(now);
         review.setUpdatedAt(now);
         return weeklyAdminReviewRepository.save(review);
-    }
-
-    private Store createStore() {
-        Instant now = Instant.now();
-        Store store = new Store();
-        store.setName("Review Integration Store " + UUID.randomUUID());
-        store.setAddress("Test Address");
-        store.setBaseCashAmount(new BigDecimal("103.00"));
-        store.setActive(true);
-        store.setCreatedAt(now);
-        store.setUpdatedAt(now);
-        return storeRepository.save(store);
-    }
-
-    private User createAdmin() {
-        Instant now = Instant.now();
-        User admin = new User();
-        admin.setFullName("Review Integration Admin");
-        admin.setUsername("rev.admin." + UUID.randomUUID());
-        admin.setEmail(null);
-        admin.setPinHash(null);
-        admin.setPasswordHash("hashed-password");
-        admin.setRole(Role.ADMIN);
-        admin.setStore(null);
-        admin.setActive(true);
-        admin.setCreatedAt(now);
-        admin.setUpdatedAt(now);
-        return userRepository.save(admin);
-    }
-
-    private User createStaff(Store store) {
-        Instant now = Instant.now();
-        User staff = new User();
-        staff.setFullName("Review Integration Staff");
-        staff.setUsername("rev.staff." + UUID.randomUUID());
-        staff.setEmail(null);
-        staff.setPinHash("hashed-pin");
-        staff.setPasswordHash(null);
-        staff.setRole(Role.STAFF);
-        staff.setStore(store);
-        staff.setActive(true);
-        staff.setCreatedAt(now);
-        staff.setUpdatedAt(now);
-        return userRepository.save(staff);
-    }
-
-    private Shift createClosedShift(User staff, Store store, User closedBy, Instant closedAt) {
-        Instant now = Instant.now();
-        Shift shift = new Shift();
-        shift.setStaff(staff);
-        shift.setStore(store);
-        shift.setType(ShiftType.DAY);
-        shift.setStatus(ShiftStatus.CLOSED);
-        shift.setOpenedAt(closedAt.minusSeconds(3600));
-        shift.setClosedAt(closedAt);
-        shift.setClosedBy(closedBy);
-        shift.setCreatedAt(now);
-        shift.setUpdatedAt(now);
-        return shiftRepository.save(shift);
-    }
-
-    private ShiftClosure createClosure(
-            Shift shift,
-            User closedBy,
-            String totalCash,
-            String totalMb,
-            String totalGlovoOnline,
-            String totalGlovoCash,
-            String totalSales,
-            String pendingInvoiceTotal,
-            String cashToWithdraw,
-            String expectedPhysicalCash,
-            String confirmedCashAmount,
-            String confirmedMbAmount,
-            String cashDifference,
-            String mbDifference,
-            ClosureStatus status
-    ) {
-        Instant now = Instant.now();
-        ShiftClosure closure = new ShiftClosure();
-        closure.setShift(shift);
-        closure.setClosedBy(closedBy);
-        closure.setTotalCash(new BigDecimal(totalCash));
-        closure.setTotalMb(new BigDecimal(totalMb));
-        closure.setTotalGlovoOnline(new BigDecimal(totalGlovoOnline));
-        closure.setTotalGlovoCash(new BigDecimal(totalGlovoCash));
-        closure.setTotalSales(new BigDecimal(totalSales));
-        closure.setPendingInvoiceTotal(new BigDecimal(pendingInvoiceTotal));
-        closure.setCashToWithdraw(new BigDecimal(cashToWithdraw));
-        closure.setExpectedPhysicalCash(new BigDecimal(expectedPhysicalCash));
-        closure.setConfirmedCashAmount(new BigDecimal(confirmedCashAmount));
-        closure.setConfirmedMbAmount(new BigDecimal(confirmedMbAmount));
-        closure.setCashDifference(new BigDecimal(cashDifference));
-        closure.setMbDifference(new BigDecimal(mbDifference));
-        closure.setStatus(status);
-        closure.setNote(null);
-        closure.setCreatedAt(now);
-        closure.setUpdatedAt(now);
-        return shiftClosureRepository.save(closure);
     }
 
     private String buildRequestBody(UUID storeId, UUID staffId, LocalDate weekStart, String status, String note) {

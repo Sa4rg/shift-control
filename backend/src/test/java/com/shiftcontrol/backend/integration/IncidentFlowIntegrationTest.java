@@ -4,24 +4,13 @@ import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
 import com.shiftcontrol.backend.incidents.model.IncidentType;
-import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
-import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.shifts.model.Shift;
-import com.shiftcontrol.backend.shifts.model.ShiftStatus;
-import com.shiftcontrol.backend.shifts.model.ShiftType;
-import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
 import com.shiftcontrol.backend.stores.model.Store;
-import com.shiftcontrol.backend.stores.repository.StoreRepository;
-import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
-import com.shiftcontrol.backend.users.repository.UserRepository;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -30,21 +19,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class IncidentFlowIntegrationTest extends IntegrationTestBase {
-
-    @Autowired
-    private StoreRepository storeRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private ShiftRepository shiftRepository;
-
-    @Autowired
-    private IncidentRepository incidentRepository;
-
-    @Autowired
-    private JwtService jwtService;
 
     // -------------------------------------------------------------------------
     // Test 1: staff can create an incident for their own shift
@@ -224,75 +198,63 @@ class IncidentFlowIntegrationTest extends IntegrationTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Helper methods
+    // Test 7: GET /api/incidents/{id} — admin retrieves an incident by id
     // -------------------------------------------------------------------------
 
-    private Store createStore() {
-        Instant now = Instant.now();
+    @Test
+    void should_get_incident_by_id_as_admin() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staff = createStaff(store);
+        Shift shift = createOpenShift(staff, store);
+        Incident incident = createOpenIncident(staff, shift);
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
 
-        Store store = new Store();
-        store.setName("Incident Store " + UUID.randomUUID());
-        store.setAddress("Incident Address");
-        store.setBaseCashAmount(new BigDecimal("103.00"));
-        store.setActive(true);
-        store.setCreatedAt(now);
-        store.setUpdatedAt(now);
-
-        return storeRepository.save(store);
+        // Act + Assert
+        mockMvc.perform(get("/api/incidents/{id}", incident.getId())
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Incident retrieved successfully"))
+                .andExpect(jsonPath("$.data.id").value(incident.getId().toString()))
+                .andExpect(jsonPath("$.data.shiftId").value(shift.getId().toString()))
+                .andExpect(jsonPath("$.data.reportedById").value(staff.getId().toString()))
+                .andExpect(jsonPath("$.data.status").value("OPEN"));
     }
 
-    private User createStaff(Store store) {
-        Instant now = Instant.now();
+    // -------------------------------------------------------------------------
+    // Test 8: GET /api/incidents?status=OPEN — OPEN appears, RESOLVED excluded
+    // -------------------------------------------------------------------------
 
-        User staff = new User();
-        staff.setFullName("Incident Staff");
-        staff.setUsername("incident.staff." + UUID.randomUUID());
-        staff.setEmail(null);
-        staff.setPinHash("test-pin-hash");
-        staff.setPasswordHash(null);
-        staff.setRole(Role.STAFF);
-        staff.setStore(store);
-        staff.setActive(true);
-        staff.setCreatedAt(now);
-        staff.setUpdatedAt(now);
+    @Test
+    void should_list_open_incidents_with_status_filter() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staff = createStaff(store);
+        Shift shift = createOpenShift(staff, store);
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
 
-        return userRepository.save(staff);
+        Incident openIncident = createOpenIncident(staff, shift);
+        Incident resolvedIncident = createResolvedIncident(staff, admin);
+
+        // Act + Assert
+        mockMvc.perform(get("/api/incidents")
+                        .param("status", "OPEN")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Incidents retrieved successfully"))
+                // OPEN incident is present
+                .andExpect(jsonPath("$.data[?(@.id == '" + openIncident.getId() + "')]").isNotEmpty())
+                // RESOLVED incident is absent from the OPEN filter
+                .andExpect(jsonPath("$.data[?(@.id == '" + resolvedIncident.getId() + "')]").isEmpty());
     }
 
-    private User createAdmin() {
-        Instant now = Instant.now();
-
-        User admin = new User();
-        admin.setFullName("Incident Admin");
-        admin.setUsername("incident.admin." + UUID.randomUUID());
-        admin.setEmail(null);
-        admin.setPinHash(null);
-        admin.setPasswordHash("test-password-hash");
-        admin.setRole(Role.ADMIN);
-        admin.setStore(null);
-        admin.setActive(true);
-        admin.setCreatedAt(now);
-        admin.setUpdatedAt(now);
-
-        return userRepository.save(admin);
-    }
-
-    private Shift createOpenShift(User staff, Store store) {
-        Instant now = Instant.now();
-
-        Shift shift = new Shift();
-        shift.setStaff(staff);
-        shift.setStore(store);
-        shift.setType(ShiftType.DAY);
-        shift.setStatus(ShiftStatus.OPEN);
-        shift.setOpenedAt(now);
-        shift.setClosedAt(null);
-        shift.setClosedBy(null);
-        shift.setCreatedAt(now);
-        shift.setUpdatedAt(now);
-
-        return shiftRepository.save(shift);
-    }
+    // -------------------------------------------------------------------------
+    // Helper methods
+    // -------------------------------------------------------------------------
 
     private Incident createOpenIncident(User reportedBy, Shift shift) {
         Instant now = Instant.now();
