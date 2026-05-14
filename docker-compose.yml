@@ -1,18 +1,16 @@
 services:
-  jenkins:
-    build: .
-    container_name: shift-control-jenkins
-    user: root
-    ports:
-      - "8085:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins_home:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
-      - TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal
+  postgres:
+    image: postgres:16
+    container_name: shift-control-postgres
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: shift_control
+      POSTGRES_USER: shift_control_user
+      POSTGRES_PASSWORD: shift_control_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - shift_control_postgres_data:/var/lib/postgresql/data
 
 volumes:
-  jenkins_home:
+  shift_control_postgres_data:

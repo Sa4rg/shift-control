@@ -11,6 +11,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=true
+      - TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal
     restart: unless-stopped
 
 volumes:
