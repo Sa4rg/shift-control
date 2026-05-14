@@ -94,3 +94,18 @@ git add Jenkinsfile jenkins-local/docker-compose.yml jenkins-local/Dockerfile do
 git commit -m "Add Jenkins local CI pipeline"
 git push
 ```
+## Poll SCM automation
+
+The local Jenkins job is configured with Poll SCM:
+
+```txt
+H/2 * * * *
+
+This makes Jenkins check GitHub approximately every 2 minutes.
+
+When a push is detected, Jenkins automatically runs the pipeline.
+
+Expected build trigger message:
+
+Started by an SCM change
+```
