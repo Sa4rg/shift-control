@@ -3,6 +3,7 @@ package com.shiftcontrol.backend.shifts.controller;
 import com.shiftcontrol.backend.shared.response.ApiResponse;
 import com.shiftcontrol.backend.shifts.dto.OpenShiftRequest;
 import com.shiftcontrol.backend.shifts.dto.ShiftResponse;
+import com.shiftcontrol.backend.shifts.dto.ShiftClosePreviewResponse;
 import com.shiftcontrol.backend.shifts.service.ShiftService;
 import com.shiftcontrol.backend.closures.dto.CloseShiftRequest;
 import com.shiftcontrol.backend.closures.dto.ShiftClosureResponse;
@@ -112,5 +113,24 @@ public class ShiftController {
         );
 
         return ApiResponse.ok("Shift closed successfully", response);
+    }
+
+    @GetMapping("/{id}/close-preview")
+    public ApiResponse<ShiftClosePreviewResponse> getClosePreview(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        UUID authenticatedUserId = UUID.fromString(authentication.getName());
+
+        String authority = authentication.getAuthorities()
+                .stream()
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Authenticated user has no role"))
+                .getAuthority();
+        Role authenticatedRole = Role.valueOf(authority.replace("ROLE_", ""));
+
+        ShiftClosePreviewResponse response = shiftService.getClosePreview(id, authenticatedUserId, authenticatedRole);
+
+        return ApiResponse.ok("Shift close preview retrieved successfully", response);
     }
 }

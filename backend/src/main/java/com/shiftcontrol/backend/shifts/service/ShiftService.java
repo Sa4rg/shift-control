@@ -31,6 +31,9 @@ import org.hibernate.Hibernate;
 
 import java.math.RoundingMode;
 
+import com.shiftcontrol.backend.shifts.dto.ShiftClosePreviewResponse;
+import com.shiftcontrol.backend.stores.model.Store;
+
 
 @Service
 public class ShiftService {
@@ -161,42 +164,17 @@ public class ShiftService {
         }
 
         List<Sale> activeSales = saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE);
-
-        for (Sale sale : activeSales) {
-            Hibernate.initialize(sale.getPayments());
-        }
-
-        BigDecimal totalCash = totalByPaymentMethod(activeSales, PaymentMethod.CASH);
-        BigDecimal totalMb = totalByPaymentMethod(activeSales, PaymentMethod.MB);
-        BigDecimal totalGlovoOnline = totalByPaymentMethod(activeSales, PaymentMethod.GLOVO_ONLINE);
-        BigDecimal totalGlovoCash = totalByPaymentMethod(activeSales, PaymentMethod.GLOVO_CASH);
-
-        BigDecimal totalSales = activeSales.stream()
-                .map(Sale::getFinalTotalAmount)
-                .reduce(ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal pendingInvoiceTotal = activeSales.stream()
-                .filter(sale -> sale.getInvoiceStatus() == InvoiceStatus.PENDING)
-                .map(Sale::getFinalTotalAmount)
-                .reduce(ZERO, BigDecimal::add)
-                .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal cashToWithdraw = totalCash.add(totalGlovoCash).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal expectedPhysicalCash = shift.getStore()
-                .getBaseCashAmount()
-                .add(cashToWithdraw)
-                .setScale(2, RoundingMode.HALF_UP);
+        ShiftCloseTotals totals = calculateShiftTotals(activeSales, shift.getStore());
 
         BigDecimal confirmedCashAmount = toMoney(request.confirmedCashAmount());
         BigDecimal confirmedMbAmount = toMoney(request.confirmedMbAmount());
 
         BigDecimal cashDifference = confirmedCashAmount
-                .subtract(expectedPhysicalCash)
+                .subtract(totals.expectedPhysicalCash())
                 .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal mbDifference = confirmedMbAmount
-                .subtract(totalMb)
+                .subtract(totals.totalMb())
                 .setScale(2, RoundingMode.HALF_UP);
 
         ClosureStatus closureStatus =
@@ -210,15 +188,15 @@ public class ShiftService {
         closure.setShift(shift);
         closure.setClosedBy(closedBy);
 
-        closure.setTotalCash(totalCash);
-        closure.setTotalMb(totalMb);
-        closure.setTotalGlovoOnline(totalGlovoOnline);
-        closure.setTotalGlovoCash(totalGlovoCash);
-        closure.setTotalSales(totalSales);
-        closure.setPendingInvoiceTotal(pendingInvoiceTotal);
+        closure.setTotalCash(totals.totalCash());
+        closure.setTotalMb(totals.totalMb());
+        closure.setTotalGlovoOnline(totals.totalGlovoOnline());
+        closure.setTotalGlovoCash(totals.totalGlovoCash());
+        closure.setTotalSales(totals.totalSales());
+        closure.setPendingInvoiceTotal(totals.pendingInvoiceTotal());
 
-        closure.setCashToWithdraw(cashToWithdraw);
-        closure.setExpectedPhysicalCash(expectedPhysicalCash);
+        closure.setCashToWithdraw(totals.cashToWithdraw());
+        closure.setExpectedPhysicalCash(totals.expectedPhysicalCash());
 
         closure.setConfirmedCashAmount(confirmedCashAmount);
         closure.setConfirmedMbAmount(confirmedMbAmount);
@@ -258,5 +236,82 @@ public class ShiftService {
         }
 
         return value.trim();
+    }
+
+    @Transactional(readOnly = true)
+    public ShiftClosePreviewResponse getClosePreview(UUID shiftId, UUID authenticatedUserId, Role authenticatedRole) {
+        Shift shift = shiftRepository.findByIdWithDetails(shiftId)
+                .orElseThrow(() -> new NotFoundException("Shift not found"));
+
+        if (authenticatedRole != Role.ADMIN && !shift.getStaff().getId().equals(authenticatedUserId)) {
+            throw new BusinessException("You are not allowed to access this shift");
+        }
+
+        if (shift.getStatus() != ShiftStatus.OPEN) {
+            throw new BusinessException("Only open shifts can be previewed for closure");
+        }
+
+        List<Sale> activeSales = saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE);
+        ShiftCloseTotals totals = calculateShiftTotals(activeSales, shift.getStore());
+
+        return new ShiftClosePreviewResponse(
+                shift.getId(),
+                shift.getStaff().getId(),
+                shift.getStaff().getFullName(),
+                shift.getStore().getId(),
+                shift.getStore().getName(),
+                totals.totalCash(),
+                totals.totalMb(),
+                totals.totalGlovoOnline(),
+                totals.totalGlovoCash(),
+                totals.totalSales(),
+                totals.pendingInvoiceTotal(),
+                totals.cashToWithdraw(),
+                totals.expectedPhysicalCash()
+        );
+    }
+
+    private ShiftCloseTotals calculateShiftTotals(List<Sale> activeSales, Store store) {
+        for (Sale sale : activeSales) {
+            Hibernate.initialize(sale.getPayments());
+        }
+
+        BigDecimal totalCash = totalByPaymentMethod(activeSales, PaymentMethod.CASH);
+        BigDecimal totalMb = totalByPaymentMethod(activeSales, PaymentMethod.MB);
+        BigDecimal totalGlovoOnline = totalByPaymentMethod(activeSales, PaymentMethod.GLOVO_ONLINE);
+        BigDecimal totalGlovoCash = totalByPaymentMethod(activeSales, PaymentMethod.GLOVO_CASH);
+
+        BigDecimal totalSales = activeSales.stream()
+                .map(Sale::getFinalTotalAmount)
+                .reduce(ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal pendingInvoiceTotal = activeSales.stream()
+                .filter(sale -> sale.getInvoiceStatus() == InvoiceStatus.PENDING)
+                .map(Sale::getFinalTotalAmount)
+                .reduce(ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal cashToWithdraw = totalCash.add(totalGlovoCash).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal expectedPhysicalCash = store.getBaseCashAmount()
+                .add(cashToWithdraw)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        return new ShiftCloseTotals(
+                totalCash, totalMb, totalGlovoOnline, totalGlovoCash,
+                totalSales, pendingInvoiceTotal, cashToWithdraw, expectedPhysicalCash
+        );
+    }
+
+    private record ShiftCloseTotals(
+            BigDecimal totalCash,
+            BigDecimal totalMb,
+            BigDecimal totalGlovoOnline,
+            BigDecimal totalGlovoCash,
+            BigDecimal totalSales,
+            BigDecimal pendingInvoiceTotal,
+            BigDecimal cashToWithdraw,
+            BigDecimal expectedPhysicalCash
+    ) {
     }
 }

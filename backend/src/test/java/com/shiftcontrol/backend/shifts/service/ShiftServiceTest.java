@@ -12,6 +12,7 @@ import com.shiftcontrol.backend.sales.model.SaleStatus;
 import com.shiftcontrol.backend.sales.repository.SaleRepository;
 import com.shiftcontrol.backend.shared.exception.BusinessException;
 import com.shiftcontrol.backend.shared.exception.NotFoundException;
+import com.shiftcontrol.backend.shifts.dto.ShiftClosePreviewResponse;
 import com.shiftcontrol.backend.shifts.dto.OpenShiftRequest;
 import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.shifts.model.ShiftStatus;
@@ -674,5 +675,136 @@ class ShiftServiceTest {
                 .hasMessage("User is inactive");
 
         verify(shiftClosureRepository, never()).save(any(ShiftClosure.class));
+    }
+
+    // -------------------------------------------------------------------------
+    // getClosePreview tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_return_close_preview_for_owner_staff() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = openShift(staff, store);
+
+        List<Sale> activeSales = List.of(
+                saleWithPayment(new BigDecimal("40.00"), InvoiceStatus.INVOICED, PaymentMethod.CASH,         new BigDecimal("40.00")),
+                saleWithPayment(new BigDecimal("25.00"), InvoiceStatus.PENDING,  PaymentMethod.MB,           new BigDecimal("25.00")),
+                saleWithPayment(new BigDecimal("10.00"), InvoiceStatus.INVOICED, PaymentMethod.GLOVO_CASH,   new BigDecimal("10.00")),
+                saleWithPayment(new BigDecimal("15.00"), InvoiceStatus.INVOICED, PaymentMethod.GLOVO_ONLINE, new BigDecimal("15.00"))
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE)).thenReturn(activeSales);
+
+        // Act
+        ShiftClosePreviewResponse response = shiftService.getClosePreview(shiftId, staffId, Role.STAFF);
+
+        // Assert
+        assertThat(response.totalCash()).isEqualByComparingTo("40.00");
+        assertThat(response.totalMb()).isEqualByComparingTo("25.00");
+        assertThat(response.totalGlovoCash()).isEqualByComparingTo("10.00");
+        assertThat(response.totalGlovoOnline()).isEqualByComparingTo("15.00");
+        assertThat(response.totalSales()).isEqualByComparingTo("90.00");
+        assertThat(response.pendingInvoiceTotal()).isEqualByComparingTo("25.00");
+        assertThat(response.cashToWithdraw()).isEqualByComparingTo("50.00");
+        assertThat(response.expectedPhysicalCash()).isEqualByComparingTo("153.00");
+        assertThat(response.staffId()).isEqualTo(staffId);
+        assertThat(response.staffName()).isEqualTo("Sara Staff");
+        assertThat(shift.getStatus()).isEqualTo(ShiftStatus.OPEN);
+        verify(shiftClosureRepository, never()).save(any(ShiftClosure.class));
+        verify(shiftRepository, never()).save(any(Shift.class));
+    }
+
+    @Test
+    void should_return_close_preview_for_admin() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        User admin = adminUser();
+        UUID adminId = admin.getId();
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = openShift(staff, store);
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE)).thenReturn(List.of());
+
+        // Act
+        ShiftClosePreviewResponse response = shiftService.getClosePreview(shiftId, adminId, Role.ADMIN);
+
+        // Assert
+        assertThat(response.totalSales()).isEqualByComparingTo("0.00");
+        assertThat(response.expectedPhysicalCash()).isEqualByComparingTo("103.00");
+        assertThat(shift.getStatus()).isEqualTo(ShiftStatus.OPEN);
+        verify(shiftClosureRepository, never()).save(any(ShiftClosure.class));
+        verify(shiftRepository, never()).save(any(Shift.class));
+    }
+
+    @Test
+    void should_throw_when_staff_previews_other_staff_shift() {
+        // Arrange
+        Store store = activeStore();
+        User owner = activeStaffWithStore(store);
+        User otherStaff = anotherActiveStaffWithStore(store);
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = openShift(owner, store);
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+
+        // Act + Assert
+        assertThatThrownBy(() -> shiftService.getClosePreview(shiftId, otherStaff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("You are not allowed to access this shift");
+
+        verify(saleRepository, never()).findByShiftAndStatus(any(), any());
+    }
+
+    @Test
+    void should_throw_when_previewing_closed_shift() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = closedShift(staff, store);
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+
+        // Act + Assert
+        assertThatThrownBy(() -> shiftService.getClosePreview(shiftId, staffId, Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Only open shifts can be previewed for closure");
+
+        verify(saleRepository, never()).findByShiftAndStatus(any(), any());
+    }
+
+    @Test
+    void should_ignore_cancelled_sales_in_close_preview() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        UUID shiftId = UUID.randomUUID();
+        Shift shift = openShift(staff, store);
+
+        // Only the active sale is returned; cancelled sales are excluded by the repository query
+        List<Sale> activeSales = List.of(
+                saleWithPayment(new BigDecimal("40.00"), InvoiceStatus.INVOICED, PaymentMethod.CASH, new BigDecimal("40.00"))
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE)).thenReturn(activeSales);
+
+        // Act
+        ShiftClosePreviewResponse response = shiftService.getClosePreview(shiftId, staffId, Role.STAFF);
+
+        // Assert
+        assertThat(response.totalSales()).isEqualByComparingTo("40.00");
+        assertThat(response.totalCash()).isEqualByComparingTo("40.00");
+        assertThat(response.expectedPhysicalCash()).isEqualByComparingTo("143.00");
+        verify(saleRepository).findByShiftAndStatus(shift, SaleStatus.ACTIVE);
     }
 }
