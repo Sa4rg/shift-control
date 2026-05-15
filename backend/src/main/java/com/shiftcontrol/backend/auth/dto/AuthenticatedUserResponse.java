@@ -8,6 +8,7 @@ import java.util.UUID;
 public record AuthenticatedUserResponse(
         UUID id,
         String username,
+        String fullName,
         Role role,
         UUID storeId
 ) {
@@ -15,6 +16,7 @@ public record AuthenticatedUserResponse(
         return new AuthenticatedUserResponse(
                 user.getId(),
                 user.getUsername(),
+                user.getFullName(),
                 user.getRole(),
                 user.getStore() != null ? user.getStore().getId() : null
         );

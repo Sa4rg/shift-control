@@ -1,7 +1,5 @@
 package com.shiftcontrol.backend.sales.controller;
 
-import com.shiftcontrol.backend.shared.exception.BusinessException;
-
 import com.shiftcontrol.backend.sales.dto.CreateSaleRequest;
 import com.shiftcontrol.backend.sales.dto.SaleResponse;
 import com.shiftcontrol.backend.sales.dto.CancelSaleRequest;
@@ -70,12 +68,9 @@ public class SaleController {
             @RequestParam(required = false) String shiftId
     ) {
         UUID authenticatedUserId = UUID.fromString(authentication.getName());
+        Role authenticatedRole = extractRole(authentication);
 
-        if (!"current".equalsIgnoreCase(shiftId)) {
-            throw new BusinessException("Only shiftId=current is supported for now");
-        }
-
-        List<SaleResponse> response = saleService.listCurrentShiftSales(authenticatedUserId)
+        List<SaleResponse> response = saleService.listSales(shiftId, authenticatedUserId, authenticatedRole)
                 .stream()
                 .map(SaleResponse::fromEntity)
                 .toList();

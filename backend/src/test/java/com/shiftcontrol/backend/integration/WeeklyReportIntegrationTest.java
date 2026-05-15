@@ -126,15 +126,7 @@ class WeeklyReportIntegrationTest extends IntegrationTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Test 4: GET /api/admin/reports/weekly — missing required storeId param
-    //
-    // @RequestParam UUID storeId (required = true by default) → Spring throws
-    // MissingServletRequestParameterException. The ExceptionHandlerExceptionResolver
-    // fires before DefaultHandlerExceptionResolver and routes to the catch-all
-    // @ExceptionHandler(Exception.class) in GlobalExceptionHandler → HTTP 500.
-    // NOTE: this is a gap in GlobalExceptionHandler; storeId validation should be
-    // made explicit (e.g. handled by a dedicated MissingServletRequestParameterException
-    // handler returning 400) in a future task.
+    // Test 4: GET /api/admin/reports/weekly — missing required storeId param → 400
     // -------------------------------------------------------------------------
 
     @Test
@@ -147,9 +139,9 @@ class WeeklyReportIntegrationTest extends IntegrationTestBase {
         mockMvc.perform(get("/api/admin/reports/weekly")
                         .param("weekStart", "2026-05-04")
                         .header("Authorization", "Bearer " + adminToken))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Unexpected internal error"));
+                .andExpect(jsonPath("$.message").value("Missing required parameter: storeId"));
     }
 
 }

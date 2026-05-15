@@ -189,7 +189,7 @@ class SaleServiceTest {
 
         CreateSaleRequest request = new CreateSaleRequest(
                 List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("25.00"))),
-                List.of(new CreateSaleDiscountRequest(DiscountReason.LOYALTY_CARD, null)),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.LOYALTY_CARD, null, null)),
                 List.of(cashPayment("5.00")),
                 InvoiceStatus.PENDING,
                 null
@@ -224,7 +224,7 @@ class SaleServiceTest {
 
         CreateSaleRequest request = new CreateSaleRequest(
                 List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("20.00"))),
-                List.of(new CreateSaleDiscountRequest(DiscountReason.LOYALTY_CARD, null)),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.LOYALTY_CARD, null, null)),
                 List.of(cashPayment("20.00")),
                 InvoiceStatus.PENDING,
                 null
@@ -252,7 +252,7 @@ class SaleServiceTest {
 
         CreateSaleRequest request = new CreateSaleRequest(
                 List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("100.00"))),
-                List.of(new CreateSaleDiscountRequest(DiscountReason.VOUCHER_10_PERCENT, null)),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.VOUCHER_10_PERCENT, null, null)),
                 List.of(new CreateSalePaymentRequest(PaymentMethod.MB, new BigDecimal("90.00"))),
                 InvoiceStatus.PENDING,
                 null
@@ -378,7 +378,7 @@ class SaleServiceTest {
 
         CreateSaleRequest request = new CreateSaleRequest(
                 List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
-                List.of(new CreateSaleDiscountRequest(null, null)),
+                List.of(new CreateSaleDiscountRequest(null, null, null)),
                 List.of(cashPayment("30.00")),
                 InvoiceStatus.PENDING,
                 null
@@ -393,7 +393,43 @@ class SaleServiceTest {
     }
 
     @Test
-    void should_throw_when_discount_reason_is_manual_discount_for_now() {
+    void should_create_sale_with_manual_discount_fixed_amount() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+        when(saleRepository.save(any(Sale.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, new BigDecimal("5.00"), "  Manager approved  ")),
+                List.of(cashPayment("25.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act
+        Sale sale = saleService.createSale(staffId, request);
+
+        // Assert
+        assertThat(sale.getSubtotalAmount()).isEqualByComparingTo("30.00");
+        assertThat(sale.getDiscountTotalAmount()).isEqualByComparingTo("5.00");
+        assertThat(sale.getFinalTotalAmount()).isEqualByComparingTo("25.00");
+        assertThat(sale.getDiscounts()).hasSize(1);
+        SaleDiscount discount = sale.getDiscounts().get(0);
+        assertThat(discount.getType()).isEqualTo(DiscountType.FIXED_AMOUNT);
+        assertThat(discount.getReason()).isEqualTo(DiscountReason.MANUAL_DISCOUNT);
+        assertThat(discount.getValue()).isEqualByComparingTo("5.00");
+        assertThat(discount.getAmountApplied()).isEqualByComparingTo("5.00");
+        assertThat(discount.getNote()).isEqualTo("Manager approved");
+    }
+
+    @Test
+    void should_throw_when_manual_discount_amount_is_null() {
         // Arrange
         Store store = activeStore();
         User staff = activeStaffWithStore(store);
@@ -405,7 +441,7 @@ class SaleServiceTest {
 
         CreateSaleRequest request = new CreateSaleRequest(
                 List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
-                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, null)),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, null, "Approved")),
                 List.of(cashPayment("30.00")),
                 InvoiceStatus.PENDING,
                 null
@@ -414,9 +450,177 @@ class SaleServiceTest {
         // Act + Assert
         assertThatThrownBy(() -> saleService.createSale(staffId, request))
                 .isInstanceOf(BusinessException.class)
-                .hasMessage("Unsupported discount reason");
+                .hasMessage("Manual discount amount must be greater than zero");
 
         verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_throw_when_manual_discount_amount_is_zero() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, BigDecimal.ZERO, "Approved")),
+                List.of(cashPayment("30.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.createSale(staffId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Manual discount amount must be greater than zero");
+
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_throw_when_manual_discount_amount_exceeds_subtotal() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, new BigDecimal("35.00"), "Approved")),
+                List.of(cashPayment("30.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.createSale(staffId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Manual discount amount must be less than sale subtotal");
+
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_throw_when_manual_discount_amount_equals_subtotal() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, new BigDecimal("30.00"), "Approved")),
+                List.of(cashPayment("30.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.createSale(staffId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Manual discount amount must be less than sale subtotal");
+
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_throw_when_manual_discount_note_is_null() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, new BigDecimal("5.00"), null)),
+                List.of(cashPayment("30.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.createSale(staffId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Manual discount requires a note");
+
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_throw_when_manual_discount_note_is_blank() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("30.00"))),
+                List.of(new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, new BigDecimal("5.00"), "   ")),
+                List.of(cashPayment("30.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.createSale(staffId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Manual discount requires a note");
+
+        verify(saleRepository, never()).save(any(Sale.class));
+    }
+
+    @Test
+    void should_create_sale_combining_loyalty_card_and_manual_discount() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShiftFor(staff, store);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(Optional.of(shift));
+        when(saleRepository.save(any(Sale.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CreateSaleRequest request = new CreateSaleRequest(
+                List.of(new CreateSaleItemRequest("Product A", 1, new BigDecimal("50.00"))),
+                List.of(
+                        new CreateSaleDiscountRequest(DiscountReason.LOYALTY_CARD, null, null),
+                        new CreateSaleDiscountRequest(DiscountReason.MANUAL_DISCOUNT, new BigDecimal("5.00"), "Extra discount")
+                ),
+                List.of(cashPayment("25.00")),
+                InvoiceStatus.PENDING,
+                null
+        );
+
+        // Act
+        Sale sale = saleService.createSale(staffId, request);
+
+        // Assert
+        assertThat(sale.getSubtotalAmount()).isEqualByComparingTo("50.00");
+        assertThat(sale.getDiscountTotalAmount()).isEqualByComparingTo("25.00"); // 20 + 5
+        assertThat(sale.getFinalTotalAmount()).isEqualByComparingTo("25.00");
+        assertThat(sale.getDiscounts()).hasSize(2);
     }
 
     @Test
@@ -596,6 +800,112 @@ class SaleServiceTest {
         assertThatThrownBy(() -> saleService.listCurrentShiftSales(staffId))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Staff has no open shift");
+    }
+
+    // -------------------------------------------------------------------------
+    // listSales tests (UUID-based)
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_list_sales_by_shift_id_for_admin() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        User admin = adminUser();
+        Shift shift = openShiftFor(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+        List<Sale> sales = List.of(new Sale(), new Sale());
+        when(saleRepository.findByShiftOrderByCreatedAtDesc(shift)).thenReturn(sales);
+
+        // Act
+        List<Sale> result = saleService.listSales(shiftId.toString(), admin.getId(), Role.ADMIN);
+
+        // Assert
+        assertThat(result).isSameAs(sales);
+        verify(saleRepository).findByShiftOrderByCreatedAtDesc(shift);
+    }
+
+    @Test
+    void should_list_sales_by_shift_id_for_owner_staff() {
+        // Arrange
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+        Shift shift = openShiftFor(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+        List<Sale> sales = List.of(new Sale());
+        when(saleRepository.findByShiftOrderByCreatedAtDesc(shift)).thenReturn(sales);
+
+        // Act
+        List<Sale> result = saleService.listSales(shiftId.toString(), staff.getId(), Role.STAFF);
+
+        // Assert
+        assertThat(result).isSameAs(sales);
+        verify(saleRepository).findByShiftOrderByCreatedAtDesc(shift);
+    }
+
+    @Test
+    void should_throw_when_staff_lists_sales_for_other_staff_shift() {
+        // Arrange
+        Store store = activeStore();
+        User owner = activeStaffWithStore(store);
+        User otherStaff = new User();
+        otherStaff.setId(UUID.randomUUID());
+        otherStaff.setRole(Role.STAFF);
+        otherStaff.setActive(true);
+        otherStaff.setStore(store);
+        Shift shift = openShiftFor(owner, store);
+        UUID shiftId = UUID.randomUUID();
+
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.of(shift));
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.listSales(shiftId.toString(), otherStaff.getId(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("You are not allowed to access this shift");
+
+        verify(saleRepository, never()).findByShiftOrderByCreatedAtDesc(any(Shift.class));
+    }
+
+    @Test
+    void should_throw_when_sales_shift_id_is_missing() {
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.listSales(null, UUID.randomUUID(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("shiftId is required");
+    }
+
+    @Test
+    void should_throw_when_sales_shift_id_is_blank() {
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.listSales("   ", UUID.randomUUID(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("shiftId is required");
+    }
+
+    @Test
+    void should_throw_when_sales_shift_id_is_invalid() {
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.listSales("not-a-uuid", UUID.randomUUID(), Role.STAFF))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Invalid shiftId");
+    }
+
+    @Test
+    void should_throw_when_sales_shift_does_not_exist() {
+        // Arrange
+        UUID shiftId = UUID.randomUUID();
+        when(shiftRepository.findByIdWithDetails(shiftId)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> saleService.listSales(shiftId.toString(), UUID.randomUUID(), Role.ADMIN))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("Shift not found");
+
+        verify(saleRepository, never()).findByShiftOrderByCreatedAtDesc(any(Shift.class));
     }
 
     // -------------------------------------------------------------------------

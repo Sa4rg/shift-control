@@ -186,6 +186,23 @@ public class SaleService {
             return discount;
         }
 
+        if (request.reason() == DiscountReason.MANUAL_DISCOUNT) {
+            if (request.amount() == null || request.amount().compareTo(ZERO) <= 0) {
+                throw new BusinessException("Manual discount amount must be greater than zero");
+            }
+            if (request.amount().compareTo(subtotal) >= 0) {
+                throw new BusinessException("Manual discount amount must be less than sale subtotal");
+            }
+            if (request.note() == null || request.note().isBlank()) {
+                throw new BusinessException("Manual discount requires a note");
+            }
+            BigDecimal amount = toMoney(request.amount());
+            discount.setType(DiscountType.FIXED_AMOUNT);
+            discount.setValue(amount);
+            discount.setAmountApplied(amount);
+            return discount;
+        }
+
         throw new BusinessException("Unsupported discount reason");
     }
 
@@ -220,6 +237,44 @@ public class SaleService {
             throw new BusinessException("You are not allowed to access this sale");
         }
         return sale;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Sale> listSales(String shiftId, UUID authenticatedUserId, Role authenticatedRole) {
+        if (shiftId == null || shiftId.isBlank()) {
+            throw new BusinessException("shiftId is required");
+        }
+
+        if ("current".equalsIgnoreCase(shiftId)) {
+            return listCurrentShiftSales(authenticatedUserId);
+        }
+
+        UUID shiftUuid;
+        try {
+            shiftUuid = UUID.fromString(shiftId);
+        } catch (IllegalArgumentException e) {
+            throw new BusinessException("Invalid shiftId");
+        }
+
+        Shift shift = shiftRepository.findByIdWithDetails(shiftUuid)
+                .orElseThrow(() -> new NotFoundException("Shift not found"));
+
+        if (authenticatedRole != Role.ADMIN && !shift.getStaff().getId().equals(authenticatedUserId)) {
+            throw new BusinessException("You are not allowed to access this shift");
+        }
+
+        List<Sale> sales = saleRepository.findByShiftOrderByCreatedAtDesc(shift);
+
+        for (Sale sale : sales) {
+            Hibernate.initialize(sale.getItems());
+            Hibernate.initialize(sale.getDiscounts());
+            Hibernate.initialize(sale.getPayments());
+            Hibernate.initialize(sale.getShift());
+            Hibernate.initialize(sale.getStaff());
+            Hibernate.initialize(sale.getStore());
+        }
+
+        return sales;
     }
 
     @Transactional(readOnly = true)
