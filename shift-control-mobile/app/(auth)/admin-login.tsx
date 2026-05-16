@@ -1,32 +1,104 @@
-import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { Link, router } from "expo-router";
+import { useState } from "react";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
+import { getApiErrorMessage } from "@/src/api/errors";
+import { useAuth } from "@/src/auth/AuthContext";
+import { Button } from "@/src/components/Button";
+import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { Screen } from "@/src/components/Screen";
+import { TextField } from "@/src/components/TextField";
 
 export default function AdminLoginScreen() {
+  const { loginAdmin } = useAuth();
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const canSubmit = username.trim().length > 0 && password.length > 0;
+
+  async function handleSubmit() {
+    if (!canSubmit || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      await loginAdmin({
+        username: username.trim(),
+        password,
+      });
+
+      router.replace("/");
+    } catch (error) {
+      setErrorMessage(getApiErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   return (
     <Screen>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Shift Control</Text>
-          <Text style={styles.subtitle}>Admin login</Text>
-        </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
+      >
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Shift Control</Text>
+            <Text style={styles.subtitle}>Admin login</Text>
+          </View>
 
-        <View style={styles.card}>
-          <Text style={styles.placeholder}>
-            Admin login form will be implemented later.
-          </Text>
+          <View style={styles.card}>
+            <TextField
+              label="Username"
+              value={username}
+              onChangeText={setUsername}
+              placeholder="Enter your username"
+              autoCapitalize="none"
+            />
 
-          <Link href="/(auth)/staff-login" style={styles.link}>
-            Login as staff
-          </Link>
+            <TextField
+              label="Password"
+              value={password}
+              onChangeText={setPassword}
+              placeholder="Enter your password"
+              secureTextEntry
+            />
+
+            <ErrorMessage message={errorMessage} />
+
+            <Button
+              title="Login"
+              onPress={handleSubmit}
+              loading={isSubmitting}
+              disabled={!canSubmit}
+            />
+
+            <Link href="/(auth)/staff-login" style={styles.link}>
+              Login as staff
+            </Link>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     justifyContent: "center",
@@ -50,10 +122,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
   },
-  placeholder: {
-    fontSize: 16,
-  },
   link: {
+    alignSelf: "center",
     fontSize: 16,
     fontWeight: "600",
   },
