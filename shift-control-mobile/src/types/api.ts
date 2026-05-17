@@ -20,3 +20,18 @@ export type LoginResponse = {
   expiresIn: number;
   user: AuthUser;
 };
+
+export type ShiftType = "DAY" | "NIGHT";
+
+export type ShiftStatus = "OPEN" | "CLOSED";
+
+export type Shift = {
+  id: string;
+  staffId: string;
+  storeId: string;
+  type: ShiftType;
+  status: ShiftStatus;
+  openedAt: string;
+  closedAt: string | null;
+  closedById: string | null;
+};
