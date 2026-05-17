@@ -3,10 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getSaleById, markSaleAsInvoiced } from "@/src/api/sales";
+import { getSaleById, markSaleAsInvoiced, cancelSale } from "@/src/api/sales";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
+import { TextField } from "@/src/components/TextField";
 import { Screen } from "@/src/components/Screen";
 import type { Sale } from "@/src/types/api";
 
@@ -47,6 +48,12 @@ export default function SaleDetailScreen() {
   );
 
   const [isMarkingInvoiced, setIsMarkingInvoiced] = useState(false);
+
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelErrorMessage, setCancelErrorMessage] = useState<string | null>(
+    null
+  );
+  const [isCancelling, setIsCancelling] = useState(false);
 
   const loadSale = useCallback(async () => {
     if (!saleId) {
@@ -104,6 +111,37 @@ export default function SaleDetailScreen() {
     }
   }
 
+  async function handleCancelSale() {
+    if (
+      !saleId ||
+      state.status !== "ready" ||
+      isCancelling ||
+      cancelReason.trim().length === 0
+    ) {
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelErrorMessage(null);
+
+    try {
+      const updatedSale = await cancelSale(saleId, {
+        reason: cancelReason.trim(),
+      });
+
+      setState({
+        status: "ready",
+        sale: updatedSale,
+        errorMessage: null,
+      });
+      setCancelReason("");
+    } catch (error) {
+      setCancelErrorMessage(getApiErrorMessage(error));
+    } finally {
+      setIsCancelling(false);
+    }
+  }
+
   useEffect(() => {
     void loadSale();
   }, [loadSale]);
@@ -132,6 +170,8 @@ export default function SaleDetailScreen() {
 
   const canMarkAsInvoiced =
   sale.status === "ACTIVE" && sale.invoiceStatus === "PENDING";
+
+  const canCancelSale = sale.status === "ACTIVE";
 
   return (
     <Screen padded={false}>
@@ -179,6 +219,48 @@ export default function SaleDetailScreen() {
                 </>
             ) : null}
             </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Cancel sale</Text>
+
+          {sale.status === "CANCELLED" ? (
+            <>
+              <Text style={styles.body}>This sale is already cancelled.</Text>
+              {sale.cancelledReason ? (
+                <Text style={styles.body}>Reason: {sale.cancelledReason}</Text>
+              ) : null}
+            </>
+          ) : null}
+
+          {canCancelSale ? (
+            <>
+              {sale.invoiceStatus === "INVOICED" ? (
+                <Text style={styles.warningText}>
+                  This sale is already invoiced. Cancelling it here will not cancel the
+                  invoice. Please handle the invoice correction outside Shift Control and
+                  record the reason clearly.
+                </Text>
+              ) : null}
+
+              <TextField
+                label="Cancellation reason"
+                value={cancelReason}
+                onChangeText={setCancelReason}
+                placeholder="Example: Customer changed their mind"
+                autoCapitalize="sentences"
+              />
+
+              <ErrorMessage message={cancelErrorMessage} />
+
+              <Button
+                title="Cancel sale"
+                onPress={handleCancelSale}
+                loading={isCancelling}
+                disabled={cancelReason.trim().length === 0}
+              />
+            </>
+          ) : null}
+        </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Items</Text>
@@ -284,5 +366,10 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
+  },
+  warningText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#8a5a00",
   },
 });

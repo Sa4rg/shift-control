@@ -28,3 +28,19 @@ export async function markSaleAsInvoiced(id: string): Promise<Sale> {
 
   return response.data.data;
 }
+
+export type CancelSaleRequest = {
+  reason: string;
+};
+
+export async function cancelSale(
+  id: string,
+  request: CancelSaleRequest
+): Promise<Sale> {
+  const response = await apiClient.patch<ApiEnvelope<Sale>>(
+    `/api/sales/${id}/cancel`,
+    request
+  );
+
+  return response.data.data;
+}
