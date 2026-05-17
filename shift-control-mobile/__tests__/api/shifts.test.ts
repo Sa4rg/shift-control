@@ -1,11 +1,12 @@
 import { AxiosError } from "axios";
 
-import { getCurrentShift } from "@/src/api/shifts";
+import { getCurrentShift, openShift } from "@/src/api/shifts";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
   apiClient: {
     get: jest.fn(),
+    post: jest.fn(),
   },
 }));
 
@@ -103,5 +104,46 @@ describe("getCurrentShift", () => {
     );
 
     await expect(getCurrentShift()).rejects.toThrow("Server error");
+  });
+});
+
+describe("openShift", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("opens a shift with the selected type", async () => {
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Shift opened successfully",
+        data: {
+          id: "shift-1",
+          staffId: "staff-1",
+          storeId: "store-1",
+          type: "DAY",
+          status: "OPEN",
+          openedAt: "2026-05-16T08:00:00Z",
+          closedAt: null,
+          closedById: null,
+        },
+      },
+    });
+
+    const result = await openShift({ type: "DAY" });
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/shifts/open", {
+      type: "DAY",
+    });
+    expect(result).toEqual({
+      id: "shift-1",
+      staffId: "staff-1",
+      storeId: "store-1",
+      type: "DAY",
+      status: "OPEN",
+      openedAt: "2026-05-16T08:00:00Z",
+      closedAt: null,
+      closedById: null,
+    });
   });
 });

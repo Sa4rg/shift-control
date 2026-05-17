@@ -3,12 +3,17 @@ import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getCurrentShift, type CurrentShiftResult } from "@/src/api/shifts";
+import {
+  getCurrentShift,
+  openShift,
+  type CurrentShiftResult,
+} from "@/src/api/shifts";
 import { useAuth } from "@/src/auth/AuthContext";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { Screen } from "@/src/components/Screen";
+import type { ShiftType } from "@/src/types/api";
 
 type ShiftLoadState =
   | {
@@ -35,6 +40,12 @@ export default function StaffHomeScreen() {
     result: null,
     errorMessage: null,
   });
+  const [openingShiftType, setOpeningShiftType] = useState<ShiftType | null>(
+    null
+  );
+  const [openShiftErrorMessage, setOpenShiftErrorMessage] = useState<
+    string | null
+  >(null);
 
   const loadCurrentShift = useCallback(async () => {
     setShiftState({
@@ -63,6 +74,24 @@ export default function StaffHomeScreen() {
   useEffect(() => {
     void loadCurrentShift();
   }, [loadCurrentShift]);
+
+  async function handleOpenShift(type: ShiftType) {
+    if (openingShiftType) {
+      return;
+    }
+
+    setOpeningShiftType(type);
+    setOpenShiftErrorMessage(null);
+
+    try {
+      await openShift({ type });
+      await loadCurrentShift();
+    } catch (error) {
+      setOpenShiftErrorMessage(getApiErrorMessage(error));
+    } finally {
+      setOpeningShiftType(null);
+    }
+  }
 
   async function handleLogout() {
     await logout();
@@ -96,9 +125,23 @@ export default function StaffHomeScreen() {
             <Text style={styles.body}>
               You do not have an open shift right now.
             </Text>
-            <Text style={styles.body}>
-              Opening a shift will be implemented next.
-            </Text>
+
+            <ErrorMessage message={openShiftErrorMessage} />
+
+            <View style={styles.actions}>
+              <Button
+                title="Open day shift"
+                onPress={() => void handleOpenShift("DAY")}
+                loading={openingShiftType === "DAY"}
+                disabled={openingShiftType !== null}
+              />
+              <Button
+                title="Open night shift"
+                onPress={() => void handleOpenShift("NIGHT")}
+                loading={openingShiftType === "NIGHT"}
+                disabled={openingShiftType !== null}
+              />
+            </View>
           </View>
         ) : null}
 
@@ -160,6 +203,10 @@ const styles = StyleSheet.create({
   body: {
     fontSize: 16,
     lineHeight: 22,
+  },
+  actions: {
+    gap: 12,
+    marginTop: 4,
   },
   refreshLink: {
     fontSize: 16,
