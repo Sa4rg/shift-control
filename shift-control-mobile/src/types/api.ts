@@ -28,7 +28,9 @@ export type ShiftStatus = "OPEN" | "CLOSED";
 export type Shift = {
   id: string;
   staffId: string;
+  staffName: string;
   storeId: string;
+  storeName: string;
   type: ShiftType;
   status: ShiftStatus;
   openedAt: string;

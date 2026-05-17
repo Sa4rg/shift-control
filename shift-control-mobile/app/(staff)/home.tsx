@@ -313,6 +313,8 @@ export default function StaffHomeScreen() {
         ) : null}
 
         <View style={styles.footer}>
+          <Button title="My shifts" onPress={() => router.push("/(staff)/history")} />
+            
           <Button
             title="My incidents"
             onPress={() => router.push("/(staff)/incidents")}

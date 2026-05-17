@@ -69,3 +69,9 @@ export async function closeShift(
 
   return response.data.data;
 }
+
+export async function listShifts(): Promise<Shift[]> {
+  const response = await apiClient.get<ApiEnvelope<Shift[]>>("/api/shifts");
+
+  return response.data.data;
+}
