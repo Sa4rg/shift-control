@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import {
@@ -15,6 +15,9 @@ import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { Screen } from "@/src/components/Screen";
 import type { Sale, ShiftType } from "@/src/types/api";
+
+import { formatDateTime } from "@/src/utils/dates";
+import { formatMoney } from "@/src/utils/money";
 
 type ShiftLoadState =
   | {
@@ -128,6 +131,9 @@ export default function StaffHomeScreen() {
     }
   }, []);
 
+  const visibleSales = salesState.sales.slice(0, 5);
+  const hiddenSalesCount = Math.max(salesState.sales.length - visibleSales.length, 0);
+
   useFocusEffect(
     useCallback(() => {
       void loadCurrentShift();
@@ -162,8 +168,8 @@ export default function StaffHomeScreen() {
   }
 
   return (
-    <Screen>
-      <View style={styles.container}>
+    <Screen padded={false}>
+      <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>Staff home</Text>
           <Text style={styles.subtitle}>Welcome, {user?.fullName}</Text>
@@ -216,7 +222,7 @@ export default function StaffHomeScreen() {
                 Status: {shiftState.result.shift.status}
               </Text>
               <Text style={styles.body}>
-                Opened at: {shiftState.result.shift.openedAt}
+                Opened at: {formatDateTime(shiftState.result.shift.openedAt)}
               </Text>
 
               <Pressable onPress={loadCurrentShift}>
@@ -253,7 +259,7 @@ export default function StaffHomeScreen() {
               {salesState.status === "ready" &&
               salesState.sales.length > 0 ? (
                 <View style={styles.salesList}>
-                  {salesState.sales.map((sale) => (
+                  {visibleSales.map((sale) => (
                     <Pressable
                       key={sale.id}
                       style={styles.saleRow}
@@ -271,11 +277,18 @@ export default function StaffHomeScreen() {
                       </View>
 
                       <Text style={styles.saleTotal}>
-                        €{sale.finalTotalAmount.toFixed(2)}
+                        {formatMoney(sale.finalTotalAmount)}
                       </Text>
                     </Pressable>
                   ))}
                 </View>
+              ) : null}
+
+              {hiddenSalesCount > 0 ? (
+                <Button
+                  title={`View all sales (${salesState.sales.length})`}
+                  onPress={() => router.push("/(staff)/sales" as never)}
+                />
               ) : null}
             </View>
           </>
@@ -284,15 +297,15 @@ export default function StaffHomeScreen() {
         <View style={styles.footer}>
           <Button title="Logout" onPress={handleLogout} />
         </View>
-      </View>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     gap: 16,
+    padding: 24,
   },
   header: {
     gap: 6,
@@ -363,6 +376,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   footer: {
-    marginTop: "auto",
+    marginTop: 8,
+    paddingBottom: 24,
   },
 });

@@ -11,6 +11,9 @@ import { TextField } from "@/src/components/TextField";
 import { Screen } from "@/src/components/Screen";
 import type { Sale } from "@/src/types/api";
 
+import { formatDateTime } from "@/src/utils/dates";
+import { formatMoney } from "@/src/utils/money";
+
 
 type SaleDetailState =
   | {
@@ -28,10 +31,6 @@ type SaleDetailState =
       sale: null;
       errorMessage: string;
     };
-
-function formatMoney(value: number): string {
-  return `€${value.toFixed(2)}`;
-}
 
 export default function SaleDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
@@ -186,6 +185,7 @@ export default function SaleDetailScreen() {
           <Text style={styles.body}>Status: {sale.status}</Text>
           <Text style={styles.body}>Invoice: {sale.invoiceStatus}</Text>
           <Text style={styles.body}>Subtotal: {formatMoney(sale.subtotalAmount)}</Text>
+          <Text style={styles.body}>Created at: {formatDateTime(sale.createdAt)}</Text>
           <Text style={styles.body}>
             Discount: {formatMoney(sale.discountTotalAmount)}
           </Text>
