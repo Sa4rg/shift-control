@@ -9,6 +9,16 @@ export async function listCurrentShiftSales(): Promise<Sale[]> {
   return response.data.data;
 }
 
+export async function listSalesByShiftId(shiftId: string): Promise<Sale[]> {
+  const response = await apiClient.get<ApiEnvelope<Sale[]>>("/api/sales", {
+    params: {
+      shiftId,
+    },
+  });
+
+  return response.data.data;
+}
+
 export async function createSale(request: CreateSaleRequest): Promise<Sale> {
   const response = await apiClient.post<ApiEnvelope<Sale>>("/api/sales", request);
 

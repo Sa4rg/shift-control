@@ -195,3 +195,25 @@ export type CreateIncidentRequest = {
   closureId?: string;
   saleId?: string;
 };
+
+export type ShiftClosure = {
+  id: string;
+  shiftId: string;
+  closedById: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashToWithdraw: number;
+  expectedPhysicalCash: number;
+  confirmedCashAmount: number;
+  confirmedMbAmount: number;
+  cashDifference: number;
+  mbDifference: number;
+  status: ShiftClosureStatus;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+};

@@ -1,4 +1,12 @@
-import { listCurrentShiftSales, createSale, getSaleById, markSaleAsInvoiced, cancelSale } from "@/src/api/sales";
+import {
+  cancelSale,
+  createSale,
+  getSaleById,
+  listCurrentShiftSales,
+  listSalesByShiftId,
+  markSaleAsInvoiced,
+} from "@/src/api/sales";
+
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -310,5 +318,30 @@ describe("cancelSale", () => {
     );
     expect(result.status).toBe("CANCELLED");
     expect(result.cancelledReason).toBe("Customer changed their mind");
+  });
+});
+
+describe("listSalesByShiftId", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("lists sales by shift id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sales listed successfully",
+        data: [],
+      },
+    });
+
+    const result = await listSalesByShiftId("shift-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/sales", {
+      params: {
+        shiftId: "shift-1",
+      },
+    });
+    expect(result).toEqual([]);
   });
 });
