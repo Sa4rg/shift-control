@@ -8,12 +8,13 @@ import {
   openShift,
   type CurrentShiftResult,
 } from "@/src/api/shifts";
+import { listCurrentShiftSales } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { Screen } from "@/src/components/Screen";
-import type { ShiftType } from "@/src/types/api";
+import type { Sale, ShiftType } from "@/src/types/api";
 
 type ShiftLoadState =
   | {
@@ -32,12 +33,39 @@ type ShiftLoadState =
       errorMessage: string;
     };
 
+type SalesLoadState =
+  | {
+      status: "idle";
+      sales: Sale[];
+      errorMessage: null;
+    }
+  | {
+      status: "loading";
+      sales: Sale[];
+      errorMessage: null;
+    }
+  | {
+      status: "ready";
+      sales: Sale[];
+      errorMessage: null;
+    }
+  | {
+      status: "error";
+      sales: Sale[];
+      errorMessage: string;
+    };
+
 export default function StaffHomeScreen() {
   const { user, logout } = useAuth();
 
   const [shiftState, setShiftState] = useState<ShiftLoadState>({
     status: "loading",
     result: null,
+    errorMessage: null,
+  });
+  const [salesState, setSalesState] = useState<SalesLoadState>({
+    status: "idle",
+    sales: [],
     errorMessage: null,
   });
   const [openingShiftType, setOpeningShiftType] = useState<ShiftType | null>(
@@ -53,6 +81,11 @@ export default function StaffHomeScreen() {
       result: null,
       errorMessage: null,
     });
+    setSalesState({
+      status: "idle",
+      sales: [],
+      errorMessage: null,
+    });
 
     try {
       const result = await getCurrentShift();
@@ -62,6 +95,30 @@ export default function StaffHomeScreen() {
         result,
         errorMessage: null,
       });
+
+      if (result.status === "active") {
+        setSalesState({
+          status: "loading",
+          sales: [],
+          errorMessage: null,
+        });
+
+        try {
+          const sales = await listCurrentShiftSales();
+
+          setSalesState({
+            status: "ready",
+            sales,
+            errorMessage: null,
+          });
+        } catch (error) {
+          setSalesState({
+            status: "error",
+            sales: [],
+            errorMessage: getApiErrorMessage(error),
+          });
+        }
+      }
     } catch (error) {
       setShiftState({
         status: "error",
@@ -147,22 +204,68 @@ export default function StaffHomeScreen() {
 
         {shiftState.status === "ready" &&
         shiftState.result.status === "active" ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Active shift</Text>
-            <Text style={styles.body}>
-              Type: {shiftState.result.shift.type}
-            </Text>
-            <Text style={styles.body}>
-              Status: {shiftState.result.shift.status}
-            </Text>
-            <Text style={styles.body}>
-              Opened at: {shiftState.result.shift.openedAt}
-            </Text>
+          <>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Active shift</Text>
+              <Text style={styles.body}>
+                Type: {shiftState.result.shift.type}
+              </Text>
+              <Text style={styles.body}>
+                Status: {shiftState.result.shift.status}
+              </Text>
+              <Text style={styles.body}>
+                Opened at: {shiftState.result.shift.openedAt}
+              </Text>
 
-            <Pressable onPress={loadCurrentShift}>
-              <Text style={styles.refreshLink}>Refresh</Text>
-            </Pressable>
-          </View>
+              <Pressable onPress={loadCurrentShift}>
+                <Text style={styles.refreshLink}>Refresh</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.card}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.cardTitle}>Current shift sales</Text>
+                <Pressable onPress={loadCurrentShift}>
+                  <Text style={styles.refreshLink}>Refresh</Text>
+                </Pressable>
+              </View>
+
+              {salesState.status === "loading" ? (
+                <Text style={styles.body}>Loading sales...</Text>
+              ) : null}
+
+              {salesState.status === "error" ? (
+                <ErrorMessage message={salesState.errorMessage} />
+              ) : null}
+
+              {salesState.status === "ready" &&
+              salesState.sales.length === 0 ? (
+                <Text style={styles.body}>No sales registered yet.</Text>
+              ) : null}
+
+              {salesState.status === "ready" &&
+              salesState.sales.length > 0 ? (
+                <View style={styles.salesList}>
+                  {salesState.sales.map((sale) => (
+                    <View key={sale.id} style={styles.saleRow}>
+                      <View style={styles.saleMain}>
+                        <Text style={styles.saleTitle}>
+                          Sale {sale.id.slice(0, 8)}
+                        </Text>
+                        <Text style={styles.saleMeta}>
+                          {sale.status} · {sale.invoiceStatus}
+                        </Text>
+                      </View>
+
+                      <Text style={styles.saleTotal}>
+                        €{sale.finalTotalAmount.toFixed(2)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </View>
+          </>
         ) : null}
 
         <View style={styles.footer}>
@@ -212,6 +315,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     marginTop: 4,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  salesList: {
+    gap: 12,
+  },
+  saleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#eeeeee",
+    paddingTop: 12,
+  },
+  saleMain: {
+    flex: 1,
+    gap: 4,
+  },
+  saleTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  saleMeta: {
+    fontSize: 14,
+    color: "#666666",
+  },
+  saleTotal: {
+    fontSize: 16,
+    fontWeight: "700",
   },
   footer: {
     marginTop: "auto",

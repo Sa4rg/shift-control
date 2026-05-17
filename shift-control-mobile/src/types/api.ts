@@ -35,3 +35,59 @@ export type Shift = {
   closedAt: string | null;
   closedById: string | null;
 };
+
+export type SaleStatus = "ACTIVE" | "CANCELLED";
+
+export type InvoiceStatus = "PENDING" | "INVOICED";
+
+export type PaymentMethod = "CASH" | "MB" | "GLOVO_ONLINE" | "GLOVO_CASH";
+
+export type DiscountReason =
+  | "MANUAL_DISCOUNT"
+  | "LOYALTY_CARD"
+  | "VOUCHER_10_PERCENT";
+
+export type DiscountType = "FIXED_AMOUNT" | "PERCENTAGE";
+
+export type SaleItem = {
+  id: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type SaleDiscount = {
+  id: string;
+  type: DiscountType;
+  reason: DiscountReason;
+  value: number;
+  calculatedAmount: number;
+  note: string | null;
+};
+
+export type SalePayment = {
+  id: string;
+  method: PaymentMethod;
+  amount: number;
+};
+
+export type Sale = {
+  id: string;
+  shiftId: string;
+  staffId: string;
+  storeId: string;
+  status: SaleStatus;
+  invoiceStatus: InvoiceStatus;
+  subtotalAmount: number;
+  discountTotalAmount: number;
+  finalTotalAmount: number;
+  note: string | null;
+  items: SaleItem[];
+  discounts: SaleDiscount[];
+  payments: SalePayment[];
+  createdAt: string;
+  updatedAt: string;
+  cancelledAt: string | null;
+  cancelledReason: string | null;
+};
