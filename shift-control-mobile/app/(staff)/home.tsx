@@ -230,6 +230,11 @@ export default function StaffHomeScreen() {
                 </Pressable>
               </View>
 
+              <Button
+                title="New sale"
+                onPress={() => router.push("/(staff)/sales/new-sale")}
+              />
+
               {salesState.status === "loading" ? (
                 <Text style={styles.body}>Loading sales...</Text>
               ) : null}

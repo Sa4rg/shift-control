@@ -91,3 +91,35 @@ export type Sale = {
   cancelledAt: string | null;
   cancelledReason: string | null;
 };
+
+export type CreateSaleItemRequest = {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+export type CreateSalePaymentRequest = {
+  method: PaymentMethod;
+  amount: number;
+};
+
+export type CreateSaleDiscountRequest =
+  | {
+      reason: "LOYALTY_CARD";
+    }
+  | {
+      reason: "VOUCHER_10_PERCENT";
+    }
+  | {
+      reason: "MANUAL_DISCOUNT";
+      amount: number;
+      note: string;
+    };
+
+export type CreateSaleRequest = {
+  items: CreateSaleItemRequest[];
+  discounts: CreateSaleDiscountRequest[];
+  payments: CreateSalePaymentRequest[];
+  invoiceStatus: InvoiceStatus;
+  note?: string;
+};
