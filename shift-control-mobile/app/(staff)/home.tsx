@@ -1,5 +1,5 @@
-import { router } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
@@ -128,9 +128,11 @@ export default function StaffHomeScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    void loadCurrentShift();
-  }, [loadCurrentShift]);
+  useFocusEffect(
+    useCallback(() => {
+      void loadCurrentShift();
+    }, [loadCurrentShift])
+  );
 
   async function handleOpenShift(type: ShiftType) {
     if (openingShiftType) {
