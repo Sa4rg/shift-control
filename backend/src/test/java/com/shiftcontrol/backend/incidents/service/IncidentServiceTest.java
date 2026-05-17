@@ -278,14 +278,34 @@ class IncidentServiceTest {
     }
 
     @Test
-    void should_throw_when_staff_lists_incidents() {
+    void should_list_own_incidents_for_staff_without_status_filter() {
         // Arrange
         UUID staffId = UUID.randomUUID();
+        List<Incident> incidents = List.of(new Incident(), new Incident());
 
-        // Act + Assert
-        assertThatThrownBy(() -> incidentService.listIncidents(null, staffId, Role.STAFF))
-                .isInstanceOf(BusinessException.class)
-                .hasMessage("Only admin users can list incidents");
+        when(incidentRepository.findByStaffUserOrderByCreatedAtDesc(staffId)).thenReturn(incidents);
+
+        // Act
+        List<Incident> result = incidentService.listIncidents(null, staffId, Role.STAFF);
+
+        // Assert
+        assertThat(result).isSameAs(incidents);
+    }
+
+    @Test
+    void should_list_own_incidents_for_staff_with_status_filter() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+        List<Incident> incidents = List.of(new Incident());
+
+        when(incidentRepository.findByStaffUserAndStatusOrderByCreatedAtDesc(staffId, IncidentStatus.OPEN))
+                .thenReturn(incidents);
+
+        // Act
+        List<Incident> result = incidentService.listIncidents(IncidentStatus.OPEN, staffId, Role.STAFF);
+
+        // Assert
+        assertThat(result).isSameAs(incidents);
     }
 
     // -------------------------------------------------------------------------

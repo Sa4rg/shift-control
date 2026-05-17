@@ -313,6 +313,25 @@ export default function StaffHomeScreen() {
         ) : null}
 
         <View style={styles.footer}>
+          <Button
+            title="My incidents"
+            onPress={() => router.push("/(staff)/incidents")}
+          />
+
+          {activeShift ? (
+            <Button
+              title="New incident"
+              onPress={() =>
+                router.push({
+                  pathname: "/(staff)/incidents/new-incident",
+                  params: {
+                    shiftId: activeShift.id,
+                  },
+                })
+              }
+            />
+          ) : null}
+
           <Button title="Logout" onPress={handleLogout} />
         </View>
       </ScrollView>
