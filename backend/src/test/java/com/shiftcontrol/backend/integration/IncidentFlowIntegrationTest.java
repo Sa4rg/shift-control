@@ -86,11 +86,11 @@ class IncidentFlowIntegrationTest extends IntegrationTestBase {
     }
 
     // -------------------------------------------------------------------------
-    // Test 3: staff cannot list all incidents
+    // Test 3: staff can list their own incidents (empty when none exist)
     // -------------------------------------------------------------------------
 
     @Test
-    void should_reject_global_incident_list_for_staff() throws Exception {
+    void should_list_empty_incidents_for_staff_with_no_incidents() throws Exception {
         // Arrange
         Store store = createStore();
         User staff = createStaff(store);
@@ -99,9 +99,94 @@ class IncidentFlowIntegrationTest extends IntegrationTestBase {
         // Act + Assert
         mockMvc.perform(get("/api/incidents")
                         .header("Authorization", "Bearer " + staffToken))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.message").value("Only admin users can list incidents"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.message").value("Incidents retrieved successfully"))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 3b: staff can list their own incidents when they exist
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_list_own_incidents_as_staff() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staff = createStaff(store);
+        Shift shift = createOpenShift(staff, store);
+        Incident incident = createOpenIncident(staff, shift);
+        String staffToken = jwtService.generateAccessToken(staff);
+
+        // Act + Assert
+        mockMvc.perform(get("/api/incidents")
+                        .header("Authorization", "Bearer " + staffToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[?(@.id == '" + incident.getId() + "')]").isNotEmpty());
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 3c: staff cannot see incidents from another staff member
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_not_list_other_staff_incidents_as_staff() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staffA = createStaff(store);
+        Shift shiftA = createOpenShift(staffA, store);
+        Incident incidentA = createOpenIncident(staffA, shiftA);
+
+        User staffB = createStaff(store);
+        String staffBToken = jwtService.generateAccessToken(staffB);
+
+        // Act + Assert
+        mockMvc.perform(get("/api/incidents")
+                        .header("Authorization", "Bearer " + staffBToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[?(@.id == '" + incidentA.getId() + "')]").isEmpty());
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 3d: unauthenticated users get 401
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_return_401_when_unauthenticated_lists_incidents() throws Exception {
+        mockMvc.perform(get("/api/incidents"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // -------------------------------------------------------------------------
+    // Test 3e: admin can list incidents from all staff members
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_list_all_incidents_as_admin() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staffA = createStaff(store);
+        Shift shiftA = createOpenShift(staffA, store);
+        Incident incidentA = createOpenIncident(staffA, shiftA);
+
+        User staffB = createStaff(store);
+        Shift shiftB = createOpenShift(staffB, store);
+        Incident incidentB = createOpenIncident(staffB, shiftB);
+
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
+
+        // Act + Assert
+        mockMvc.perform(get("/api/incidents")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data[?(@.id == '" + incidentA.getId() + "')]").isNotEmpty())
+                .andExpect(jsonPath("$.data[?(@.id == '" + incidentB.getId() + "')]").isNotEmpty());
     }
 
     // -------------------------------------------------------------------------

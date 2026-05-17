@@ -101,4 +101,46 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
                 @Param("from") Instant from,
                 @Param("to") Instant to
         );
+
+    @Query("""
+        SELECT i FROM Incident i
+        LEFT JOIN FETCH i.shift directShift
+        LEFT JOIN FETCH directShift.staff
+        LEFT JOIN FETCH i.closure closure
+        LEFT JOIN FETCH closure.shift closureShift
+        LEFT JOIN FETCH closureShift.staff
+        LEFT JOIN FETCH i.sale sale
+        LEFT JOIN FETCH sale.staff
+        LEFT JOIN FETCH i.reportedBy
+        LEFT JOIN FETCH i.resolvedBy
+        WHERE directShift.staff.id = :staffId
+           OR closureShift.staff.id = :staffId
+           OR sale.staff.id = :staffId
+        ORDER BY i.createdAt DESC
+        """)
+    List<Incident> findByStaffUserOrderByCreatedAtDesc(@Param("staffId") UUID staffId);
+
+    @Query("""
+        SELECT i FROM Incident i
+        LEFT JOIN FETCH i.shift directShift
+        LEFT JOIN FETCH directShift.staff
+        LEFT JOIN FETCH i.closure closure
+        LEFT JOIN FETCH closure.shift closureShift
+        LEFT JOIN FETCH closureShift.staff
+        LEFT JOIN FETCH i.sale sale
+        LEFT JOIN FETCH sale.staff
+        LEFT JOIN FETCH i.reportedBy
+        LEFT JOIN FETCH i.resolvedBy
+        WHERE i.status = :status
+          AND (
+                directShift.staff.id = :staffId
+             OR closureShift.staff.id = :staffId
+             OR sale.staff.id = :staffId
+          )
+        ORDER BY i.createdAt DESC
+        """)
+    List<Incident> findByStaffUserAndStatusOrderByCreatedAtDesc(
+            @Param("staffId") UUID staffId,
+            @Param("status") IncidentStatus status
+    );
 }

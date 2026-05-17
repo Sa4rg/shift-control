@@ -100,15 +100,21 @@ public class IncidentService {
 
     @Transactional(readOnly = true)
     public List<Incident> listIncidents(IncidentStatus status, UUID authenticatedUserId, Role authenticatedRole) {
-        if (authenticatedRole != Role.ADMIN) {
-            throw new BusinessException("Only admin users can list incidents");
+        if (authenticatedRole == Role.ADMIN) {
+            if (status == null) {
+                return incidentRepository.findAllByOrderByCreatedAtDesc();
+            }
+            return incidentRepository.findByStatusOrderByCreatedAtDesc(status);
         }
 
-        if (status == null) {
-            return incidentRepository.findAllByOrderByCreatedAtDesc();
+        if (authenticatedRole == Role.STAFF) {
+            if (status == null) {
+                return incidentRepository.findByStaffUserOrderByCreatedAtDesc(authenticatedUserId);
+            }
+            return incidentRepository.findByStaffUserAndStatusOrderByCreatedAtDesc(authenticatedUserId, status);
         }
 
-        return incidentRepository.findByStatusOrderByCreatedAtDesc(status);
+        throw new BusinessException("Invalid user role");
     }
 
     @Transactional(readOnly = true)

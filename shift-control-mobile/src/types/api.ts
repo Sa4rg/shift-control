@@ -156,3 +156,40 @@ export type ShiftCloseResult = ShiftClosePreview & {
   closedById: string;
   status: ShiftClosureStatus;
 };
+
+export type IncidentType =
+  | "CASH_DIFFERENCE"
+  | "MB_DIFFERENCE"
+  | "GLOVO_DIFFERENCE"
+  | "WRONG_CHARGE"
+  | "PENDING_INVOICE"
+  | "OPERATIONAL_NOTE";
+
+export type IncidentSeverity = "LOW" | "MEDIUM" | "HIGH";
+
+export type IncidentStatus = "OPEN" | "RESOLVED";
+
+export type Incident = {
+  id: string;
+  type: IncidentType;
+  title: string;
+  description: string;
+  severity: IncidentSeverity;
+  status: IncidentStatus;
+  shiftId: string | null;
+  closureId: string | null;
+  saleId: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolutionNote: string | null;
+};
+
+export type CreateIncidentRequest = {
+  type: IncidentType;
+  title: string;
+  description: string;
+  severity: IncidentSeverity;
+  shiftId?: string;
+  closureId?: string;
+  saleId?: string;
+};
