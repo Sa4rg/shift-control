@@ -139,3 +139,20 @@ export type ShiftClosePreview = {
   cashToWithdraw: number;
   expectedPhysicalCash: number;
 };
+
+export type ShiftClosureStatus = "CLOSED_OK" | "CLOSED_WITH_INCIDENT";
+
+export type CloseShiftRequest = {
+  confirmedCashAmount: number;
+  confirmedMbAmount: number;
+  note?: string;
+};
+
+export type ShiftCloseResult = ShiftClosePreview & {
+  confirmedCashAmount: number;
+  confirmedMbAmount: number;
+  cashDifference: number;
+  mbDifference: number;
+  closedById: string;
+  status: ShiftClosureStatus;
+};

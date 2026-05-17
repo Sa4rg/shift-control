@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 
-import { getCurrentShift, openShift, getShiftClosePreview } from "@/src/api/shifts";
+import { getCurrentShift, openShift, getShiftClosePreview, closeShift } from "@/src/api/shifts";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -184,5 +184,57 @@ describe("getShiftClosePreview", () => {
     expect(result.shiftId).toBe("shift-1");
     expect(result.totalSales).toBe(280);
     expect(result.expectedPhysicalCash).toBe(273);
+  });
+});
+
+describe("closeShift", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("closes a shift with confirmed totals", async () => {
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Shift closed successfully",
+        data: {
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          staffName: "Sara Staff",
+          storeId: "store-1",
+          storeName: "Main Store",
+          totalCash: 150,
+          totalMb: 80,
+          totalGlovoOnline: 30,
+          totalGlovoCash: 20,
+          totalSales: 280,
+          pendingInvoiceTotal: 50,
+          cashToWithdraw: 170,
+          expectedPhysicalCash: 273,
+          confirmedCashAmount: 273,
+          confirmedMbAmount: 80,
+          cashDifference: 0,
+          mbDifference: 0,
+          closedById: "staff-1",
+          status: "CLOSED_OK",
+        },
+      },
+    });
+
+    const request = {
+      confirmedCashAmount: 273,
+      confirmedMbAmount: 80,
+      note: "Everything matched",
+    };
+
+    const result = await closeShift("shift-1", request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith(
+      "/api/shifts/shift-1/close",
+      request
+    );
+    expect(result.status).toBe("CLOSED_OK");
+    expect(result.cashDifference).toBe(0);
+    expect(result.mbDifference).toBe(0);
   });
 });

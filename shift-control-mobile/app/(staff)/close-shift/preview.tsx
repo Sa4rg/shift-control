@@ -160,14 +160,24 @@ export default function CloseShiftPreviewScreen() {
         </View>
 
         <View style={styles.warningCard}>
-          <Text style={styles.warningTitle}>Next step</Text>
+          <Text style={styles.warningTitle}>Confirm carefully</Text>
           <Text style={styles.warningText}>
-            Closing the shift will be implemented next. For now, this screen is
-            read-only.
+            Closing the shift is final. Confirm the physical totals before continuing.
           </Text>
         </View>
 
         <View style={styles.actions}>
+          <Button
+            title="Confirm close shift"
+            onPress={() =>
+              router.push({
+                pathname: "/(staff)/close-shift/confirm",
+                params: {
+                  shiftId: preview.shiftId,
+                },
+              })
+            }
+          />
           <Button title="Refresh preview" onPress={loadPreview} />
           <Button title="Back" onPress={() => router.back()} />
         </View>

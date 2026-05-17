@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 
 import { apiClient } from "@/src/api/client";
-import type { ApiEnvelope, Shift, ShiftType, ShiftClosePreview } from "@/src/types/api";
+import type { ApiEnvelope, Shift, ShiftType, ShiftClosePreview, CloseShiftRequest, ShiftCloseResult } from "@/src/types/api";
 
 export type CurrentShiftResult =
   | {
@@ -53,6 +53,18 @@ export async function getShiftClosePreview(
 ): Promise<ShiftClosePreview> {
   const response = await apiClient.get<ApiEnvelope<ShiftClosePreview>>(
     `/api/shifts/${shiftId}/close-preview`
+  );
+
+  return response.data.data;
+}
+
+export async function closeShift(
+  shiftId: string,
+  request: CloseShiftRequest
+): Promise<ShiftCloseResult> {
+  const response = await apiClient.post<ApiEnvelope<ShiftCloseResult>>(
+    `/api/shifts/${shiftId}/close`,
+    request
   );
 
   return response.data.data;
