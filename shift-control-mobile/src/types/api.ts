@@ -123,3 +123,19 @@ export type CreateSaleRequest = {
   invoiceStatus: InvoiceStatus;
   note?: string;
 };
+
+export type ShiftClosePreview = {
+  shiftId: string;
+  staffId: string;
+  staffName: string;
+  storeId: string;
+  storeName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashToWithdraw: number;
+  expectedPhysicalCash: number;
+};

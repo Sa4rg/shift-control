@@ -1,6 +1,6 @@
 import { AxiosError } from "axios";
 
-import { getCurrentShift, openShift } from "@/src/api/shifts";
+import { getCurrentShift, openShift, getShiftClosePreview } from "@/src/api/shifts";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -145,5 +145,44 @@ describe("openShift", () => {
       closedAt: null,
       closedById: null,
     });
+  });
+});
+
+describe("getShiftClosePreview", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets close preview for a shift", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Close preview calculated successfully",
+        data: {
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          staffName: "Sara Staff",
+          storeId: "store-1",
+          storeName: "Main Store",
+          totalCash: 150,
+          totalMb: 80,
+          totalGlovoOnline: 30,
+          totalGlovoCash: 20,
+          totalSales: 280,
+          pendingInvoiceTotal: 50,
+          cashToWithdraw: 170,
+          expectedPhysicalCash: 273,
+        },
+      },
+    });
+
+    const result = await getShiftClosePreview("shift-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      "/api/shifts/shift-1/close-preview"
+    );
+    expect(result.shiftId).toBe("shift-1");
+    expect(result.totalSales).toBe(280);
+    expect(result.expectedPhysicalCash).toBe(273);
   });
 });

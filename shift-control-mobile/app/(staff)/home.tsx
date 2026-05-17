@@ -167,6 +167,14 @@ export default function StaffHomeScreen() {
     return <LoadingState message="Checking current shift..." />;
   }
 
+  const activeShift =
+    shiftState.status === "ready" && shiftState.result.status === "active"
+      ? shiftState.result.shift
+      : null;
+
+  const hasNoActiveShift =
+    shiftState.status === "ready" && shiftState.result.status === "none";
+
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -183,8 +191,7 @@ export default function StaffHomeScreen() {
           </View>
         ) : null}
 
-        {shiftState.status === "ready" &&
-        shiftState.result.status === "none" ? (
+        {hasNoActiveShift ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>No active shift</Text>
             <Text style={styles.body}>
@@ -210,24 +217,35 @@ export default function StaffHomeScreen() {
           </View>
         ) : null}
 
-        {shiftState.status === "ready" &&
-        shiftState.result.status === "active" ? (
+        {activeShift ? (
           <>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Active shift</Text>
               <Text style={styles.body}>
-                Type: {shiftState.result.shift.type}
+                Type: {activeShift.type}
               </Text>
               <Text style={styles.body}>
-                Status: {shiftState.result.shift.status}
+                Status: {activeShift.status}
               </Text>
               <Text style={styles.body}>
-                Opened at: {formatDateTime(shiftState.result.shift.openedAt)}
+                Opened at: {formatDateTime(activeShift.openedAt)}
               </Text>
 
               <Pressable onPress={loadCurrentShift}>
                 <Text style={styles.refreshLink}>Refresh</Text>
               </Pressable>
+
+              <Button
+                title="Close shift"
+                onPress={() =>
+                  router.push({
+                    pathname: "/(staff)/close-shift/preview",
+                    params: {
+                      shiftId: activeShift.id,
+                    },
+                  })
+                }
+              />
             </View>
 
             <View style={styles.card}>
