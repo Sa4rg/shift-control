@@ -14,3 +14,9 @@ export async function createSale(request: CreateSaleRequest): Promise<Sale> {
 
   return response.data.data;
 }
+
+export async function getSaleById(id: string): Promise<Sale> {
+  const response = await apiClient.get<ApiEnvelope<Sale>>(`/api/sales/${id}`);
+
+  return response.data.data;
+}

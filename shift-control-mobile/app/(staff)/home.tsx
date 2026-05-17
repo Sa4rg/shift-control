@@ -252,7 +252,13 @@ export default function StaffHomeScreen() {
               salesState.sales.length > 0 ? (
                 <View style={styles.salesList}>
                   {salesState.sales.map((sale) => (
-                    <View key={sale.id} style={styles.saleRow}>
+                    <Pressable
+                      key={sale.id}
+                      style={styles.saleRow}
+                      onPress={() =>
+                        router.push(`/(staff)/sales/${sale.id}`)
+                      }
+                    >
                       <View style={styles.saleMain}>
                         <Text style={styles.saleTitle}>
                           Sale {sale.id.slice(0, 8)}
@@ -265,7 +271,7 @@ export default function StaffHomeScreen() {
                       <Text style={styles.saleTotal}>
                         €{sale.finalTotalAmount.toFixed(2)}
                       </Text>
-                    </View>
+                    </Pressable>
                   ))}
                 </View>
               ) : null}

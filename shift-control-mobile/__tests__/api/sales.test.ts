@@ -1,4 +1,4 @@
-import { listCurrentShiftSales, createSale } from "@/src/api/sales";
+import { listCurrentShiftSales, createSale, getSaleById } from "@/src/api/sales";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -144,5 +144,60 @@ describe("createSale", () => {
     expect(mockedApiClient.post).toHaveBeenCalledWith("/api/sales", request);
     expect(result.id).toBe("sale-1");
     expect(result.finalTotalAmount).toBe(20);
+  });
+});
+
+describe("getSaleById", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a sale by id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sale found",
+        data: {
+          id: "sale-1",
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          storeId: "store-1",
+          status: "ACTIVE",
+          invoiceStatus: "PENDING",
+          subtotalAmount: 20,
+          discountTotalAmount: 0,
+          finalTotalAmount: 20,
+          note: null,
+          items: [
+            {
+              id: "item-1",
+              productName: "Coffee",
+              quantity: 2,
+              unitPrice: 10,
+              lineTotal: 20,
+            },
+          ],
+          discounts: [],
+          payments: [
+            {
+              id: "payment-1",
+              method: "CASH",
+              amount: 20,
+            },
+          ],
+          createdAt: "2026-05-16T08:30:00Z",
+          updatedAt: "2026-05-16T08:30:00Z",
+          cancelledAt: null,
+          cancelledReason: null,
+        },
+      },
+    });
+
+    const result = await getSaleById("sale-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/sales/sale-1");
+    expect(result.id).toBe("sale-1");
+    expect(result.items).toHaveLength(1);
+    expect(result.payments).toHaveLength(1);
   });
 });
