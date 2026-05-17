@@ -1,18 +1,13 @@
-import { listCurrentShiftSales, createSale, getSaleById } from "@/src/api/sales";
+import { listCurrentShiftSales, createSale, getSaleById, markSaleAsInvoiced } from "@/src/api/sales";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
   apiClient: {
     get: jest.fn(),
+    post: jest.fn(),
+    patch: jest.fn(),
   },
 })); 
-
-jest.mock("@/src/api/client", () => ({
-  apiClient: {
-    get: jest.fn(),
-    post: jest.fn(),
-  },
-}));
 
 const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
 
@@ -199,5 +194,60 @@ describe("getSaleById", () => {
     expect(result.id).toBe("sale-1");
     expect(result.items).toHaveLength(1);
     expect(result.payments).toHaveLength(1);
+  });
+});
+
+describe("markSaleAsInvoiced", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("marks a sale as invoiced", async () => {
+    mockedApiClient.patch.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sale marked as invoiced",
+        data: {
+          id: "sale-1",
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          storeId: "store-1",
+          status: "ACTIVE",
+          invoiceStatus: "INVOICED",
+          subtotalAmount: 20,
+          discountTotalAmount: 0,
+          finalTotalAmount: 20,
+          note: null,
+          items: [
+            {
+              id: "item-1",
+              productName: "Coffee",
+              quantity: 2,
+              unitPrice: 10,
+              lineTotal: 20,
+            },
+          ],
+          discounts: [],
+          payments: [
+            {
+              id: "payment-1",
+              method: "CASH",
+              amount: 20,
+            },
+          ],
+          createdAt: "2026-05-16T08:30:00Z",
+          updatedAt: "2026-05-16T08:31:00Z",
+          cancelledAt: null,
+          cancelledReason: null,
+        },
+      },
+    });
+
+    const result = await markSaleAsInvoiced("sale-1");
+
+    expect(mockedApiClient.patch).toHaveBeenCalledWith(
+      "/api/sales/sale-1/invoice"
+    );
+    expect(result.invoiceStatus).toBe("INVOICED");
   });
 });

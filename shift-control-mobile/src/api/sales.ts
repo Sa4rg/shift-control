@@ -20,3 +20,11 @@ export async function getSaleById(id: string): Promise<Sale> {
 
   return response.data.data;
 }
+
+export async function markSaleAsInvoiced(id: string): Promise<Sale> {
+  const response = await apiClient.patch<ApiEnvelope<Sale>>(
+    `/api/sales/${id}/invoice`
+  );
+
+  return response.data.data;
+}

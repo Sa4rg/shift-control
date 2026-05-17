@@ -3,12 +3,13 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getSaleById } from "@/src/api/sales";
+import { getSaleById, markSaleAsInvoiced } from "@/src/api/sales";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { Screen } from "@/src/components/Screen";
 import type { Sale } from "@/src/types/api";
+
 
 type SaleDetailState =
   | {
@@ -40,6 +41,12 @@ export default function SaleDetailScreen() {
     sale: null,
     errorMessage: null,
   });
+
+  const [invoiceErrorMessage, setInvoiceErrorMessage] = useState<string | null>(
+    null
+  );
+
+  const [isMarkingInvoiced, setIsMarkingInvoiced] = useState(false);
 
   const loadSale = useCallback(async () => {
     if (!saleId) {
@@ -74,6 +81,29 @@ export default function SaleDetailScreen() {
     }
   }, [saleId]);
 
+  async function handleMarkAsInvoiced() {
+    if (!saleId || state.status !== "ready" || isMarkingInvoiced) {
+        return;
+    }
+
+    setIsMarkingInvoiced(true);
+    setInvoiceErrorMessage(null);
+
+    try {
+        const updatedSale = await markSaleAsInvoiced(saleId);
+
+        setState({
+        status: "ready",
+        sale: updatedSale,
+        errorMessage: null,
+        });
+    } catch (error) {
+        setInvoiceErrorMessage(getApiErrorMessage(error));
+    } finally {
+        setIsMarkingInvoiced(false);
+    }
+  }
+
   useEffect(() => {
     void loadSale();
   }, [loadSale]);
@@ -100,6 +130,9 @@ export default function SaleDetailScreen() {
 
   const sale = state.sale;
 
+  const canMarkAsInvoiced =
+  sale.status === "ACTIVE" && sale.invoiceStatus === "PENDING";
+
   return (
     <Screen padded={false}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -118,6 +151,34 @@ export default function SaleDetailScreen() {
           </Text>
           <Text style={styles.total}>Total: {formatMoney(sale.finalTotalAmount)}</Text>
         </View>
+
+        <View style={styles.card}>
+            <Text style={styles.cardTitle}>Invoice action</Text>
+
+            {sale.invoiceStatus === "INVOICED" ? (
+                <Text style={styles.body}>This sale is already invoiced.</Text>
+            ) : null}
+
+            {sale.status === "CANCELLED" ? (
+                <Text style={styles.body}>Cancelled sales cannot be invoiced.</Text>
+            ) : null}
+
+            {canMarkAsInvoiced ? (
+                <>
+                <Text style={styles.body}>
+                    Mark this sale as invoiced once it has been faturado.
+                </Text>
+
+                <ErrorMessage message={invoiceErrorMessage} />
+
+                <Button
+                    title="Mark as invoiced"
+                    onPress={handleMarkAsInvoiced}
+                    loading={isMarkingInvoiced}
+                />
+                </>
+            ) : null}
+            </View>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Items</Text>
