@@ -49,6 +49,10 @@ function DifferenceText({
   return <Text style={styles.body}>{message}</Text>;
 }
 
+function getTotalGlovoAmount(result: ShiftCloseResult): number {
+  return result.totalGlovoOnline + result.totalGlovoCash;
+}
+
 function getBaseCashAmount(result: ShiftCloseResult): number {
   return result.expectedPhysicalCash - result.cashToWithdraw;
 }
@@ -158,7 +162,16 @@ export default function CloseShiftConfirmScreen() {
                   Cash sales: {formatMoney(result.totalCash)}
                 </Text>
                 <Text style={styles.body}>
+                  MB sales: {formatMoney(result.totalMb)}
+                </Text>
+                <Text style={styles.body}>
+                  Glovo online: {formatMoney(result.totalGlovoOnline)}
+                </Text>
+                <Text style={styles.body}>
                   Glovo cash: {formatMoney(result.totalGlovoCash)}
+                </Text>
+                <Text style={styles.body}>
+                  Total Glovo: {formatMoney(getTotalGlovoAmount(result))}
                 </Text>
                 <Text style={styles.body}>
                   Cash to withdraw: {formatMoney(result.cashToWithdraw)}
@@ -187,6 +200,9 @@ export default function CloseShiftConfirmScreen() {
                 <Text style={styles.infoText}>
                   Keep {formatMoney(getBaseCashAmount(result))} as the base
                   cash amount in the register.
+                </Text>
+                <Text style={styles.infoText}>
+                  Glovo online is included in sales and Glovo totals, but it does not affect physical cash or MB terminal totals.
                 </Text>
               </View>
 

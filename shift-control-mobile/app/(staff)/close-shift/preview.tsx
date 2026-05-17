@@ -28,6 +28,10 @@ type ClosePreviewState =
       errorMessage: string;
     };
 
+function getTotalGlovoAmount(preview: ShiftClosePreview): number {
+  return preview.totalGlovoOnline + preview.totalGlovoCash;
+}
+
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.summaryRow}>
@@ -145,6 +149,20 @@ export default function CloseShiftPreviewScreen() {
             label="Glovo cash"
             value={formatMoney(preview.totalGlovoCash)}
           />
+          <SummaryRow
+            label="Total Glovo"
+            value={formatMoney(getTotalGlovoAmount(preview))}
+          />
+        </View>
+
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>Glovo handling</Text>
+          <Text style={styles.infoText}>
+            Glovo online is included in sales and Glovo totals, but it does not affect physical cash or MB terminal totals.
+          </Text>
+          <Text style={styles.infoText}>
+            Glovo cash is included in Glovo totals and affects physical cash.
+          </Text>
         </View>
 
         <View style={styles.card}>
@@ -231,6 +249,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     textAlign: "right",
+  },
+  infoCard: {
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#cfe0ff",
+    borderRadius: 16,
+    padding: 20,
+    backgroundColor: "#f1f6ff",
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#1f4f8f",
+  },
+  infoText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#1f4f8f",
   },
   warningCard: {
     gap: 8,
