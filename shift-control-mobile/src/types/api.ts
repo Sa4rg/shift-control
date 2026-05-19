@@ -367,3 +367,33 @@ export type MonthlyReport = {
   staffSummaries: MonthlyStaffSummary[];
   weekSummaries: MonthlyWeekSummary[];
 };
+
+export type WeeklyAdminReviewStatus =
+  | "REVIEWED_OK"
+  | "REVIEWED_WITH_INCIDENT";
+
+export type WeeklyAdminReview = {
+  id: string;
+  storeId: string;
+  storeName: string;
+  staffId: string;
+  staffName: string;
+  reviewedById: string;
+  reviewedByName: string;
+  weekStart: string;
+  weekEnd: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  incidentCount: number;
+  status: WeeklyAdminReviewStatus;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
