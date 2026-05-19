@@ -20,7 +20,7 @@ import type { IncidentSeverity, IncidentType } from "@/src/types/api";
 const INCIDENT_TYPES: IncidentType[] = [
   "CASH_DIFFERENCE",
   "MB_DIFFERENCE",
-  "GLOVO_DIFFERENCE",
+  "GLOVO_ISSUE",
   "WRONG_CHARGE",
   "PENDING_INVOICE",
   "OPERATIONAL_NOTE",

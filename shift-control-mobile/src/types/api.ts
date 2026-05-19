@@ -162,7 +162,7 @@ export type ShiftCloseResult = ShiftClosePreview & {
 export type IncidentType =
   | "CASH_DIFFERENCE"
   | "MB_DIFFERENCE"
-  | "GLOVO_DIFFERENCE"
+  | "GLOVO_ISSUE"
   | "WRONG_CHARGE"
   | "PENDING_INVOICE"
   | "OPERATIONAL_NOTE";
@@ -173,17 +173,22 @@ export type IncidentStatus = "OPEN" | "RESOLVED";
 
 export type Incident = {
   id: string;
-  type: IncidentType;
-  title: string;
-  description: string;
-  severity: IncidentSeverity;
-  status: IncidentStatus;
   shiftId: string | null;
   closureId: string | null;
   saleId: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
+  reportedById: string;
+  reportedByName: string;
+  resolvedById: string | null;
+  resolvedByName: string | null;
+  type: IncidentType;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  title: string;
+  description: string;
   resolutionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
 };
 
 export type CreateIncidentRequest = {
@@ -213,6 +218,181 @@ export type ShiftClosure = {
   cashDifference: number;
   mbDifference: number;
   status: ShiftClosureStatus;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Store = {
+  id: string;
+  name: string;
+  address: string;
+  baseCashAmount: number;
+  active: boolean;
+  deactivatedById: string | null;
+  deactivatedByName: string | null;
+  deactivatedAt: string | null;
+};
+
+export type AdminUser = {
+  id: string;
+  fullName: string;
+  username: string;
+  email: string | null;
+  role: UserRole;
+  storeId: string | null;
+  active: boolean;
+  deactivatedById: string | null;
+  deactivatedByName: string | null;
+  deactivatedAt: string | null;
+};
+
+export type DailyStaffSummary = {
+  staffId: string;
+  staffName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+};
+
+export type DailyReport = {
+  storeId: string;
+  storeName: string;
+  date: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+  staffSummaries: DailyStaffSummary[];
+};
+
+export type WeeklyStaffSummary = {
+  storeId: string;
+  storeName: string;
+  staffId: string;
+  staffName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  incidentCount: number;
+};
+
+export type WeeklyReport = {
+  storeId: string;
+  weekStart: string;
+  weekEnd: string;
+  staffSummaries: WeeklyStaffSummary[];
+};
+
+export type MonthlyStaffSummary = {
+  staffId: string;
+  staffName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+};
+
+export type MonthlyWeekSummary = {
+  weekStart: string;
+  weekEnd: string;
+  totalSales: number;
+  closuresCount: number;
+  incidentCount: number;
+};
+
+export type MonthlyReport = {
+  storeId: string;
+  storeName: string;
+  monthStart: string;
+  monthEnd: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+  weeklyReviewsCount: number;
+  weeklyReviewsOkCount: number;
+  weeklyReviewsWithIncidentCount: number;
+  staffSummaries: MonthlyStaffSummary[];
+  weekSummaries: MonthlyWeekSummary[];
+};
+
+export type WeeklyAdminReviewStatus =
+  | "REVIEWED_OK"
+  | "REVIEWED_WITH_INCIDENT";
+
+export type WeeklyAdminReview = {
+  id: string;
+  storeId: string;
+  storeName: string;
+  staffId: string;
+  staffName: string;
+  reviewedById: string;
+  reviewedByName: string;
+  weekStart: string;
+  weekEnd: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  incidentCount: number;
+  status: WeeklyAdminReviewStatus;
   note: string | null;
   createdAt: string;
   updatedAt: string;

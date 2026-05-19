@@ -317,7 +317,7 @@ Represents a problem, cash difference, or administrative note linked to a sale, 
 enum IncidentType {
     CASH_DIFFERENCE,
     MB_DIFFERENCE,
-    GLOVO_DIFFERENCE,
+    GLOVO_ISSUE,
     WRONG_CHARGE,
     PENDING_INVOICE,
     OTHER
