@@ -217,3 +217,14 @@ export type ShiftClosure = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type Store = {
+  id: string;
+  name: string;
+  address: string;
+  baseCashAmount: number;
+  active: boolean;
+  deactivatedById: string | null;
+  deactivatedByName: string | null;
+  deactivatedAt: string | null;
+};

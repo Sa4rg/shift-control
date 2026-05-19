@@ -1,0 +1,68 @@
+import { listStores } from "@/src/api/stores";
+import { apiClient } from "@/src/api/client";
+
+jest.mock("@/src/api/client", () => ({
+  apiClient: {
+    get: jest.fn(),
+  },
+}));
+
+const mockedApiClient = apiClient as jest.Mocked<typeof apiClient>;
+
+describe("listStores", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("lists stores without filters", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Stores listed successfully",
+        data: [
+          {
+            id: "store-1",
+            name: "Main Store",
+            address: "Main Street 123",
+            baseCashAmount: 103,
+            active: true,
+            deactivatedById: null,
+            deactivatedByName: null,
+            deactivatedAt: null,
+          },
+        ],
+      },
+    });
+
+    const result = await listStores();
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/stores", {
+      params: {},
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("store-1");
+    expect(result[0].baseCashAmount).toBe(103);
+  });
+
+  it("lists stores with filters", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Stores listed successfully",
+        data: [],
+      },
+    });
+
+    await listStores({
+      search: "main",
+      includeInactive: true,
+    });
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/stores", {
+      params: {
+        search: "main",
+        includeInactive: true,
+      },
+    });
+  });
+});
