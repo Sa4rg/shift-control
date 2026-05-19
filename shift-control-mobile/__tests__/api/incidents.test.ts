@@ -1,10 +1,11 @@
-import { createIncident, getIncidentById, listIncidents } from "@/src/api/incidents";
+import { createIncident, getIncidentById, listIncidents, resolveIncident } from "@/src/api/incidents";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
   apiClient: {
     get: jest.fn(),
     post: jest.fn(),
+    patch: jest.fn(),
   },
 }));
 
@@ -143,5 +144,54 @@ describe("getIncidentById", () => {
     );
     expect(result.id).toBe("incident-1");
     expect(result.description).toBe("Register had less cash than expected");
+  });
+});
+
+describe("resolveIncident", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("resolves an incident with a resolution note", async () => {
+    const request = {
+      resolutionNote: "Cash difference reviewed and accepted.",
+    };
+
+    mockedApiClient.patch.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Incident resolved successfully",
+        data: {
+          id: "incident-1",
+          type: "CASH_DIFFERENCE",
+          title: "Cash short",
+          description: "Register had less cash than expected",
+          severity: "MEDIUM",
+          status: "RESOLVED",
+          shiftId: "shift-1",
+          closureId: null,
+          saleId: null,
+          reportedById: "staff-1",
+          reportedByName: "Sara Staff",
+          resolvedById: "admin-1",
+          resolvedByName: "Admin User",
+          createdAt: "2026-05-17T10:00:00Z",
+          updatedAt: "2026-05-17T11:00:00Z",
+          resolvedAt: "2026-05-17T11:00:00Z",
+          resolutionNote: "Cash difference reviewed and accepted.",
+        },
+      },
+    });
+
+    const result = await resolveIncident("incident-1", request);
+
+    expect(mockedApiClient.patch).toHaveBeenCalledWith(
+      "/api/incidents/incident-1/resolve",
+      request
+    );
+    expect(result.status).toBe("RESOLVED");
+    expect(result.resolutionNote).toBe(
+      "Cash difference reviewed and accepted."
+    );
   });
 });

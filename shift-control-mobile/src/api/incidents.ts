@@ -41,3 +41,19 @@ export async function getIncidentById(id: string): Promise<Incident> {
 
   return response.data.data;
 }
+
+export type ResolveIncidentRequest = {
+  resolutionNote: string;
+};
+
+export async function resolveIncident(
+  id: string,
+  request: ResolveIncidentRequest
+): Promise<Incident> {
+  const response = await apiClient.patch<ApiEnvelope<Incident>>(
+    `/api/incidents/${id}/resolve`,
+    request
+  );
+
+  return response.data.data;
+}

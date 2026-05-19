@@ -3,13 +3,14 @@ import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getIncidentById } from "@/src/api/incidents";
+import { getIncidentById, resolveIncident } from "@/src/api/incidents";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { Screen } from "@/src/components/Screen";
 import type { Incident } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
+import { TextField } from "@/src/components/TextField";
 
 type IncidentDetailState =
   | {
@@ -57,6 +58,12 @@ export default function AdminIncidentDetailScreen() {
     errorMessage: null,
   });
 
+  const [resolutionNote, setResolutionNote] = useState("");
+  const [resolveErrorMessage, setResolveErrorMessage] = useState<string | null>(
+   null
+  );
+  const [isResolving, setIsResolving] = useState(false);
+
   const loadIncident = useCallback(async () => {
     if (!incidentId) {
       setState({
@@ -89,6 +96,38 @@ export default function AdminIncidentDetailScreen() {
       });
     }
   }, [incidentId]);
+
+  async function handleResolveIncident() {
+    if (
+        !incidentId ||
+        state.status !== "ready" ||
+        state.incident.status === "RESOLVED" ||
+        resolutionNote.trim().length === 0 ||
+        isResolving
+    ) {
+        return;
+    }
+
+    setIsResolving(true);
+    setResolveErrorMessage(null);
+
+    try {
+        const updatedIncident = await resolveIncident(incidentId, {
+        resolutionNote: resolutionNote.trim(),
+        });
+
+        setState({
+        status: "ready",
+        incident: updatedIncident,
+        errorMessage: null,
+        });
+        setResolutionNote("");
+    } catch (error) {
+        setResolveErrorMessage(getApiErrorMessage(error));
+    } finally {
+        setIsResolving(false);
+    }
+    }
 
   useEffect(() => {
     void loadIncident();
@@ -217,19 +256,50 @@ export default function AdminIncidentDetailScreen() {
           )}
         </View>
 
-        {incident.resolutionNote ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Resolution</Text>
-            <Text style={styles.description}>{incident.resolutionNote}</Text>
+        <View style={styles.card}>
+        <Text style={styles.cardTitle}>Admin resolution</Text>
+
+        {incident.status === "RESOLVED" ? (
+            <>
+            <Text style={styles.body}>This incident has already been resolved.</Text>
+
+            {incident.resolutionNote ? (
+                <Text style={styles.description}>{incident.resolutionNote}</Text>
+            ) : null}
+
             <DetailRow label="Resolved by" value={incident.resolvedByName} />
             <DetailRow
-              label="Resolved at"
-              value={
+                label="Resolved at"
+                value={
                 incident.resolvedAt ? formatDateTime(incident.resolvedAt) : null
-              }
+                }
             />
-          </View>
-        ) : null}
+            </>
+        ) : (
+            <>
+            <Text style={styles.body}>
+                Add a resolution note after reviewing the incident.
+            </Text>
+
+            <TextField
+                label="Resolution note"
+                value={resolutionNote}
+                onChangeText={setResolutionNote}
+                placeholder="Explain how this incident was handled"
+                autoCapitalize="sentences"
+            />
+
+            <ErrorMessage message={resolveErrorMessage} />
+
+            <Button
+                title="Resolve incident"
+                onPress={handleResolveIncident}
+                loading={isResolving}
+                disabled={resolutionNote.trim().length === 0}
+            />
+            </>
+        )}
+        </View>
 
         <View style={styles.actions}>
           <Button title="Refresh" onPress={loadIncident} />
