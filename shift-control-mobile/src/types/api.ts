@@ -288,3 +288,27 @@ export type DailyReport = {
   resolvedIncidentsCount: number;
   staffSummaries: DailyStaffSummary[];
 };
+
+export type WeeklyStaffSummary = {
+  storeId: string;
+  storeName: string;
+  staffId: string;
+  staffName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  incidentCount: number;
+};
+
+export type WeeklyReport = {
+  storeId: string;
+  weekStart: string;
+  weekEnd: string;
+  staffSummaries: WeeklyStaffSummary[];
+};

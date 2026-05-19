@@ -1,4 +1,4 @@
-import { getDailyReport } from "@/src/api/reports";
+import { getDailyReport, getWeeklyReport } from "@/src/api/reports";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -79,6 +79,62 @@ describe("getDailyReport", () => {
     );
     expect(result.storeId).toBe("store-1");
     expect(result.totalSales).toBe(250);
+    expect(result.staffSummaries).toHaveLength(1);
+  });
+});
+
+describe("getWeeklyReport", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a weekly report", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Weekly report generated successfully",
+        data: {
+          storeId: "store-1",
+          weekStart: "2026-05-18",
+          weekEnd: "2026-05-24",
+          staffSummaries: [
+            {
+              storeId: "store-1",
+              storeName: "Main Store",
+              staffId: "staff-1",
+              staffName: "Sara Staff",
+              totalCash: 100,
+              totalMb: 80,
+              totalGlovoOnline: 50,
+              totalGlovoCash: 20,
+              totalSales: 250,
+              pendingInvoiceTotal: 30,
+              cashDifferenceTotal: 0,
+              mbDifferenceTotal: -5,
+              closuresCount: 2,
+              incidentCount: 3,
+            },
+          ],
+        },
+      },
+    });
+
+    const result = await getWeeklyReport({
+      storeId: "store-1",
+      weekStart: "2026-05-18",
+    });
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      "/api/admin/reports/weekly",
+      {
+        params: {
+          storeId: "store-1",
+          weekStart: "2026-05-18",
+        },
+      }
+    );
+    expect(result.storeId).toBe("store-1");
+    expect(result.weekStart).toBe("2026-05-18");
     expect(result.staffSummaries).toHaveLength(1);
   });
 });
