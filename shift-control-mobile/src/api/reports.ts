@@ -1,5 +1,10 @@
 import { apiClient } from "@/src/api/client";
-import type { ApiEnvelope, DailyReport, WeeklyReport } from "@/src/types/api";
+import type {
+  ApiEnvelope,
+  DailyReport,
+  MonthlyReport,
+  WeeklyReport,
+} from "@/src/types/api";
 
 export type GetDailyReportParams = {
   storeId: string;
@@ -32,6 +37,22 @@ export async function getWeeklyReport(
     {
       params,
     }
+  );
+
+  return response.data.data;
+}
+
+export type GetMonthlyReportParams = {
+  storeId: string;
+  month: string;
+};
+
+export async function getMonthlyReport(
+  params: GetMonthlyReportParams
+): Promise<MonthlyReport> {
+  const response = await apiClient.get<ApiEnvelope<MonthlyReport>>(
+    "/api/admin/reports/monthly",
+    { params }
   );
 
   return response.data.data;

@@ -312,3 +312,58 @@ export type WeeklyReport = {
   weekEnd: string;
   staffSummaries: WeeklyStaffSummary[];
 };
+
+export type MonthlyStaffSummary = {
+  staffId: string;
+  staffName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+};
+
+export type MonthlyWeekSummary = {
+  weekStart: string;
+  weekEnd: string;
+  totalSales: number;
+  closuresCount: number;
+  incidentCount: number;
+};
+
+export type MonthlyReport = {
+  storeId: string;
+  storeName: string;
+  monthStart: string;
+  monthEnd: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+  weeklyReviewsCount: number;
+  weeklyReviewsOkCount: number;
+  weeklyReviewsWithIncidentCount: number;
+  staffSummaries: MonthlyStaffSummary[];
+  weekSummaries: MonthlyWeekSummary[];
+};

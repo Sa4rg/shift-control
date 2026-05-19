@@ -1,4 +1,4 @@
-import { getDailyReport, getWeeklyReport } from "@/src/api/reports";
+import { getDailyReport, getMonthlyReport, getWeeklyReport } from "@/src/api/reports";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -136,5 +136,71 @@ describe("getWeeklyReport", () => {
     expect(result.storeId).toBe("store-1");
     expect(result.weekStart).toBe("2026-05-18");
     expect(result.staffSummaries).toHaveLength(1);
+  });
+});
+
+describe("getMonthlyReport", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a monthly report", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Monthly report generated successfully",
+        data: {
+          storeId: "store-1",
+          storeName: "Main Store",
+          monthStart: "2026-05-01",
+          monthEnd: "2026-05-31",
+          totalCash: 400,
+          totalMb: 300,
+          totalGlovoOnline: 200,
+          totalGlovoCash: 100,
+          totalSales: 1000,
+          pendingInvoiceTotal: 50,
+          cashDifferenceTotal: 0,
+          mbDifferenceTotal: -5,
+          closuresCount: 10,
+          closedOkCount: 8,
+          closedWithIncidentCount: 2,
+          activeSalesCount: 40,
+          cancelledSalesCount: 3,
+          openIncidentsCount: 2,
+          resolvedIncidentsCount: 5,
+          weeklyReviewsCount: 4,
+          weeklyReviewsOkCount: 3,
+          weeklyReviewsWithIncidentCount: 1,
+          staffSummaries: [],
+          weekSummaries: [
+            {
+              weekStart: "2026-05-04",
+              weekEnd: "2026-05-10",
+              totalSales: 250,
+              closuresCount: 3,
+              incidentCount: 1,
+            },
+          ],
+        },
+      },
+    });
+
+    const result = await getMonthlyReport({
+      storeId: "store-1",
+      month: "2026-05",
+    });
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      "/api/admin/reports/monthly",
+      {
+        params: {
+          storeId: "store-1",
+          month: "2026-05",
+        },
+      }
+    );
+    expect(result.totalSales).toBe(1000);
+    expect(result.weekSummaries).toHaveLength(1);
   });
 });
