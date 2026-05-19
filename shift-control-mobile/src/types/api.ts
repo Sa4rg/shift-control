@@ -162,7 +162,7 @@ export type ShiftCloseResult = ShiftClosePreview & {
 export type IncidentType =
   | "CASH_DIFFERENCE"
   | "MB_DIFFERENCE"
-  | "GLOVO_DIFFERENCE"
+  | "GLOVO_ISSUE"
   | "WRONG_CHARGE"
   | "PENDING_INVOICE"
   | "OPERATIONAL_NOTE";

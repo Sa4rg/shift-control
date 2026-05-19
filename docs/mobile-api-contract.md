@@ -254,7 +254,7 @@ See [Section 4 — Close Shift Flow](#4-close-shift-flow).
 }
 ```
 
-`type`: `CASH_DIFFERENCE` | `MB_DIFFERENCE` | `GLOVO_DIFFERENCE` | `WRONG_CHARGE` | `PENDING_INVOICE` | `OPERATIONAL_NOTE`
+`type`: `CASH_DIFFERENCE` | `MB_DIFFERENCE` | `GLOVO_ISSUE` | `WRONG_CHARGE` | `PENDING_INVOICE` | `OPERATIONAL_NOTE`
 `severity`: `LOW` | `MEDIUM` | `HIGH`
 `shiftId`, `closureId`, `saleId` are optional links.
 
