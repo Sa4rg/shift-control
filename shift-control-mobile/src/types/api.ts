@@ -173,17 +173,22 @@ export type IncidentStatus = "OPEN" | "RESOLVED";
 
 export type Incident = {
   id: string;
-  type: IncidentType;
-  title: string;
-  description: string;
-  severity: IncidentSeverity;
-  status: IncidentStatus;
   shiftId: string | null;
   closureId: string | null;
   saleId: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
+  reportedById: string;
+  reportedByName: string;
+  resolvedById: string | null;
+  resolvedByName: string | null;
+  type: IncidentType;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  title: string;
+  description: string;
   resolutionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  resolvedAt: string | null;
 };
 
 export type CreateIncidentRequest = {
