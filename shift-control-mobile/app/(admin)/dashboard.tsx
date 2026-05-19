@@ -91,6 +91,8 @@ export default function AdminDashboardScreen() {
             Stores are available now. Users, incidents, reports, and weekly
             reviews will be implemented next.
           </Text>
+
+          <Button title="Users" onPress={() => router.push("/(admin)/users")} />
         </View>
 
         <View style={styles.card}>

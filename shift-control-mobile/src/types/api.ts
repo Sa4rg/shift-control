@@ -228,3 +228,16 @@ export type Store = {
   deactivatedByName: string | null;
   deactivatedAt: string | null;
 };
+
+export type AdminUser = {
+  id: string;
+  fullName: string;
+  username: string;
+  email: string | null;
+  role: UserRole;
+  storeId: string | null;
+  active: boolean;
+  deactivatedById: string | null;
+  deactivatedByName: string | null;
+  deactivatedAt: string | null;
+};
