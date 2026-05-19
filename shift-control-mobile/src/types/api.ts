@@ -28,7 +28,9 @@ export type ShiftStatus = "OPEN" | "CLOSED";
 export type Shift = {
   id: string;
   staffId: string;
+  staffName: string;
   storeId: string;
+  storeName: string;
   type: ShiftType;
   status: ShiftStatus;
   openedAt: string;
@@ -192,4 +194,26 @@ export type CreateIncidentRequest = {
   shiftId?: string;
   closureId?: string;
   saleId?: string;
+};
+
+export type ShiftClosure = {
+  id: string;
+  shiftId: string;
+  closedById: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashToWithdraw: number;
+  expectedPhysicalCash: number;
+  confirmedCashAmount: number;
+  confirmedMbAmount: number;
+  cashDifference: number;
+  mbDifference: number;
+  status: ShiftClosureStatus;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
 };

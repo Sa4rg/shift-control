@@ -1,4 +1,12 @@
-import { listCurrentShiftSales, createSale, getSaleById, markSaleAsInvoiced, cancelSale } from "@/src/api/sales";
+import {
+  cancelSale,
+  createSale,
+  getSaleById,
+  listCurrentShiftSales,
+  listSalesByShiftId,
+  markSaleAsInvoiced,
+} from "@/src/api/sales";
+
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -139,6 +147,72 @@ describe("createSale", () => {
     expect(mockedApiClient.post).toHaveBeenCalledWith("/api/sales", request);
     expect(result.id).toBe("sale-1");
     expect(result.finalTotalAmount).toBe(20);
+  });
+
+  it("creates a simple sale with Glovo online payment", async () => {
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sale created successfully",
+        data: {
+          id: "sale-2",
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          storeId: "store-1",
+          status: "ACTIVE",
+          invoiceStatus: "PENDING",
+          subtotalAmount: 15,
+          discountTotalAmount: 0,
+          finalTotalAmount: 15,
+          note: null,
+          items: [
+            {
+              id: "item-2",
+              productName: "Glovo order",
+              quantity: 1,
+              unitPrice: 15,
+              lineTotal: 15,
+            },
+          ],
+          discounts: [],
+          payments: [
+            {
+              id: "payment-2",
+              method: "GLOVO_ONLINE",
+              amount: 15,
+            },
+          ],
+          createdAt: "2026-05-16T09:00:00Z",
+          updatedAt: "2026-05-16T09:00:00Z",
+          cancelledAt: null,
+          cancelledReason: null,
+        },
+      },
+    });
+
+    const request = {
+      items: [
+        {
+          productName: "Glovo order",
+          quantity: 1,
+          unitPrice: 15,
+        },
+      ],
+      discounts: [],
+      payments: [
+        {
+          method: "GLOVO_ONLINE" as const,
+          amount: 15,
+        },
+      ],
+      invoiceStatus: "PENDING" as const,
+    };
+
+    const result = await createSale(request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/sales", request);
+    expect(result.id).toBe("sale-2");
+    expect(result.payments[0].method).toBe("GLOVO_ONLINE");
   });
 });
 
@@ -310,5 +384,30 @@ describe("cancelSale", () => {
     );
     expect(result.status).toBe("CANCELLED");
     expect(result.cancelledReason).toBe("Customer changed their mind");
+  });
+});
+
+describe("listSalesByShiftId", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("lists sales by shift id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sales listed successfully",
+        data: [],
+      },
+    });
+
+    const result = await listSalesByShiftId("shift-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/sales", {
+      params: {
+        shiftId: "shift-1",
+      },
+    });
+    expect(result).toEqual([]);
   });
 });

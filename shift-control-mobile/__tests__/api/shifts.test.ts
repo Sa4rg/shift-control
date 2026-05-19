@@ -1,6 +1,15 @@
 import { AxiosError } from "axios";
 
-import { getCurrentShift, openShift, getShiftClosePreview, closeShift } from "@/src/api/shifts";
+import {
+  closeShift,
+  getCurrentShift,
+  getShiftById,
+  getShiftClosePreview,
+  getShiftClosureByShiftId,
+  listShifts,
+  openShift,
+} from "@/src/api/shifts";
+
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -25,7 +34,9 @@ describe("getCurrentShift", () => {
         data: {
           id: "shift-1",
           staffId: "staff-1",
+          staffName: "Sara Staff",
           storeId: "store-1",
+          storeName: "Main Store",
           type: "DAY",
           status: "OPEN",
           openedAt: "2026-05-16T08:00:00Z",
@@ -43,7 +54,9 @@ describe("getCurrentShift", () => {
       shift: {
         id: "shift-1",
         staffId: "staff-1",
+        staffName: "Sara Staff",
         storeId: "store-1",
+        storeName: "Main Store",
         type: "DAY",
         status: "OPEN",
         openedAt: "2026-05-16T08:00:00Z",
@@ -120,7 +133,9 @@ describe("openShift", () => {
         data: {
           id: "shift-1",
           staffId: "staff-1",
+          staffName: "Sara Staff",
           storeId: "store-1",
+          storeName: "Main Store",
           type: "DAY",
           status: "OPEN",
           openedAt: "2026-05-16T08:00:00Z",
@@ -138,7 +153,9 @@ describe("openShift", () => {
     expect(result).toEqual({
       id: "shift-1",
       staffId: "staff-1",
+      staffName: "Sara Staff",
       storeId: "store-1",
+      storeName: "Main Store",
       type: "DAY",
       status: "OPEN",
       openedAt: "2026-05-16T08:00:00Z",
@@ -236,5 +253,120 @@ describe("closeShift", () => {
     expect(result.status).toBe("CLOSED_OK");
     expect(result.cashDifference).toBe(0);
     expect(result.mbDifference).toBe(0);
+  });
+});
+
+describe("listShifts", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("lists shifts for the authenticated user", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Shifts listed successfully",
+        data: [
+          {
+            id: "shift-1",
+            staffId: "staff-1",
+            staffName: "Sara Staff",
+            storeId: "store-1",
+            storeName: "Main Store",
+            type: "DAY",
+            status: "CLOSED",
+            openedAt: "2026-05-16T08:00:00Z",
+            closedAt: "2026-05-16T16:00:00Z",
+            closedById: "staff-1",
+          },
+        ],
+      },
+    });
+
+    const result = await listShifts();
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/shifts");
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("shift-1");
+    expect(result[0].status).toBe("CLOSED");
+  });
+});
+
+describe("getShiftById", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a shift by id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Shift found",
+        data: {
+          id: "shift-1",
+          staffId: "staff-1",
+          staffName: "Sara Staff",
+          storeId: "store-1",
+          storeName: "Main Store",
+          type: "DAY",
+          status: "CLOSED",
+          openedAt: "2026-05-16T08:00:00Z",
+          closedAt: "2026-05-16T16:00:00Z",
+          closedById: "staff-1",
+        },
+      },
+    });
+
+    const result = await getShiftById("shift-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/shifts/shift-1");
+    expect(result.id).toBe("shift-1");
+    expect(result.status).toBe("CLOSED");
+  });
+});
+
+describe("getShiftClosureByShiftId", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a shift closure by shift id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Closure found",
+        data: {
+          id: "closure-1",
+          shiftId: "shift-1",
+          closedById: "staff-1",
+          totalCash: 30,
+          totalMb: 20,
+          totalGlovoOnline: 10,
+          totalGlovoCash: 5,
+          totalSales: 65,
+          pendingInvoiceTotal: 0,
+          cashToWithdraw: 35,
+          expectedPhysicalCash: 138,
+          confirmedCashAmount: 138,
+          confirmedMbAmount: 20,
+          cashDifference: 0,
+          mbDifference: 0,
+          status: "CLOSED_OK",
+          note: null,
+          createdAt: "2026-05-16T16:00:00Z",
+          updatedAt: "2026-05-16T16:00:00Z",
+        },
+      },
+    });
+
+    const result = await getShiftClosureByShiftId("shift-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/closures", {
+      params: {
+        shiftId: "shift-1",
+      },
+    });
+    expect(result.id).toBe("closure-1");
+    expect(result.status).toBe("CLOSED_OK");
   });
 });

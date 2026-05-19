@@ -198,6 +198,20 @@ export default function IncidentDetailScreen() {
                 label="Sale"
                 value={incident.saleId ? incident.saleId.slice(0, 8) : null}
               />
+
+              {incident.shiftId ? (
+                <Button
+                  title="View shift"
+                  onPress={() => router.push(`/(staff)/history/${incident.shiftId}`)}
+                />
+              ) : null}
+
+              {incident.saleId ? (
+                <Button
+                  title="View sale"
+                  onPress={() => router.push(`/(staff)/sales/${incident.saleId}`)}
+                />
+              ) : null}
             </>
           ) : (
             <Text style={styles.body}>No related context available.</Text>
