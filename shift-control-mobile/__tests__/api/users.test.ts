@@ -1,9 +1,10 @@
-import { listUsers } from "@/src/api/users";
+import { listUsers, createStaff } from "@/src/api/users";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
   apiClient: {
     get: jest.fn(),
+    post: jest.fn(),
   },
 }));
 
@@ -66,5 +67,48 @@ describe("listUsers", () => {
         includeInactive: true,
       },
     });
+  });
+});
+
+describe("createStaff", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("creates a staff user", async () => {
+    const request = {
+      fullName: "New Staff",
+      username: "new.staff",
+      pin: "123456",
+      storeId: "store-1",
+    };
+
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Staff user created successfully",
+        data: {
+          id: "user-2",
+          fullName: "New Staff",
+          username: "new.staff",
+          email: null,
+          role: "STAFF",
+          storeId: "store-1",
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await createStaff(request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith(
+      "/api/admin/users/staff",
+      request
+    );
+    expect(result.id).toBe("user-2");
+    expect(result.role).toBe("STAFF");
   });
 });

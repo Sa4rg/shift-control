@@ -145,8 +145,12 @@ export default function AdminUsersScreen() {
         ) : null}
 
         <View style={styles.actions}>
-          <Button title="Refresh" onPress={loadUsers} />
-          <Button title="Back" onPress={() => router.back()} />
+        <Button
+            title="Create staff"
+            onPress={() => router.push("/(admin)/users/new-staff")}
+        />
+        <Button title="Refresh" onPress={loadUsers} />
+        <Button title="Back" onPress={() => router.back()} />
         </View>
       </ScrollView>
     </Screen>

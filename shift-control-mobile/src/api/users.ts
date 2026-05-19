@@ -6,6 +6,13 @@ export type ListUsersParams = {
   includeInactive?: boolean;
 };
 
+export type CreateStaffRequest = {
+  fullName: string;
+  username: string;
+  pin: string;
+  storeId: string;
+};
+
 export async function listUsers(
   params: ListUsersParams = {}
 ): Promise<AdminUser[]> {
@@ -14,6 +21,17 @@ export async function listUsers(
     {
       params,
     }
+  );
+
+  return response.data.data;
+}
+
+export async function createStaff(
+  request: CreateStaffRequest
+): Promise<AdminUser> {
+  const response = await apiClient.post<ApiEnvelope<AdminUser>>(
+    "/api/admin/users/staff",
+    request
   );
 
   return response.data.data;
