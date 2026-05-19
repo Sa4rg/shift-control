@@ -16,8 +16,23 @@ import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { Screen } from "@/src/components/Screen";
 import { TextField } from "@/src/components/TextField";
 import type { PaymentMethod } from "@/src/types/api";
+import { formatMoney } from "@/src/utils/money";
 
-const DEFAULT_PAYMENT_METHOD: PaymentMethod = "CASH";
+const PAYMENT_METHODS: PaymentMethod[] = [
+  "CASH",
+  "MB",
+  "GLOVO_ONLINE",
+  "GLOVO_CASH",
+];
+
+const PAYMENT_METHOD_HELP: Record<PaymentMethod, string> = {
+  CASH: "Cash received directly in the register.",
+  MB: "Card terminal payment.",
+  GLOVO_ONLINE:
+    "Glovo order already paid through the Glovo platform. It does not affect physical cash or MB terminal totals.",
+  GLOVO_CASH:
+    "Glovo order paid in cash to staff. It affects physical cash and Glovo totals.",
+};
 
 function parsePositiveNumber(value: string): number | null {
   const normalized = value.replace(",", ".").trim();
@@ -44,12 +59,19 @@ export default function NewSaleScreen() {
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const quantityNumber = useMemo(() => parsePositiveInteger(quantity), [quantity]);
-  const unitPriceNumber = useMemo(() => parsePositiveNumber(unitPrice), [unitPrice]);
+  const quantityNumber = useMemo(
+    () => parsePositiveInteger(quantity),
+    [quantity]
+  );
+  const unitPriceNumber = useMemo(
+    () => parsePositiveNumber(unitPrice),
+    [unitPrice]
+  );
 
   const finalTotal =
     quantityNumber !== null && unitPriceNumber !== null
@@ -83,7 +105,7 @@ export default function NewSaleScreen() {
         discounts: [],
         payments: [
           {
-            method: DEFAULT_PAYMENT_METHOD,
+            method: paymentMethod,
             amount: finalTotal,
           },
         ],
@@ -142,11 +164,27 @@ export default function NewSaleScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Payment</Text>
-            <Text style={styles.body}>Method: CASH</Text>
-            <Text style={styles.body}>
-              Total: {finalTotal !== null ? `€${finalTotal.toFixed(2)}` : "—"}
-            </Text>
+            <Text style={styles.cardTitle}>Payment method</Text>
+
+            <View style={styles.options}>
+              {PAYMENT_METHODS.map((method) => (
+                <Button
+                  key={method}
+                  title={method === paymentMethod ? `✓ ${method}` : method}
+                  onPress={() => setPaymentMethod(method)}
+                  disabled={isSubmitting}
+                />
+              ))}
+            </View>
+
+            <Text style={styles.helpText}>{PAYMENT_METHOD_HELP[paymentMethod]}</Text>
+
+            <View style={styles.totalBox}>
+              <Text style={styles.totalLabel}>Payment amount</Text>
+              <Text style={styles.totalValue}>
+                {finalTotal !== null ? formatMoney(finalTotal) : "—"}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.card}>
@@ -214,12 +252,31 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "700",
   },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
+  options: {
+    gap: 8,
+  },
+  helpText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#555555",
+  },
+  totalBox: {
+    gap: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#eeeeee",
+    paddingTop: 12,
+  },
+  totalLabel: {
+    fontSize: 14,
+    color: "#555555",
+  },
+  totalValue: {
+    fontSize: 22,
+    fontWeight: "700",
   },
   actions: {
     gap: 12,
     marginTop: 8,
+    paddingBottom: 24,
   },
 });
