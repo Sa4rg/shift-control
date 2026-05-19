@@ -246,3 +246,45 @@ export type AdminUser = {
   deactivatedByName: string | null;
   deactivatedAt: string | null;
 };
+
+export type DailyStaffSummary = {
+  staffId: string;
+  staffName: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+};
+
+export type DailyReport = {
+  storeId: string;
+  storeName: string;
+  date: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashDifferenceTotal: number;
+  mbDifferenceTotal: number;
+  closuresCount: number;
+  closedOkCount: number;
+  closedWithIncidentCount: number;
+  activeSalesCount: number;
+  cancelledSalesCount: number;
+  openIncidentsCount: number;
+  resolvedIncidentsCount: number;
+  staffSummaries: DailyStaffSummary[];
+};
