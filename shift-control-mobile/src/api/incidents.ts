@@ -8,6 +8,11 @@ import type {
 
 export type ListIncidentsParams = {
   status?: IncidentStatus;
+  storeId?: string;
+  staffId?: string;
+  shiftId?: string;
+  closureId?: string;
+  saleId?: string;
 };
 
 export async function listIncidents(
