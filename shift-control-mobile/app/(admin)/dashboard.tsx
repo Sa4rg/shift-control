@@ -130,7 +130,11 @@ export default function AdminDashboardScreen() {
           {storesState.status === "ready" && storesState.stores.length > 0 ? (
             <View style={styles.storeList}>
               {storesState.stores.map((store) => (
-                <View key={store.id} style={styles.storeRow}>
+                <Pressable
+                  key={store.id}
+                  style={styles.storeRow}
+                  onPress={() => router.push(`/(admin)/stores/${store.id}`)}
+                >
                   <View style={styles.storeMain}>
                     <Text style={styles.storeTitle}>{store.name}</Text>
                     <Text style={styles.storeMeta}>{store.address}</Text>
@@ -139,7 +143,9 @@ export default function AdminDashboardScreen() {
                       {formatMoney(store.baseCashAmount)}
                     </Text>
                   </View>
-                </View>
+
+                  <Text style={styles.storeAction}>View</Text>
+                </Pressable>
               ))}
             </View>
           ) : null}
@@ -197,7 +203,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   storeRow: {
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
     borderTopWidth: 1,
     borderTopColor: "#eeeeee",
     paddingTop: 12,
@@ -217,4 +226,8 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingBottom: 24,
   },
+  storeAction: {
+  fontSize: 14,
+  fontWeight: "700",
+},
 });

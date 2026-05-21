@@ -15,3 +15,9 @@ export async function listStores(
 
   return response.data.data;
 }
+
+export async function getStoreById(id: string): Promise<Store> {
+  const response = await apiClient.get<ApiEnvelope<Store>>(`/api/stores/${id}`);
+
+  return response.data.data;
+}

@@ -1,4 +1,4 @@
-import { listStores } from "@/src/api/stores";
+import { listStores, getStoreById } from "@/src/api/stores";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -64,5 +64,36 @@ describe("listStores", () => {
         includeInactive: true,
       },
     });
+  });
+});
+
+describe("getStoreById", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a store by id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Store found",
+        data: {
+          id: "store-1",
+          name: "Main Store",
+          address: "Main Street 123",
+          baseCashAmount: 103,
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await getStoreById("store-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/stores/store-1");
+    expect(result.id).toBe("store-1");
+    expect(result.name).toBe("Main Store");
   });
 });
