@@ -57,10 +57,41 @@ describe("listWeeklyReviews", () => {
     const result = await listWeeklyReviews();
 
     expect(mockedApiClient.get).toHaveBeenCalledWith(
-      "/api/admin/weekly-reviews"
+      "/api/admin/weekly-reviews",
+      { params: {} },
     );
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("review-1");
+  });
+
+  it("lists weekly reviews with filters", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Weekly reviews listed successfully",
+        data: [],
+      },
+    });
+
+    const result = await listWeeklyReviews({
+      storeId: "store-1",
+      staffId: "staff-1",
+      weekStart: "2026-05-18",
+      status: "REVIEWED_WITH_INCIDENT",
+    });
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith(
+      "/api/admin/weekly-reviews",
+      {
+        params: {
+          storeId: "store-1",
+          staffId: "staff-1",
+          weekStart: "2026-05-18",
+          status: "REVIEWED_WITH_INCIDENT",
+        },
+      }
+    );
+    expect(result).toEqual([]);
   });
 });
 

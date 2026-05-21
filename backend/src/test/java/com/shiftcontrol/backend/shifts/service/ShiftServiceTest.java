@@ -366,15 +366,16 @@ class ShiftServiceTest {
         // Arrange
         UUID adminId = UUID.randomUUID();
         List<Shift> shifts = List.of(new Shift(), new Shift());
-        when(shiftRepository.findAllWithDetails()).thenReturn(shifts);
+        when(shiftRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class))).thenReturn(shifts);
+        when(shiftRepository.findAllWithDetailsByIds(any())).thenReturn(shifts);
 
         // Act
-        List<Shift> result = shiftService.listShifts(adminId, Role.ADMIN);
+        List<Shift> result = shiftService.listShifts(adminId, Role.ADMIN, null, null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(shifts);
-        verify(shiftRepository).findAllWithDetails();
-        verify(shiftRepository, never()).findByStaffIdWithDetails(any());
+        verify(shiftRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class));
+        verify(shiftRepository).findAllWithDetailsByIds(any());
     }
 
     @Test
@@ -382,15 +383,15 @@ class ShiftServiceTest {
         // Arrange
         UUID staffId = UUID.randomUUID();
         List<Shift> shifts = List.of(new Shift());
-        when(shiftRepository.findByStaffIdWithDetails(staffId)).thenReturn(shifts);
+        when(shiftRepository.findAll(any(org.springframework.data.jpa.domain.Specification.class))).thenReturn(shifts);
+        when(shiftRepository.findAllWithDetailsByIds(any())).thenReturn(shifts);
 
         // Act
-        List<Shift> result = shiftService.listShifts(staffId, Role.STAFF);
+        List<Shift> result = shiftService.listShifts(staffId, Role.STAFF, null, null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(shifts);
-        verify(shiftRepository).findByStaffIdWithDetails(staffId);
-        verify(shiftRepository, never()).findAllWithDetails();
+        verify(shiftRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class));
     }
 
     // -------------------------------------------------------------------------

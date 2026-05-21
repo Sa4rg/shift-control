@@ -285,10 +285,39 @@ describe("listShifts", () => {
 
     const result = await listShifts();
 
-    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/shifts");
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/shifts", { params: {} });
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe("shift-1");
     expect(result[0].status).toBe("CLOSED");
+  });
+
+  it("lists shifts with filters", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Shifts listed successfully",
+        data: [],
+      },
+    });
+
+    const result = await listShifts({
+      storeId: "store-1",
+      staffId: "staff-1",
+      status: "CLOSED",
+      from: "2026-05-01",
+      to: "2026-05-31",
+    });
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/shifts", {
+      params: {
+        storeId: "store-1",
+        staffId: "staff-1",
+        status: "CLOSED",
+        from: "2026-05-01",
+        to: "2026-05-31",
+      },
+    });
+    expect(result).toEqual([]);
   });
 });
 

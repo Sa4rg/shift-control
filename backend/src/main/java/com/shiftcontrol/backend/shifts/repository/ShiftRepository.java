@@ -4,14 +4,16 @@ import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.shifts.model.ShiftStatus;
 import com.shiftcontrol.backend.users.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface ShiftRepository extends JpaRepository<Shift, UUID> {
+public interface ShiftRepository extends JpaRepository<Shift, UUID>, JpaSpecificationExecutor<Shift> {
 
     boolean existsByStaffAndStatus(User staff, ShiftStatus status);
 
@@ -45,4 +47,14 @@ public interface ShiftRepository extends JpaRepository<Shift, UUID> {
         ORDER BY s.openedAt DESC
     """)
     List<Shift> findByStaffIdWithDetails(@Param("staffId") UUID staffId);
+
+    @Query("""
+        SELECT s FROM Shift s
+        JOIN FETCH s.staff
+        JOIN FETCH s.store
+        LEFT JOIN FETCH s.closedBy
+        WHERE s.id IN :ids
+        ORDER BY s.openedAt DESC
+    """)
+    List<Shift> findAllWithDetailsByIds(@Param("ids") List<UUID> ids);
 }

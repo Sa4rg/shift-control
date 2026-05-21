@@ -66,6 +66,37 @@ describe("listIncidents", () => {
       },
     });
   });
+
+  it("lists incidents with admin filters", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Incidents listed successfully",
+        data: [],
+      },
+    });
+
+    const result = await listIncidents({
+      status: "OPEN",
+      storeId: "store-1",
+      staffId: "staff-1",
+      shiftId: "shift-1",
+      closureId: "closure-1",
+      saleId: "sale-1",
+    });
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/incidents", {
+      params: {
+        status: "OPEN",
+        storeId: "store-1",
+        staffId: "staff-1",
+        shiftId: "shift-1",
+        closureId: "closure-1",
+        saleId: "sale-1",
+      },
+    });
+    expect(result).toEqual([]);
+  });
 });
 
 describe("createIncident", () => {

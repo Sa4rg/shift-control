@@ -5,6 +5,13 @@ import type {
   WeeklyAdminReviewStatus,
 } from "@/src/types/api";
 
+export type ListWeeklyReviewsParams = {
+  storeId?: string;
+  staffId?: string;
+  weekStart?: string;
+  status?: WeeklyAdminReviewStatus;
+};
+
 export type CreateWeeklyReviewRequest = {
   storeId: string;
   staffId: string;
@@ -13,12 +20,17 @@ export type CreateWeeklyReviewRequest = {
   note?: string;
 };
 
-export async function listWeeklyReviews(): Promise<WeeklyAdminReview[]> {
-  const response = await apiClient.get<ApiEnvelope<WeeklyAdminReview[]>>(
-    "/api/admin/weekly-reviews"
-  );
+export async function listWeeklyReviews(
+    params: ListWeeklyReviewsParams = {}
+  ): Promise<WeeklyAdminReview[]> {
+    const response = await apiClient.get<ApiEnvelope<WeeklyAdminReview[]>>(
+      "/api/admin/weekly-reviews",
+      {
+        params,
+      }
+    );
 
-  return response.data.data;
+    return response.data.data;
 }
 
 export async function getWeeklyReviewById(

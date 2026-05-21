@@ -1,7 +1,7 @@
 import { AxiosError } from "axios";
 
 import { apiClient } from "@/src/api/client";
-import type { ApiEnvelope, Shift, ShiftType, ShiftClosePreview, CloseShiftRequest, ShiftCloseResult, ShiftClosure } from "@/src/types/api";
+import type { ApiEnvelope, Shift, ShiftType, ShiftClosePreview, CloseShiftRequest, ShiftCloseResult, ShiftClosure, ShiftStatus } from "@/src/types/api";
 
 export type CurrentShiftResult =
   | {
@@ -70,8 +70,20 @@ export async function closeShift(
   return response.data.data;
 }
 
-export async function listShifts(): Promise<Shift[]> {
-  const response = await apiClient.get<ApiEnvelope<Shift[]>>("/api/shifts");
+export type ListShiftsParams = {
+  storeId?: string;
+  staffId?: string;
+  status?: ShiftStatus;
+  from?: string;
+  to?: string;
+};
+
+export async function listShifts(
+  params: ListShiftsParams = {}
+): Promise<Shift[]> {
+  const response = await apiClient.get<ApiEnvelope<Shift[]>>("/api/shifts", {
+    params,
+  });
 
   return response.data.data;
 }

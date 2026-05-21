@@ -4,6 +4,7 @@ import com.shiftcontrol.backend.reviews.dto.CreateWeeklyAdminReviewRequest;
 import com.shiftcontrol.backend.reviews.dto.WeeklyReportResponse;
 import com.shiftcontrol.backend.reviews.dto.WeeklyStaffSummaryResponse;
 import com.shiftcontrol.backend.reviews.model.WeeklyAdminReview;
+import com.shiftcontrol.backend.reviews.model.WeeklyAdminReviewStatus;
 import com.shiftcontrol.backend.reviews.repository.WeeklyAdminReviewRepository;
 import com.shiftcontrol.backend.shared.exception.BusinessException;
 import com.shiftcontrol.backend.shared.exception.NotFoundException;
@@ -126,8 +127,18 @@ public class WeeklyAdminReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<WeeklyAdminReview> listReviews() {
-        return weeklyAdminReviewRepository.findAllByOrderByWeekStartDescCreatedAtDesc();
+    public List<WeeklyAdminReview> listReviews(
+            UUID storeId,
+            UUID staffId,
+            LocalDate weekStart,
+            WeeklyAdminReviewStatus status
+    ) {
+        return weeklyAdminReviewRepository.findWithFilters(
+                storeId,
+                staffId,
+                weekStart != null ? weekStart.toString() : null,
+                status != null ? status.name() : null
+        );
     }
 
     @Transactional(readOnly = true)

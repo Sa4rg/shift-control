@@ -4,15 +4,18 @@ import com.shiftcontrol.backend.shared.response.ApiResponse;
 import com.shiftcontrol.backend.shifts.dto.OpenShiftRequest;
 import com.shiftcontrol.backend.shifts.dto.ShiftResponse;
 import com.shiftcontrol.backend.shifts.dto.ShiftClosePreviewResponse;
+import com.shiftcontrol.backend.shifts.model.ShiftStatus;
 import com.shiftcontrol.backend.shifts.service.ShiftService;
 import com.shiftcontrol.backend.closures.dto.CloseShiftRequest;
 import com.shiftcontrol.backend.closures.dto.ShiftClosureResponse;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.shiftcontrol.backend.users.model.Role;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -81,7 +85,14 @@ public class ShiftController {
     }
 
     @GetMapping
-    public ApiResponse<List<ShiftResponse>> listShifts(Authentication authentication) {
+    public ApiResponse<List<ShiftResponse>> listShifts(
+            Authentication authentication,
+            @RequestParam(required = false) UUID storeId,
+            @RequestParam(required = false) UUID staffId,
+            @RequestParam(required = false) ShiftStatus status,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
         UUID authenticatedUserId = UUID.fromString(authentication.getName());
 
         String authority = authentication.getAuthorities()
@@ -92,7 +103,8 @@ public class ShiftController {
 
         Role authenticatedRole = Role.valueOf(authority.replace("ROLE_", ""));
 
-        List<ShiftResponse> response = shiftService.listShifts(authenticatedUserId, authenticatedRole)
+        List<ShiftResponse> response = shiftService
+                .listShifts(authenticatedUserId, authenticatedRole, storeId, staffId, status, from, to)
                 .stream()
                 .map(ShiftResponse::fromEntity)
                 .toList();

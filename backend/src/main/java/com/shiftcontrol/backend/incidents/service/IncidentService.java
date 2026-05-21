@@ -99,19 +99,22 @@ public class IncidentService {
     }
 
     @Transactional(readOnly = true)
-    public List<Incident> listIncidents(IncidentStatus status, UUID authenticatedUserId, Role authenticatedRole) {
+    public List<Incident> listIncidents(
+            IncidentStatus status,
+            UUID authenticatedUserId,
+            Role authenticatedRole,
+            UUID storeId,
+            UUID filterStaffId,
+            UUID shiftId,
+            UUID closureId,
+            UUID saleId
+    ) {
         if (authenticatedRole == Role.ADMIN) {
-            if (status == null) {
-                return incidentRepository.findAllByOrderByCreatedAtDesc();
-            }
-            return incidentRepository.findByStatusOrderByCreatedAtDesc(status);
+            return incidentRepository.findAdminFiltered(status, storeId, filterStaffId, shiftId, closureId, saleId);
         }
 
         if (authenticatedRole == Role.STAFF) {
-            if (status == null) {
-                return incidentRepository.findByStaffUserOrderByCreatedAtDesc(authenticatedUserId);
-            }
-            return incidentRepository.findByStaffUserAndStatusOrderByCreatedAtDesc(authenticatedUserId, status);
+            return incidentRepository.findStaffFiltered(authenticatedUserId, status, shiftId, closureId, saleId);
         }
 
         throw new BusinessException("Invalid user role");
