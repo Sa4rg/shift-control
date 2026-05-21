@@ -1,4 +1,4 @@
-import { listUsers, createStaff } from "@/src/api/users";
+import { listUsers, createStaff, getUserById } from "@/src/api/users";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -109,6 +109,39 @@ describe("createStaff", () => {
       request
     );
     expect(result.id).toBe("user-2");
+    expect(result.role).toBe("STAFF");
+  });
+});
+
+describe("getUserById", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a user by id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "User found",
+        data: {
+          id: "user-1",
+          fullName: "Sara Staff",
+          username: "sara.staff",
+          email: null,
+          role: "STAFF",
+          storeId: "store-1",
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await getUserById("user-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/admin/users/user-1");
+    expect(result.id).toBe("user-1");
     expect(result.role).toBe("STAFF");
   });
 });

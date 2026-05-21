@@ -36,3 +36,11 @@ export async function createStaff(
 
   return response.data.data;
 }
+
+export async function getUserById(id: string): Promise<AdminUser> {
+  const response = await apiClient.get<ApiEnvelope<AdminUser>>(
+    `/api/admin/users/${id}`
+  );
+
+  return response.data.data;
+}
