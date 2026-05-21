@@ -1,9 +1,9 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Alert } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getStoreById } from "@/src/api/stores";
+import { getStoreById, deactivateStore } from "@/src/api/stores";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
@@ -52,6 +52,11 @@ export default function AdminStoreDetailScreen() {
     errorMessage: null,
   });
 
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(
+    null
+  );
+  const [isDeactivating, setIsDeactivating] = useState(false);
+
   const loadStore = useCallback(async () => {
     if (!storeId) {
       setState({
@@ -84,6 +89,53 @@ export default function AdminStoreDetailScreen() {
       });
     }
   }, [storeId]);
+
+  async function handleDeactivateStore() {
+    if (!storeId || state.status !== "ready" || !state.store.active) {
+        return;
+    }
+
+    setIsDeactivating(true);
+    setActionErrorMessage(null);
+
+    try {
+        const updatedStore = await deactivateStore(storeId);
+
+        setState({
+        status: "ready",
+        store: updatedStore,
+        errorMessage: null,
+        });
+    } catch (error) {
+        setActionErrorMessage(getApiErrorMessage(error));
+    } finally {
+        setIsDeactivating(false);
+    }
+    }
+
+    function confirmDeactivateStore() {
+    if (state.status !== "ready") {
+        return;
+    }
+
+    Alert.alert(
+        "Deactivate store",
+        `Are you sure you want to deactivate ${state.store.name}? This store should not be used for new operations after deactivation.`,
+        [
+        {
+            text: "Cancel",
+            style: "cancel",
+        },
+        {
+            text: "Deactivate",
+            style: "destructive",
+            onPress: () => {
+            void handleDeactivateStore();
+            },
+        },
+        ]
+    );
+    }
 
   useEffect(() => {
     void loadStore();
@@ -156,9 +208,24 @@ export default function AdminStoreDetailScreen() {
           </View>
         ) : null}
 
+        <ErrorMessage message={actionErrorMessage} />
+
         <View style={styles.actions}>
-          <Button title="Refresh" onPress={loadStore} />
-          <Button title="Back" onPress={() => router.back()} />
+        {store.active ? (
+            <Button
+            title="Deactivate store"
+            onPress={confirmDeactivateStore}
+            loading={isDeactivating}
+            disabled={isDeactivating}
+            />
+        ) : null}
+
+        <Button title="Refresh" onPress={loadStore} disabled={isDeactivating} />
+        <Button
+            title="Back"
+            onPress={() => router.back()}
+            disabled={isDeactivating}
+        />
         </View>
       </ScrollView>
     </Screen>

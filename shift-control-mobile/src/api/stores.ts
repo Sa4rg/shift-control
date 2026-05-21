@@ -36,3 +36,11 @@ export async function createStore(request: CreateStoreRequest): Promise<Store> {
 
   return response.data.data;
 }
+
+export async function deactivateStore(id: string): Promise<Store> {
+  const response = await apiClient.patch<ApiEnvelope<Store>>(
+    `/api/stores/${id}/deactivate`
+  );
+
+  return response.data.data;
+}

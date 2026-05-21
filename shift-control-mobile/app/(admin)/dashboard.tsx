@@ -38,6 +38,8 @@ export default function AdminDashboardScreen() {
     errorMessage: null,
   });
 
+  const [includeInactiveStores, setIncludeInactiveStores] = useState(false);
+
   const loadStores = useCallback(async () => {
     setStoresState({
       status: "loading",
@@ -46,7 +48,7 @@ export default function AdminDashboardScreen() {
     });
 
     try {
-      const stores = await listStores();
+      const stores = await listStores({ includeInactive: includeInactiveStores });
 
       setStoresState({
         status: "ready",
@@ -60,7 +62,7 @@ export default function AdminDashboardScreen() {
         errorMessage: getApiErrorMessage(error),
       });
     }
-  }, []);
+  }, [includeInactiveStores]);
 
   useFocusEffect(
     useCallback(() => {
@@ -117,6 +119,32 @@ export default function AdminDashboardScreen() {
               <Text style={styles.refreshLink}>Refresh</Text>
             </Pressable>
           </View>
+
+          <Text style={styles.sectionLabel}>Store visibility</Text>
+          <View style={styles.filterOptions}>
+            <Pressable
+              style={[styles.filterButton, !includeInactiveStores && styles.filterButtonActive]}
+              onPress={() => setIncludeInactiveStores(false)}
+            >
+              <Text style={!includeInactiveStores ? styles.filterButtonTextActive : styles.filterButtonText}>
+                {!includeInactiveStores ? "✓ Active only" : "Active only"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterButton, includeInactiveStores && styles.filterButtonActive]}
+              onPress={() => setIncludeInactiveStores(true)}
+            >
+              <Text style={includeInactiveStores ? styles.filterButtonTextActive : styles.filterButtonText}>
+                {includeInactiveStores ? "✓ Include inactive" : "Include inactive"}
+              </Text>
+            </Pressable>
+          </View>
+
+          {storesState.status === "ready" ? (
+            <Text style={styles.storeSummary}>
+              Active: {storesState.stores.filter((s) => s.active).length} · Inactive: {storesState.stores.filter((s) => !s.active).length}
+            </Text>
+          ) : null}
 
           {storesState.status === "error" ? (
             <>
@@ -229,7 +257,41 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   storeAction: {
-  fontSize: 14,
-  fontWeight: "700",
-},
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555555",
+  },
+  filterOptions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#dddddd",
+    backgroundColor: "#f5f5f5",
+  },
+  filterButtonActive: {
+    borderColor: "#000000",
+    backgroundColor: "#000000",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: "#555555",
+  },
+  filterButtonTextActive: {
+    fontSize: 14,
+    color: "#ffffff",
+    fontWeight: "700",
+  },
+  storeSummary: {
+    fontSize: 14,
+    color: "#666666",
+  },
 });
