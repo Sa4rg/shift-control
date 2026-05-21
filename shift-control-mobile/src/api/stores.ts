@@ -6,6 +6,12 @@ export type ListStoresParams = {
   includeInactive?: boolean;
 };
 
+export type CreateStoreRequest = {
+  name: string;
+  address: string;
+  baseCashAmount: number;
+};
+
 export async function listStores(
   params: ListStoresParams = {}
 ): Promise<Store[]> {
@@ -18,6 +24,15 @@ export async function listStores(
 
 export async function getStoreById(id: string): Promise<Store> {
   const response = await apiClient.get<ApiEnvelope<Store>>(`/api/stores/${id}`);
+
+  return response.data.data;
+}
+
+export async function createStore(request: CreateStoreRequest): Promise<Store> {
+  const response = await apiClient.post<ApiEnvelope<Store>>(
+    "/api/stores",
+    request
+  );
 
   return response.data.data;
 }

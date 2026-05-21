@@ -105,7 +105,9 @@ export default function AdminDashboardScreen() {
 
           <Button
             title="Weekly reviews" onPress={() => router.push("/(admin)/weekly-reviews")}/>
-            
+
+          <Button
+            title="Create store" onPress={() => router.push("/(admin)/stores/new-store")}/>           
         </View>
 
         <View style={styles.card}>

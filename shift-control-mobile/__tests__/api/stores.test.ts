@@ -1,9 +1,10 @@
-import { listStores, getStoreById } from "@/src/api/stores";
+import { listStores, getStoreById, createStore } from "@/src/api/stores";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
   apiClient: {
     get: jest.fn(),
+    post: jest.fn(),
   },
 }));
 
@@ -95,5 +96,42 @@ describe("getStoreById", () => {
     expect(mockedApiClient.get).toHaveBeenCalledWith("/api/stores/store-1");
     expect(result.id).toBe("store-1");
     expect(result.name).toBe("Main Store");
+  });
+});
+
+describe("createStore", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("creates a store", async () => {
+    const request = {
+      name: "New Store",
+      address: "New Street 123",
+      baseCashAmount: 103,
+    };
+
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Store created successfully",
+        data: {
+          id: "store-2",
+          name: "New Store",
+          address: "New Street 123",
+          baseCashAmount: 103,
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await createStore(request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/stores", request);
+    expect(result.id).toBe("store-2");
+    expect(result.active).toBe(true);
   });
 });
