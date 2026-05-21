@@ -44,3 +44,11 @@ export async function getUserById(id: string): Promise<AdminUser> {
 
   return response.data.data;
 }
+
+export async function deactivateUser(id: string): Promise<AdminUser> {
+  const response = await apiClient.patch<ApiEnvelope<AdminUser>>(
+    `/api/admin/users/${id}/deactivate`
+  );
+
+  return response.data.data;
+}

@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Alert } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getStoreById } from "@/src/api/stores";
-import { getUserById } from "@/src/api/users";
+import { getUserById, deactivateUser } from "@/src/api/users";
 import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
@@ -56,6 +56,11 @@ export default function AdminUserDetailScreen() {
     errorMessage: null,
   });
 
+  const [actionErrorMessage, setActionErrorMessage] = useState<string | null>(
+    null
+  );
+  const [isDeactivating, setIsDeactivating] = useState(false);
+
   const loadUser = useCallback(async () => {
     if (!userId) {
       setState({
@@ -102,6 +107,64 @@ export default function AdminUserDetailScreen() {
       });
     }
   }, [userId]);
+
+  async function handleDeactivateUser() {
+    if (!userId || state.status !== "ready" || !state.user.active) {
+      return;
+    }
+
+    setIsDeactivating(true);
+    setActionErrorMessage(null);
+
+    try {
+      const updatedUser = await deactivateUser(userId);
+
+      let store: Store | null = state.store;
+
+      if (updatedUser.storeId) {
+        try {
+          store = await getStoreById(updatedUser.storeId);
+        } catch {
+          store = null;
+        }
+      }
+
+      setState({
+        status: "ready",
+        user: updatedUser,
+        store,
+        errorMessage: null,
+      });
+    } catch (error) {
+      setActionErrorMessage(getApiErrorMessage(error));
+    } finally {
+      setIsDeactivating(false);
+    }
+  }
+
+  function confirmDeactivateUser() {
+    if (state.status !== "ready") {
+      return;
+    }
+
+    Alert.alert(
+      "Deactivate user",
+      `Are you sure you want to deactivate ${state.user.fullName}? This user will not be able to use the app after deactivation.`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Deactivate",
+          style: "destructive",
+          onPress: () => {
+            void handleDeactivateUser();
+          },
+        },
+      ]
+    );
+  }
 
   useEffect(() => {
     void loadUser();
@@ -189,9 +252,24 @@ export default function AdminUserDetailScreen() {
           </View>
         ) : null}
 
+        <ErrorMessage message={actionErrorMessage} />
+
         <View style={styles.actions}>
-          <Button title="Refresh" onPress={loadUser} />
-          <Button title="Back" onPress={() => router.back()} />
+          {user.active ? (
+            <Button
+              title="Deactivate user"
+              onPress={confirmDeactivateUser}
+              loading={isDeactivating}
+              disabled={isDeactivating}
+            />
+          ) : null}
+
+          <Button title="Refresh" onPress={loadUser} disabled={isDeactivating} />
+          <Button
+            title="Back"
+            onPress={() => router.back()}
+            disabled={isDeactivating}
+          />
         </View>
       </ScrollView>
     </Screen>
