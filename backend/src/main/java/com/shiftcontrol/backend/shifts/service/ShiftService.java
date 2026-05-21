@@ -17,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import com.shiftcontrol.backend.closures.dto.CloseShiftRequest;
@@ -124,16 +126,34 @@ public class ShiftService {
     }
 
     @Transactional(readOnly = true)
-    public List<Shift> listShifts(UUID authenticatedUserId, Role authenticatedRole) {
-        if (authenticatedRole == Role.ADMIN) {
-            return shiftRepository.findAllWithDetails();
+    public List<Shift> listShifts(
+            UUID authenticatedUserId,
+            Role authenticatedRole,
+            UUID storeId,
+            UUID filterStaffId,
+            ShiftStatus status,
+            LocalDate from,
+            LocalDate to
+    ) {
+        Instant fromInstant = from != null ? from.atStartOfDay(ZoneOffset.UTC).toInstant() : null;
+        Instant toInstant = to != null ? to.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant() : null;
+
+        UUID effectiveStaffId = authenticatedRole == Role.STAFF ? authenticatedUserId : filterStaffId;
+
+        org.springframework.data.jpa.domain.Specification<com.shiftcontrol.backend.shifts.model.Shift> spec =
+                com.shiftcontrol.backend.shifts.repository.ShiftSpecification
+                        .withFilters(storeId, effectiveStaffId, status, fromInstant, toInstant);
+
+        List<java.util.UUID> ids = shiftRepository.findAll(spec)
+                .stream()
+                .map(com.shiftcontrol.backend.shifts.model.Shift::getId)
+                .toList();
+
+        if (ids.isEmpty()) {
+            return java.util.Collections.emptyList();
         }
 
-        if (authenticatedRole == Role.STAFF) {
-            return shiftRepository.findByStaffIdWithDetails(authenticatedUserId);
-        }
-
-        throw new BusinessException("Invalid user role");
+        return shiftRepository.findAllWithDetailsByIds(ids);
     }
 
     @Transactional

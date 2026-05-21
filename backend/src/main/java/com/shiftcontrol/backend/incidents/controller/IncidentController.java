@@ -51,13 +51,18 @@ public class IncidentController {
     @GetMapping
     public ApiResponse<List<IncidentResponse>> listIncidents(
             Authentication authentication,
-            @RequestParam(required = false) IncidentStatus status
+            @RequestParam(required = false) IncidentStatus status,
+            @RequestParam(required = false) UUID storeId,
+            @RequestParam(required = false) UUID staffId,
+            @RequestParam(required = false) UUID shiftId,
+            @RequestParam(required = false) UUID closureId,
+            @RequestParam(required = false) UUID saleId
     ) {
         UUID authenticatedUserId = UUID.fromString(authentication.getName());
         Role authenticatedRole = extractRole(authentication);
 
         List<IncidentResponse> response = incidentService
-                .listIncidents(status, authenticatedUserId, authenticatedRole)
+                .listIncidents(status, authenticatedUserId, authenticatedRole, storeId, staffId, shiftId, closureId, saleId)
                 .stream()
                 .map(IncidentResponse::fromEntity)
                 .toList();

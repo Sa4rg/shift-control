@@ -405,15 +405,15 @@ class WeeklyAdminReviewServiceTest {
         WeeklyAdminReview review2 = new WeeklyAdminReview();
         List<WeeklyAdminReview> expected = List.of(review1, review2);
 
-        when(weeklyAdminReviewRepository.findAllByOrderByWeekStartDescCreatedAtDesc())
+        when(weeklyAdminReviewRepository.findWithFilters(null, null, null, null))
                 .thenReturn(expected);
 
         // Act
-        List<WeeklyAdminReview> result = weeklyAdminReviewService.listReviews();
+        List<WeeklyAdminReview> result = weeklyAdminReviewService.listReviews(null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(expected);
-        verify(weeklyAdminReviewRepository).findAllByOrderByWeekStartDescCreatedAtDesc();
+        verify(weeklyAdminReviewRepository).findWithFilters(null, null, null, null);
     }
 
     // -------------------------------------------------------------------------

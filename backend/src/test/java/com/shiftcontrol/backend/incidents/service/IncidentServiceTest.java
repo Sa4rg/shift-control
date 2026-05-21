@@ -253,10 +253,10 @@ class IncidentServiceTest {
         UUID adminId = UUID.randomUUID();
         List<Incident> incidents = List.of(new Incident(), new Incident());
 
-        when(incidentRepository.findAllByOrderByCreatedAtDesc()).thenReturn(incidents);
+        when(incidentRepository.findAdminFiltered(null, null, null, null, null, null)).thenReturn(incidents);
 
         // Act
-        List<Incident> result = incidentService.listIncidents(null, adminId, Role.ADMIN);
+        List<Incident> result = incidentService.listIncidents(null, adminId, Role.ADMIN, null, null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(incidents);
@@ -268,10 +268,10 @@ class IncidentServiceTest {
         UUID adminId = UUID.randomUUID();
         List<Incident> incidents = List.of(new Incident());
 
-        when(incidentRepository.findByStatusOrderByCreatedAtDesc(IncidentStatus.OPEN)).thenReturn(incidents);
+        when(incidentRepository.findAdminFiltered(IncidentStatus.OPEN, null, null, null, null, null)).thenReturn(incidents);
 
         // Act
-        List<Incident> result = incidentService.listIncidents(IncidentStatus.OPEN, adminId, Role.ADMIN);
+        List<Incident> result = incidentService.listIncidents(IncidentStatus.OPEN, adminId, Role.ADMIN, null, null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(incidents);
@@ -283,10 +283,10 @@ class IncidentServiceTest {
         UUID staffId = UUID.randomUUID();
         List<Incident> incidents = List.of(new Incident(), new Incident());
 
-        when(incidentRepository.findByStaffUserOrderByCreatedAtDesc(staffId)).thenReturn(incidents);
+        when(incidentRepository.findStaffFiltered(staffId, null, null, null, null)).thenReturn(incidents);
 
         // Act
-        List<Incident> result = incidentService.listIncidents(null, staffId, Role.STAFF);
+        List<Incident> result = incidentService.listIncidents(null, staffId, Role.STAFF, null, null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(incidents);
@@ -298,11 +298,11 @@ class IncidentServiceTest {
         UUID staffId = UUID.randomUUID();
         List<Incident> incidents = List.of(new Incident());
 
-        when(incidentRepository.findByStaffUserAndStatusOrderByCreatedAtDesc(staffId, IncidentStatus.OPEN))
+        when(incidentRepository.findStaffFiltered(staffId, IncidentStatus.OPEN, null, null, null))
                 .thenReturn(incidents);
 
         // Act
-        List<Incident> result = incidentService.listIncidents(IncidentStatus.OPEN, staffId, Role.STAFF);
+        List<Incident> result = incidentService.listIncidents(IncidentStatus.OPEN, staffId, Role.STAFF, null, null, null, null, null);
 
         // Assert
         assertThat(result).isSameAs(incidents);

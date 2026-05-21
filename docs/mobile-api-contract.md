@@ -264,7 +264,16 @@ See [Section 4 — Close Shift Flow](#4-close-shift-flow).
 
 `GET /api/incidents` · STAFF (own only) or ADMIN (all)
 
-Optional: `?status=OPEN` | `?status=RESOLVED`
+| Param | Type | Roles | Description |
+|---|---|---|---|
+| `status` | `OPEN` \| `RESOLVED` | ALL | Filter by incident status |
+| `storeId` | UUID | ADMIN only | Filter by store (STAFF ignored) |
+| `staffId` | UUID | ADMIN only | Filter by staff member (STAFF ignored) |
+| `shiftId` | UUID | ALL | Filter by shift |
+| `closureId` | UUID | ALL | Filter by closure |
+| `saleId` | UUID | ALL | Filter by sale |
+
+All params are optional. STAFF callers always see only their own incidents regardless of any filter param.
 
 ---
 
@@ -463,11 +472,33 @@ Login via `POST /api/auth/admin/login`. `user.role = "ADMIN"`, `user.storeId = n
 | `GET /api/admin/reports/daily` | ADMIN | `?storeId=<UUID>&date=2026-05-15` |
 | `GET /api/admin/reports/weekly` | ADMIN | `?storeId=<UUID>&weekStart=2026-05-11` |
 | `GET /api/admin/reports/monthly` | ADMIN | `?storeId=<UUID>&month=2026-05` |
-| `GET /api/admin/weekly-reviews` | ADMIN | lists all reviews |
+| `GET /api/admin/weekly-reviews` | ADMIN | optional filters — see below |
 | `POST /api/admin/weekly-reviews` | ADMIN | body: `storeId`, `staffId`, `weekStartDate`, `weekEndDate`, `status`, `note` |
+| `GET /api/shifts` | ADMIN | optional filters — see below |
 | `GET /api/sales?shiftId=<UUID>` | ADMIN | no ownership restriction |
 
 `status` for weekly review: `REVIEWED_OK` | `REVIEWED_WITH_INCIDENT`.
+
+#### GET /api/admin/weekly-reviews — optional query params
+
+| Param | Type | Description |
+|---|---|---|
+| `storeId` | UUID | Filter to one store |
+| `staffId` | UUID | Filter to one staff member |
+| `weekStart` | ISO date (`YYYY-MM-DD`) | Exact match on week start date |
+| `status` | `REVIEWED_OK` \| `REVIEWED_WITH_INCIDENT` | Filter by review status |
+
+#### GET /api/shifts — optional query params (ADMIN)
+
+| Param | Type | Description |
+|---|---|---|
+| `storeId` | UUID | Filter to one store |
+| `staffId` | UUID | Filter to one staff member |
+| `status` | `OPEN` \| `CLOSED` | Filter by shift status |
+| `from` | ISO date (`YYYY-MM-DD`) | Inclusive start of date range (by `openedAt`) |
+| `to` | ISO date (`YYYY-MM-DD`) | Inclusive end of date range (by `openedAt`) |
+
+All params are optional. STAFF callers are always scoped to their own shifts regardless of `staffId` param.
 
 ---
 
