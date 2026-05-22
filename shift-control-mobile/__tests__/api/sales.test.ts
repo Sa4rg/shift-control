@@ -214,6 +214,88 @@ describe("createSale", () => {
     expect(result.id).toBe("sale-2");
     expect(result.payments[0].method).toBe("GLOVO_ONLINE");
   });
+
+  it("creates a sale with a manual discount", async () => {
+    const request = {
+      items: [
+        {
+          productName: "Coffee",
+          quantity: 3,
+          unitPrice: 10,
+        },
+      ],
+      discounts: [
+        {
+          reason: "MANUAL_DISCOUNT" as const,
+          amount: 5,
+          note: "Manager approved",
+        },
+      ],
+      payments: [
+        {
+          method: "CASH" as const,
+          amount: 25,
+        },
+      ],
+      invoiceStatus: "PENDING" as const,
+    };
+
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sale created successfully",
+        data: {
+          id: "sale-3",
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          storeId: "store-1",
+          status: "ACTIVE",
+          invoiceStatus: "PENDING",
+          subtotalAmount: 30,
+          discountTotalAmount: 5,
+          finalTotalAmount: 25,
+          note: null,
+          items: [
+            {
+              id: "item-3",
+              productName: "Coffee",
+              quantity: 3,
+              unitPrice: 10,
+              lineTotal: 30,
+            },
+          ],
+          discounts: [
+            {
+              id: "discount-1",
+              type: "FIXED_AMOUNT",
+              reason: "MANUAL_DISCOUNT",
+              value: 5,
+              amountApplied: 5,
+              note: "Manager approved",
+            },
+          ],
+          payments: [
+            {
+              id: "payment-3",
+              method: "CASH",
+              amount: 25,
+            },
+          ],
+          createdAt: "2026-05-16T09:00:00Z",
+          updatedAt: "2026-05-16T09:00:00Z",
+          cancelledAt: null,
+          cancelledReason: null,
+        },
+      },
+    });
+
+    const result = await createSale(request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/sales", request);
+    expect(result.discountTotalAmount).toBe(5);
+    expect(result.finalTotalAmount).toBe(25);
+    expect(result.discounts[0].reason).toBe("MANUAL_DISCOUNT");
+  });
 });
 
 describe("getSaleById", () => {

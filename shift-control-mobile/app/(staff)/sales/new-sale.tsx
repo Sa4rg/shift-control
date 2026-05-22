@@ -15,14 +15,27 @@ import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { Screen } from "@/src/components/Screen";
 import { TextField } from "@/src/components/TextField";
-import type { PaymentMethod } from "@/src/types/api";
+import type {
+  CreateSaleDiscountRequest,
+  DiscountReason,
+  PaymentMethod,
+} from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
+
+type DiscountSelection = "NONE" | DiscountReason;
 
 const PAYMENT_METHODS: PaymentMethod[] = [
   "CASH",
   "MB",
   "GLOVO_ONLINE",
   "GLOVO_CASH",
+];
+
+const DISCOUNT_OPTIONS: DiscountSelection[] = [
+  "NONE",
+  "LOYALTY_CARD",
+  "VOUCHER_10_PERCENT",
+  "MANUAL_DISCOUNT",
 ];
 
 const PAYMENT_METHOD_HELP: Record<PaymentMethod, string> = {
@@ -32,6 +45,16 @@ const PAYMENT_METHOD_HELP: Record<PaymentMethod, string> = {
     "Glovo order already paid through the Glovo platform. It does not affect physical cash or MB terminal totals.",
   GLOVO_CASH:
     "Glovo order paid in cash to staff. It affects physical cash and Glovo totals.",
+};
+
+const DISCOUNT_HELP: Record<DiscountSelection, string> = {
+  NONE: "No discount will be applied.",
+  LOYALTY_CARD:
+    "Applies a fixed €20.00 discount. Requires subtotal of at least €25.00.",
+  VOUCHER_10_PERCENT:
+    "Applies a 10% discount over the original subtotal.",
+  MANUAL_DISCOUNT:
+    "Applies a custom fixed amount. Requires amount and approval note.",
 };
 
 function parsePositiveNumber(value: string): number | null {
@@ -55,11 +78,98 @@ function parsePositiveInteger(value: string): number | null {
   return parsed;
 }
 
+function roundMoney(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function getDiscountLabel(discount: DiscountSelection): string {
+  switch (discount) {
+    case "NONE":
+      return "No discount";
+    case "LOYALTY_CARD":
+      return "Loyalty card";
+    case "VOUCHER_10_PERCENT":
+      return "Voucher 10%";
+    case "MANUAL_DISCOUNT":
+      return "Manual discount";
+  }
+}
+
+function calculateDiscountAmount({
+  subtotal,
+  discount,
+  manualDiscountAmount,
+}: {
+  subtotal: number | null;
+  discount: DiscountSelection;
+  manualDiscountAmount: number | null;
+}): number | null {
+  if (subtotal === null) {
+    return null;
+  }
+
+  if (discount === "NONE") {
+    return 0;
+  }
+
+  if (discount === "LOYALTY_CARD") {
+    return subtotal >= 25 ? 20 : null;
+  }
+
+  if (discount === "VOUCHER_10_PERCENT") {
+    return roundMoney(subtotal * 0.1);
+  }
+
+  if (manualDiscountAmount === null) {
+    return null;
+  }
+
+  return manualDiscountAmount;
+}
+
+function buildDiscounts({
+  discount,
+  manualDiscountAmount,
+  manualDiscountNote,
+}: {
+  discount: DiscountSelection;
+  manualDiscountAmount: number | null;
+  manualDiscountNote: string;
+}): CreateSaleDiscountRequest[] {
+  if (discount === "NONE") {
+    return [];
+  }
+
+  if (discount === "LOYALTY_CARD") {
+    return [{ reason: "LOYALTY_CARD" }];
+  }
+
+  if (discount === "VOUCHER_10_PERCENT") {
+    return [{ reason: "VOUCHER_10_PERCENT" }];
+  }
+
+  if (manualDiscountAmount === null) {
+    return [];
+  }
+
+  return [
+    {
+      reason: "MANUAL_DISCOUNT",
+      amount: manualDiscountAmount,
+      note: manualDiscountNote.trim(),
+    },
+  ];
+}
+
 export default function NewSaleScreen() {
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [selectedDiscount, setSelectedDiscount] =
+    useState<DiscountSelection>("NONE");
+  const [manualDiscountAmount, setManualDiscountAmount] = useState("");
+  const [manualDiscountNote, setManualDiscountNote] = useState("");
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,25 +178,67 @@ export default function NewSaleScreen() {
     () => parsePositiveInteger(quantity),
     [quantity]
   );
+
   const unitPriceNumber = useMemo(
     () => parsePositiveNumber(unitPrice),
     [unitPrice]
   );
 
-  const finalTotal =
+  const manualDiscountAmountNumber = useMemo(
+    () => parsePositiveNumber(manualDiscountAmount),
+    [manualDiscountAmount]
+  );
+
+  const subtotal =
     quantityNumber !== null && unitPriceNumber !== null
-      ? quantityNumber * unitPriceNumber
+      ? roundMoney(quantityNumber * unitPriceNumber)
       : null;
+
+  const discountAmount = calculateDiscountAmount({
+    subtotal,
+    discount: selectedDiscount,
+    manualDiscountAmount: manualDiscountAmountNumber,
+  });
+
+  const finalTotal =
+    subtotal !== null && discountAmount !== null
+      ? roundMoney(subtotal - discountAmount)
+      : null;
+
+  const isLoyaltyDiscountAllowed =
+    selectedDiscount !== "LOYALTY_CARD" ||
+    (subtotal !== null && subtotal >= 25);
+
+  const isManualDiscountValid =
+    selectedDiscount !== "MANUAL_DISCOUNT" ||
+    (manualDiscountAmountNumber !== null &&
+      subtotal !== null &&
+      manualDiscountAmountNumber < subtotal &&
+      manualDiscountNote.trim().length > 0);
+
+  const isDiscountValid =
+    discountAmount !== null &&
+    discountAmount >= 0 &&
+    isLoyaltyDiscountAllowed &&
+    isManualDiscountValid;
 
   const canSubmit =
     productName.trim().length > 0 &&
     quantityNumber !== null &&
     unitPriceNumber !== null &&
+    subtotal !== null &&
+    isDiscountValid &&
     finalTotal !== null &&
-    finalTotal > 0;
+    finalTotal > 0 &&
+    !isSubmitting;
 
   async function handleSubmit() {
-    if (!canSubmit || isSubmitting || finalTotal === null) {
+    if (
+      !canSubmit ||
+      quantityNumber === null ||
+      unitPriceNumber === null ||
+      finalTotal === null
+    ) {
       return;
     }
 
@@ -102,7 +254,11 @@ export default function NewSaleScreen() {
             unitPrice: unitPriceNumber,
           },
         ],
-        discounts: [],
+        discounts: buildDiscounts({
+          discount: selectedDiscount,
+          manualDiscountAmount: manualDiscountAmountNumber,
+          manualDiscountNote,
+        }),
         payments: [
           {
             method: paymentMethod,
@@ -131,7 +287,7 @@ export default function NewSaleScreen() {
           <View style={styles.header}>
             <Text style={styles.title}>New sale</Text>
             <Text style={styles.subtitle}>
-              Create a simple paid sale for the current shift.
+              Create a paid sale for the current shift.
             </Text>
           </View>
 
@@ -164,6 +320,115 @@ export default function NewSaleScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.cardTitle}>Discount</Text>
+
+            <View style={styles.options}>
+              {DISCOUNT_OPTIONS.map((discount) => {
+                const isDisabled =
+                  isSubmitting ||
+                  (discount === "LOYALTY_CARD" &&
+                    subtotal !== null &&
+                    subtotal < 25);
+
+                return (
+                  <Button
+                    key={discount}
+                    title={
+                      discount === selectedDiscount
+                        ? `✓ ${getDiscountLabel(discount)}`
+                        : getDiscountLabel(discount)
+                    }
+                    onPress={() => setSelectedDiscount(discount)}
+                    disabled={isDisabled}
+                  />
+                );
+              })}
+            </View>
+
+            <Text style={styles.helpText}>
+              {DISCOUNT_HELP[selectedDiscount]}
+            </Text>
+
+            {selectedDiscount === "LOYALTY_CARD" &&
+            subtotal !== null &&
+            subtotal < 25 ? (
+              <Text style={styles.warningText}>
+                Loyalty card discount requires subtotal of at least{" "}
+                {formatMoney(25)}.
+              </Text>
+            ) : null}
+
+            {selectedDiscount === "MANUAL_DISCOUNT" ? (
+              <>
+                <TextField
+                  label="Manual discount amount"
+                  value={manualDiscountAmount}
+                  onChangeText={setManualDiscountAmount}
+                  placeholder="5.00"
+                  keyboardType="decimal-pad"
+                />
+
+                {manualDiscountAmount.length > 0 &&
+                manualDiscountAmountNumber === null ? (
+                  <Text style={styles.warningText}>
+                    Manual discount amount must be greater than zero.
+                  </Text>
+                ) : null}
+
+                {manualDiscountAmountNumber !== null &&
+                subtotal !== null &&
+                manualDiscountAmountNumber >= subtotal ? (
+                  <Text style={styles.warningText}>
+                    Manual discount must be lower than subtotal.
+                  </Text>
+                ) : null}
+
+                <TextField
+                  label="Manual discount note"
+                  value={manualDiscountNote}
+                  onChangeText={setManualDiscountNote}
+                  placeholder="Example: Manager approved"
+                  autoCapitalize="sentences"
+                />
+
+                {manualDiscountAmount.length > 0 &&
+                manualDiscountNote.trim().length === 0 ? (
+                  <Text style={styles.warningText}>
+                    Manual discount requires a note.
+                  </Text>
+                ) : null}
+              </>
+            ) : null}
+
+            <View style={styles.totalBox}>
+              <Text style={styles.totalLabel}>Subtotal</Text>
+              <Text style={styles.totalValue}>
+                {subtotal !== null ? formatMoney(subtotal) : "—"}
+              </Text>
+            </View>
+
+            <View style={styles.totalBox}>
+              <Text style={styles.totalLabel}>Discount</Text>
+              <Text style={styles.totalValue}>
+                {discountAmount !== null ? formatMoney(discountAmount) : "—"}
+              </Text>
+            </View>
+
+            <View style={styles.totalBox}>
+              <Text style={styles.totalLabel}>Final total</Text>
+              <Text style={styles.totalValue}>
+                {finalTotal !== null ? formatMoney(finalTotal) : "—"}
+              </Text>
+            </View>
+
+            {finalTotal !== null && finalTotal <= 0 ? (
+              <Text style={styles.warningText}>
+                Final total must be greater than zero.
+              </Text>
+            ) : null}
+          </View>
+
+          <View style={styles.card}>
             <Text style={styles.cardTitle}>Payment method</Text>
 
             <View style={styles.options}>
@@ -177,12 +442,16 @@ export default function NewSaleScreen() {
               ))}
             </View>
 
-            <Text style={styles.helpText}>{PAYMENT_METHOD_HELP[paymentMethod]}</Text>
+            <Text style={styles.helpText}>
+              {PAYMENT_METHOD_HELP[paymentMethod]}
+            </Text>
 
             <View style={styles.totalBox}>
               <Text style={styles.totalLabel}>Payment amount</Text>
               <Text style={styles.totalValue}>
-                {finalTotal !== null ? formatMoney(finalTotal) : "—"}
+                {finalTotal !== null && finalTotal > 0
+                  ? formatMoney(finalTotal)
+                  : "—"}
               </Text>
             </View>
           </View>
@@ -259,6 +528,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#555555",
+  },
+  warningText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#7a5200",
   },
   totalBox: {
     gap: 4,
