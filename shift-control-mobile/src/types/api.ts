@@ -65,6 +65,7 @@ export type SaleDiscount = {
   reason: DiscountReason;
   value: number;
   calculatedAmount: number;
+  amountApplied: number;
   note: string | null;
 };
 

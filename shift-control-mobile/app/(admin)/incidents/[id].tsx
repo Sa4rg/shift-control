@@ -239,7 +239,7 @@ export default function AdminIncidentDetailScreen() {
                 <Button
                   title="View shift"
                   onPress={() =>
-                    router.push(`/(staff)/history/${incident.shiftId}`)
+                    router.push(`/(admin)/shifts/${incident.shiftId}`)
                   }
                 />
               ) : null}
@@ -247,7 +247,7 @@ export default function AdminIncidentDetailScreen() {
               {incident.saleId ? (
                 <Button
                   title="View sale"
-                  onPress={() => router.push(`/(staff)/sales/${incident.saleId}`)}
+                  onPress={() => router.push(`/(admin)/sales/${incident.saleId}`)}
                 />
               ) : null}
             </>

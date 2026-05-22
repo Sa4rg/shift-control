@@ -288,7 +288,7 @@ export default function AdminShiftDetailScreen() {
                 <Pressable
                   key={sale.id}
                   style={styles.saleRow}
-                  onPress={() => router.push(`/(staff)/sales/${sale.id}`)}
+                  onPress={() => router.push(`/(admin)/sales/${sale.id}`)}
                 >
                   <View style={styles.saleMain}>
                     <Text style={styles.saleTitle}>
