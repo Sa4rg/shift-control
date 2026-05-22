@@ -23,6 +23,8 @@ import type {
 import { formatMoney } from "@/src/utils/money";
 
 type DiscountSelection = "NONE" | DiscountReason;
+type PaymentMode = "SINGLE" | "SPLIT";
+type SplitPaymentVariant = "REGISTER_METHODS" | "GLOVO_ONLINE_ONLY";
 
 const PAYMENT_METHODS: PaymentMethod[] = [
   "CASH",
@@ -30,6 +32,8 @@ const PAYMENT_METHODS: PaymentMethod[] = [
   "GLOVO_ONLINE",
   "GLOVO_CASH",
 ];
+
+const SPLIT_REGISTER_METHODS: PaymentMethod[] = ["CASH", "MB", "GLOVO_CASH"];
 
 const DISCOUNT_OPTIONS: DiscountSelection[] = [
   "NONE",
@@ -66,6 +70,25 @@ function parsePositiveNumber(value: string): number | null {
   }
 
   return parsed;
+}
+
+function parseOptionalPositiveNumber(value: string): {
+  amount: number | null;
+  isValid: boolean;
+} {
+  if (value.trim().length === 0) {
+    return {
+      amount: null,
+      isValid: true,
+    };
+  }
+
+  const parsed = parsePositiveNumber(value);
+
+  return {
+    amount: parsed,
+    isValid: parsed !== null,
+  };
 }
 
 function parsePositiveInteger(value: string): number | null {
@@ -166,6 +189,12 @@ export default function NewSaleScreen() {
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>("SINGLE");
+  const [splitPaymentVariant, setSplitPaymentVariant] =
+    useState<SplitPaymentVariant>("REGISTER_METHODS");
+  const [splitCashAmount, setSplitCashAmount] = useState("");
+  const [splitMbAmount, setSplitMbAmount] = useState("");
+  const [splitGlovoCashAmount, setSplitGlovoCashAmount] = useState("");
   const [selectedDiscount, setSelectedDiscount] =
     useState<DiscountSelection>("NONE");
   const [manualDiscountAmount, setManualDiscountAmount] = useState("");
@@ -189,6 +218,21 @@ export default function NewSaleScreen() {
     [manualDiscountAmount]
   );
 
+  const splitCash = useMemo(
+    () => parseOptionalPositiveNumber(splitCashAmount),
+    [splitCashAmount]
+  );
+
+  const splitMb = useMemo(
+    () => parseOptionalPositiveNumber(splitMbAmount),
+    [splitMbAmount]
+  );
+
+  const splitGlovoCash = useMemo(
+    () => parseOptionalPositiveNumber(splitGlovoCashAmount),
+    [splitGlovoCashAmount]
+  );
+
   const subtotal =
     quantityNumber !== null && unitPriceNumber !== null
       ? roundMoney(quantityNumber * unitPriceNumber)
@@ -204,6 +248,25 @@ export default function NewSaleScreen() {
     subtotal !== null && discountAmount !== null
       ? roundMoney(subtotal - discountAmount)
       : null;
+
+  const splitPaymentTotal = roundMoney(
+    (splitCash.amount ?? 0) +
+      (splitMb.amount ?? 0) +
+      (splitGlovoCash.amount ?? 0)
+  );
+
+  const splitRemaining =
+    finalTotal !== null ? roundMoney(finalTotal - splitPaymentTotal) : null;
+
+  const isSplitPaymentAmountValid =
+    splitCash.isValid && splitMb.isValid && splitGlovoCash.isValid;
+
+  const isSplitPaymentTotalValid =
+    paymentMode === "SINGLE" ||
+    splitPaymentVariant === "GLOVO_ONLINE_ONLY" ||
+    (finalTotal !== null &&
+      splitPaymentTotal > 0 &&
+      roundMoney(splitPaymentTotal) === roundMoney(finalTotal));
 
   const isLoyaltyDiscountAllowed =
     selectedDiscount !== "LOYALTY_CARD" ||
@@ -230,7 +293,56 @@ export default function NewSaleScreen() {
     isDiscountValid &&
     finalTotal !== null &&
     finalTotal > 0 &&
+    isSplitPaymentAmountValid &&
+    isSplitPaymentTotalValid &&
     !isSubmitting;
+
+  function buildPayments(finalAmount: number) {
+    if (paymentMode === "SINGLE") {
+      return [
+        {
+          method: paymentMethod,
+          amount: finalAmount,
+        },
+      ];
+    }
+
+    if (splitPaymentVariant === "GLOVO_ONLINE_ONLY") {
+      return [
+        {
+          method: "GLOVO_ONLINE" as const,
+          amount: finalAmount,
+        },
+      ];
+    }
+
+    return [
+      {
+        method: "CASH" as const,
+        amount: splitCash.amount,
+      },
+      {
+        method: "MB" as const,
+        amount: splitMb.amount,
+      },
+      {
+        method: "GLOVO_CASH" as const,
+        amount: splitGlovoCash.amount,
+      },
+    ]
+      .filter(
+        (
+          payment
+        ): payment is {
+          method: "CASH" | "MB" | "GLOVO_CASH";
+          amount: number;
+        } => payment.amount !== null && payment.amount > 0
+      )
+      .map((payment) => ({
+        method: payment.method,
+        amount: roundMoney(payment.amount),
+      }));
+  }
 
   async function handleSubmit() {
     if (
@@ -259,12 +371,7 @@ export default function NewSaleScreen() {
           manualDiscountAmount: manualDiscountAmountNumber,
           manualDiscountNote,
         }),
-        payments: [
-          {
-            method: paymentMethod,
-            amount: finalTotal,
-          },
-        ],
+        payments: buildPayments(finalTotal),
         invoiceStatus: "PENDING",
         note: note.trim().length > 0 ? note.trim() : undefined,
       });
@@ -429,31 +536,171 @@ export default function NewSaleScreen() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Payment method</Text>
+            <Text style={styles.cardTitle}>Payment</Text>
 
             <View style={styles.options}>
-              {PAYMENT_METHODS.map((method) => (
-                <Button
-                  key={method}
-                  title={method === paymentMethod ? `✓ ${method}` : method}
-                  onPress={() => setPaymentMethod(method)}
-                  disabled={isSubmitting}
-                />
-              ))}
+              <Button
+                title={
+                  paymentMode === "SINGLE" ? "✓ Single payment" : "Single payment"
+                }
+                onPress={() => setPaymentMode("SINGLE")}
+                disabled={isSubmitting}
+              />
+              <Button
+                title={
+                  paymentMode === "SPLIT" ? "✓ Split payment" : "Split payment"
+                }
+                onPress={() => setPaymentMode("SPLIT")}
+                disabled={isSubmitting}
+              />
             </View>
 
-            <Text style={styles.helpText}>
-              {PAYMENT_METHOD_HELP[paymentMethod]}
-            </Text>
+            {paymentMode === "SINGLE" ? (
+              <>
+                <Text style={styles.cardSubtitle}>Payment method</Text>
 
-            <View style={styles.totalBox}>
-              <Text style={styles.totalLabel}>Payment amount</Text>
-              <Text style={styles.totalValue}>
-                {finalTotal !== null && finalTotal > 0
-                  ? formatMoney(finalTotal)
-                  : "—"}
-              </Text>
-            </View>
+                <View style={styles.options}>
+                  {PAYMENT_METHODS.map((method) => (
+                    <Button
+                      key={method}
+                      title={method === paymentMethod ? `✓ ${method}` : method}
+                      onPress={() => setPaymentMethod(method)}
+                      disabled={isSubmitting}
+                    />
+                  ))}
+                </View>
+
+                <Text style={styles.helpText}>
+                  {PAYMENT_METHOD_HELP[paymentMethod]}
+                </Text>
+
+                <View style={styles.totalBox}>
+                  <Text style={styles.totalLabel}>Payment amount</Text>
+                  <Text style={styles.totalValue}>
+                    {finalTotal !== null && finalTotal > 0
+                      ? formatMoney(finalTotal)
+                      : "—"}
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.cardSubtitle}>Split type</Text>
+
+                <View style={styles.options}>
+                  <Button
+                    title={
+                      splitPaymentVariant === "REGISTER_METHODS"
+                        ? "✓ Cash / MB / Glovo cash"
+                        : "Cash / MB / Glovo cash"
+                    }
+                    onPress={() => setSplitPaymentVariant("REGISTER_METHODS")}
+                    disabled={isSubmitting}
+                  />
+                  <Button
+                    title={
+                      splitPaymentVariant === "GLOVO_ONLINE_ONLY"
+                        ? "✓ Glovo online only"
+                        : "Glovo online only"
+                    }
+                    onPress={() => setSplitPaymentVariant("GLOVO_ONLINE_ONLY")}
+                    disabled={isSubmitting}
+                  />
+                </View>
+
+                {splitPaymentVariant === "GLOVO_ONLINE_ONLY" ? (
+                  <>
+                    <Text style={styles.helpText}>
+                      Glovo online is not combined with register payments. The
+                      full final total will be assigned to GLOVO_ONLINE.
+                    </Text>
+
+                    <View style={styles.totalBox}>
+                      <Text style={styles.totalLabel}>GLOVO_ONLINE amount</Text>
+                      <Text style={styles.totalValue}>
+                        {finalTotal !== null && finalTotal > 0
+                          ? formatMoney(finalTotal)
+                          : "—"}
+                      </Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.helpText}>
+                      Enter the amount received by each method. Leave unused
+                      methods empty.
+                    </Text>
+
+                    <TextField
+                      label="CASH amount"
+                      value={splitCashAmount}
+                      onChangeText={setSplitCashAmount}
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                    />
+
+                    {splitCashAmount.length > 0 && !splitCash.isValid ? (
+                      <Text style={styles.warningText}>
+                        CASH amount must be greater than zero or empty.
+                      </Text>
+                    ) : null}
+
+                    <TextField
+                      label="MB amount"
+                      value={splitMbAmount}
+                      onChangeText={setSplitMbAmount}
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                    />
+
+                    {splitMbAmount.length > 0 && !splitMb.isValid ? (
+                      <Text style={styles.warningText}>
+                        MB amount must be greater than zero or empty.
+                      </Text>
+                    ) : null}
+
+                    <TextField
+                      label="GLOVO_CASH amount"
+                      value={splitGlovoCashAmount}
+                      onChangeText={setSplitGlovoCashAmount}
+                      placeholder="0.00"
+                      keyboardType="decimal-pad"
+                    />
+
+                    {splitGlovoCashAmount.length > 0 &&
+                    !splitGlovoCash.isValid ? (
+                      <Text style={styles.warningText}>
+                        GLOVO_CASH amount must be greater than zero or empty.
+                      </Text>
+                    ) : null}
+
+                    <View style={styles.totalBox}>
+                      <Text style={styles.totalLabel}>Split total</Text>
+                      <Text style={styles.totalValue}>
+                        {formatMoney(splitPaymentTotal)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.totalBox}>
+                      <Text style={styles.totalLabel}>Remaining</Text>
+                      <Text style={styles.totalValue}>
+                        {splitRemaining !== null
+                          ? formatMoney(splitRemaining)
+                          : "—"}
+                      </Text>
+                    </View>
+
+                    {finalTotal !== null &&
+                    splitRemaining !== null &&
+                    splitRemaining !== 0 ? (
+                      <Text style={styles.warningText}>
+                        Split payments must match the final total exactly.
+                      </Text>
+                    ) : null}
+                  </>
+                )}
+              </>
+            )}
           </View>
 
           <View style={styles.card}>
@@ -519,6 +766,10 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 20,
+    fontWeight: "700",
+  },
+  cardSubtitle: {
+    fontSize: 16,
     fontWeight: "700",
   },
   options: {
