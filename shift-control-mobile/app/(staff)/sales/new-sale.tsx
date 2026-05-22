@@ -15,174 +15,28 @@ import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { Screen } from "@/src/components/Screen";
 import { TextField } from "@/src/components/TextField";
+import {
+  buildDiscounts,
+  calculateDiscountAmount,
+  parseOptionalPositiveNumber,
+  parsePositiveInteger,
+  parsePositiveNumber,
+  roundMoney,
+} from "@/src/features/staff/sales/newSaleCalculations";
+import {
+  DISCOUNT_HELP,
+  DISCOUNT_OPTIONS,
+  getDiscountLabel,
+  PAYMENT_METHOD_HELP,
+  PAYMENT_METHODS,
+} from "@/src/features/staff/sales/newSaleOptions";
 import type {
-  CreateSaleDiscountRequest,
-  DiscountReason,
-  PaymentMethod,
-} from "@/src/types/api";
+  DiscountSelection,
+  PaymentMode,
+  SplitPaymentVariant,
+} from "@/src/features/staff/sales/newSaleTypes";
+import type { PaymentMethod } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
-
-type DiscountSelection = "NONE" | DiscountReason;
-type PaymentMode = "SINGLE" | "SPLIT";
-type SplitPaymentVariant = "REGISTER_METHODS" | "GLOVO_ONLINE_ONLY";
-
-const PAYMENT_METHODS: PaymentMethod[] = [
-  "CASH",
-  "MB",
-  "GLOVO_ONLINE",
-  "GLOVO_CASH",
-];
-
-const SPLIT_REGISTER_METHODS: PaymentMethod[] = ["CASH", "MB", "GLOVO_CASH"];
-
-const DISCOUNT_OPTIONS: DiscountSelection[] = [
-  "NONE",
-  "LOYALTY_CARD",
-  "VOUCHER_10_PERCENT",
-  "MANUAL_DISCOUNT",
-];
-
-const PAYMENT_METHOD_HELP: Record<PaymentMethod, string> = {
-  CASH: "Cash received directly in the register.",
-  MB: "Card terminal payment.",
-  GLOVO_ONLINE:
-    "Glovo order already paid through the Glovo platform. It does not affect physical cash or MB terminal totals.",
-  GLOVO_CASH:
-    "Glovo order paid in cash to staff. It affects physical cash and Glovo totals.",
-};
-
-const DISCOUNT_HELP: Record<DiscountSelection, string> = {
-  NONE: "No discount will be applied.",
-  LOYALTY_CARD:
-    "Applies a fixed €20.00 discount. Requires subtotal of at least €25.00.",
-  VOUCHER_10_PERCENT:
-    "Applies a 10% discount over the original subtotal.",
-  MANUAL_DISCOUNT:
-    "Applies a custom fixed amount. Requires amount and approval note.",
-};
-
-function parsePositiveNumber(value: string): number | null {
-  const normalized = value.replace(",", ".").trim();
-  const parsed = Number(normalized);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function parseOptionalPositiveNumber(value: string): {
-  amount: number | null;
-  isValid: boolean;
-} {
-  if (value.trim().length === 0) {
-    return {
-      amount: null,
-      isValid: true,
-    };
-  }
-
-  const parsed = parsePositiveNumber(value);
-
-  return {
-    amount: parsed,
-    isValid: parsed !== null,
-  };
-}
-
-function parsePositiveInteger(value: string): number | null {
-  const parsed = Number(value.trim());
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return null;
-  }
-
-  return parsed;
-}
-
-function roundMoney(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
-
-function getDiscountLabel(discount: DiscountSelection): string {
-  switch (discount) {
-    case "NONE":
-      return "No discount";
-    case "LOYALTY_CARD":
-      return "Loyalty card";
-    case "VOUCHER_10_PERCENT":
-      return "Voucher 10%";
-    case "MANUAL_DISCOUNT":
-      return "Manual discount";
-  }
-}
-
-function calculateDiscountAmount({
-  subtotal,
-  discount,
-  manualDiscountAmount,
-}: {
-  subtotal: number | null;
-  discount: DiscountSelection;
-  manualDiscountAmount: number | null;
-}): number | null {
-  if (subtotal === null) {
-    return null;
-  }
-
-  if (discount === "NONE") {
-    return 0;
-  }
-
-  if (discount === "LOYALTY_CARD") {
-    return subtotal >= 25 ? 20 : null;
-  }
-
-  if (discount === "VOUCHER_10_PERCENT") {
-    return roundMoney(subtotal * 0.1);
-  }
-
-  if (manualDiscountAmount === null) {
-    return null;
-  }
-
-  return manualDiscountAmount;
-}
-
-function buildDiscounts({
-  discount,
-  manualDiscountAmount,
-  manualDiscountNote,
-}: {
-  discount: DiscountSelection;
-  manualDiscountAmount: number | null;
-  manualDiscountNote: string;
-}): CreateSaleDiscountRequest[] {
-  if (discount === "NONE") {
-    return [];
-  }
-
-  if (discount === "LOYALTY_CARD") {
-    return [{ reason: "LOYALTY_CARD" }];
-  }
-
-  if (discount === "VOUCHER_10_PERCENT") {
-    return [{ reason: "VOUCHER_10_PERCENT" }];
-  }
-
-  if (manualDiscountAmount === null) {
-    return [];
-  }
-
-  return [
-    {
-      reason: "MANUAL_DISCOUNT",
-      amount: manualDiscountAmount,
-      note: manualDiscountNote.trim(),
-    },
-  ];
-}
 
 export default function NewSaleScreen() {
   const [productName, setProductName] = useState("");
