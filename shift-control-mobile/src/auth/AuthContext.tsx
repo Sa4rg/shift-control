@@ -20,6 +20,12 @@ import {
   getAccessToken,
   saveAccessToken,
 } from "@/src/storage/token";
+
+import {
+  registerUnauthorizedHandler,
+  unregisterUnauthorizedHandler,
+} from "@/src/auth/authEvents";
+
 import type { AuthUser } from "@/src/types/api";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
@@ -82,6 +88,20 @@ export function AuthProvider({ children }: PropsWithChildren) {
     setUser(null);
     setStatus("unauthenticated");
   }, []);
+
+  const handleUnauthorized = useCallback(async () => {
+    await clearAccessToken();
+    setUser(null);
+    setStatus("unauthenticated");
+  }, []);
+
+  useEffect(() => {
+    registerUnauthorizedHandler(handleUnauthorized);
+
+    return () => {
+      unregisterUnauthorizedHandler();
+    };
+  }, [handleUnauthorized]);
 
   useEffect(() => {
     void restoreSession();
