@@ -1,9 +1,11 @@
-import { listStores } from "@/src/api/stores";
+import { listStores, getStoreById, createStore, deactivateStore } from "@/src/api/stores";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
   apiClient: {
     get: jest.fn(),
+    post: jest.fn(),
+    patch: jest.fn(),
   },
 }));
 
@@ -64,5 +66,106 @@ describe("listStores", () => {
         includeInactive: true,
       },
     });
+  });
+});
+
+describe("getStoreById", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("gets a store by id", async () => {
+    mockedApiClient.get.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Store found",
+        data: {
+          id: "store-1",
+          name: "Main Store",
+          address: "Main Street 123",
+          baseCashAmount: 103,
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await getStoreById("store-1");
+
+    expect(mockedApiClient.get).toHaveBeenCalledWith("/api/stores/store-1");
+    expect(result.id).toBe("store-1");
+    expect(result.name).toBe("Main Store");
+  });
+});
+
+describe("createStore", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("creates a store", async () => {
+    const request = {
+      name: "New Store",
+      address: "New Street 123",
+      baseCashAmount: 103,
+    };
+
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Store created successfully",
+        data: {
+          id: "store-2",
+          name: "New Store",
+          address: "New Street 123",
+          baseCashAmount: 103,
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await createStore(request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/stores", request);
+    expect(result.id).toBe("store-2");
+    expect(result.active).toBe(true);
+  });
+});
+
+describe("deactivateStore", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("deactivates a store", async () => {
+    mockedApiClient.patch.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Store deactivated successfully",
+        data: {
+          id: "store-1",
+          name: "Main Store",
+          address: "Main Street 123",
+          baseCashAmount: 103,
+          active: false,
+          deactivatedById: "admin-1",
+          deactivatedByName: "Admin User",
+          deactivatedAt: "2026-05-19T10:00:00Z",
+        },
+      },
+    });
+
+    const result = await deactivateStore("store-1");
+
+    expect(mockedApiClient.patch).toHaveBeenCalledWith(
+      "/api/stores/store-1/deactivate"
+    );
+    expect(result.active).toBe(false);
+    expect(result.deactivatedByName).toBe("Admin User");
   });
 });

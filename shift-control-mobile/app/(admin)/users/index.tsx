@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { listUsers } from "@/src/api/users";
@@ -29,7 +29,10 @@ type UsersState =
 
 function UserRow({ user }: { user: AdminUser }) {
   return (
-    <View style={styles.userRow}>
+    <Pressable
+      style={styles.userRow}
+      onPress={() => router.push(`/(admin)/users/${user.id}`)}
+    >
       <View style={styles.userMain}>
         <Text style={styles.userTitle}>{user.fullName}</Text>
         <Text style={styles.userMeta}>
@@ -40,7 +43,9 @@ function UserRow({ user }: { user: AdminUser }) {
           {user.storeId ? ` · Store ${user.storeId.slice(0, 8)}` : ""}
         </Text>
       </View>
-    </View>
+
+      <Text style={styles.userAction}>View</Text>
+    </Pressable>
   );
 }
 
@@ -51,6 +56,8 @@ export default function AdminUsersScreen() {
     errorMessage: null,
   });
 
+  const [includeInactiveUsers, setIncludeInactiveUsers] = useState(false);
+
   const loadUsers = useCallback(async () => {
     setState({
       status: "loading",
@@ -59,7 +66,7 @@ export default function AdminUsersScreen() {
     });
 
     try {
-      const users = await listUsers();
+      const users = await listUsers({ includeInactive: includeInactiveUsers });
 
       setState({
         status: "ready",
@@ -73,7 +80,7 @@ export default function AdminUsersScreen() {
         errorMessage: getApiErrorMessage(error),
       });
     }
-  }, []);
+  }, [includeInactiveUsers]);
 
   useFocusEffect(
     useCallback(() => {
@@ -109,6 +116,33 @@ export default function AdminUsersScreen() {
           <Text style={styles.subtitle}>
             Review admin and staff accounts.
           </Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionLabel}>User visibility</Text>
+          <View style={styles.filterOptions}>
+            <Pressable
+              style={[styles.filterButton, !includeInactiveUsers && styles.filterButtonActive]}
+              onPress={() => setIncludeInactiveUsers(false)}
+            >
+              <Text style={!includeInactiveUsers ? styles.filterButtonTextActive : styles.filterButtonText}>
+                {!includeInactiveUsers ? "✓ Active only" : "Active only"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.filterButton, includeInactiveUsers && styles.filterButtonActive]}
+              onPress={() => setIncludeInactiveUsers(true)}
+            >
+              <Text style={includeInactiveUsers ? styles.filterButtonTextActive : styles.filterButtonText}>
+                {includeInactiveUsers ? "✓ Include inactive" : "Include inactive"}
+              </Text>
+            </Pressable>
+          </View>
+          {state.status === "ready" ? (
+            <Text style={styles.userSummary}>
+              Active: {state.users.filter((u) => u.active).length} · Inactive: {state.users.filter((u) => !u.active).length}
+            </Text>
+          ) : null}
         </View>
 
         {state.status === "error" ? (
@@ -190,7 +224,10 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   userRow: {
-    gap: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
     borderTopWidth: 1,
     borderTopColor: "#eeeeee",
     paddingTop: 12,
@@ -209,5 +246,43 @@ const styles = StyleSheet.create({
   actions: {
     gap: 12,
     paddingBottom: 24,
+  },
+  userAction: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555555",
+  },
+  filterOptions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#dddddd",
+    backgroundColor: "#f5f5f5",
+  },
+  filterButtonActive: {
+    borderColor: "#000000",
+    backgroundColor: "#000000",
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: "#555555",
+  },
+  filterButtonTextActive: {
+    fontSize: 14,
+    color: "#ffffff",
+    fontWeight: "700",
+  },
+  userSummary: {
+    fontSize: 14,
+    color: "#666666",
   },
 });
