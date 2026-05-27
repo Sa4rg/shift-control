@@ -4,9 +4,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -14,11 +16,9 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { listShifts, type ListShiftsParams } from "@/src/api/shifts";
 import { listStores } from "@/src/api/stores";
 import { listUsers } from "@/src/api/users";
-import { Button } from "@/src/components/Button";
+import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
-import { TextField } from "@/src/components/TextField";
 import type { AdminUser, Shift, ShiftStatus, Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 
@@ -77,34 +77,130 @@ function isValidOptionalIsoDate(value: string): boolean {
   return !Number.isNaN(date.getTime());
 }
 
-function ShiftRow({ shift }: { shift: Shift }) {
+function StatusBadge({ status }: { status: ShiftStatus }) {
+  const isOpen = status === "OPEN";
+
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        isOpen ? styles.statusBadgeOpen : styles.statusBadgeClosed,
+      ]}
+    >
+      <Text
+        style={[
+          styles.statusBadgeText,
+          isOpen ? styles.statusBadgeTextOpen : styles.statusBadgeTextClosed,
+        ]}
+      >
+        {status}
+      </Text>
+    </View>
+  );
+}
+
+function FilterChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
-      style={styles.shiftRow}
+      style={({ pressed }) => [
+        styles.filterChip,
+        selected && styles.filterChipActive,
+        pressed && styles.buttonPressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          selected && styles.filterChipTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function StatusSegment({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.statusSegment,
+        selected && styles.statusSegmentActive,
+        pressed && styles.buttonPressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.statusSegmentText,
+          selected && styles.statusSegmentTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ShiftRow({ shift, isLast }: { shift: Shift; isLast: boolean }) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.shiftRow,
+        isLast && styles.shiftRowLast,
+        pressed && styles.rowPressed,
+      ]}
       onPress={() => router.push(`/(admin)/shifts/${shift.id}`)}
     >
       <View style={styles.shiftMain}>
-        <Text style={styles.shiftTitle}>
-          {shift.type} shift · {shift.status}
-        </Text>
-        <Text style={styles.shiftMeta}>{shift.storeName}</Text>
-        <Text style={styles.shiftMeta}>Staff: {shift.staffName}</Text>
-        <Text style={styles.shiftMeta}>
-          Opened: {formatDateTime(shift.openedAt)}
-        </Text>
-        {shift.closedAt ? (
-          <Text style={styles.shiftMeta}>
-            Closed: {formatDateTime(shift.closedAt)}
+        <View style={styles.shiftTitleRow}>
+          <StatusBadge status={shift.status} />
+          <Text style={styles.shiftStaff}>{shift.staffName}</Text>
+        </View>
+
+        <Text style={styles.shiftStore}>{shift.storeName}</Text>
+
+        <View style={styles.shiftDateBlock}>
+          <Text style={styles.shiftDateText}>
+            ↳ Opened {formatDateTime(shift.openedAt)}
           </Text>
-        ) : null}
+
+          {shift.closedAt ? (
+            <Text style={styles.shiftDateText}>
+              ↲ Closed {formatDateTime(shift.closedAt)}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
-      <Text style={styles.shiftAction}>View</Text>
+      <View style={styles.viewGroup}>
+        <Text style={styles.viewText}>View</Text>
+        <Text style={styles.chevron}>›</Text>
+      </View>
     </Pressable>
   );
 }
 
 export default function AdminShiftsScreen() {
+  const { user } = useAuth();
+
   const [referenceDataState, setReferenceDataState] =
     useState<ReferenceDataState>({
       status: "loading",
@@ -140,7 +236,7 @@ export default function AdminShiftsScreen() {
     () =>
       referenceDataState.status === "ready"
         ? referenceDataState.staffUsers.filter(
-            (user) => user.active && user.role === "STAFF"
+            (staffUser) => staffUser.active && staffUser.role === "STAFF"
           )
         : [],
     [referenceDataState]
@@ -151,7 +247,9 @@ export default function AdminShiftsScreen() {
       return activeStaffUsers;
     }
 
-    return activeStaffUsers.filter((user) => user.storeId === selectedStoreId);
+    return activeStaffUsers.filter(
+      (staffUser) => staffUser.storeId === selectedStoreId
+    );
   }, [activeStaffUsers, selectedStoreId]);
 
   const selectedStore = useMemo(
@@ -160,7 +258,7 @@ export default function AdminShiftsScreen() {
   );
 
   const selectedStaff = useMemo(
-    () => staffOptions.find((user) => user.id === selectedStaffId) ?? null,
+    () => staffOptions.find((staffUser) => staffUser.id === selectedStaffId) ?? null,
     [staffOptions, selectedStaffId]
   );
 
@@ -257,10 +355,6 @@ export default function AdminShiftsScreen() {
     setToDate("");
   }
 
-  if (referenceDataState.status === "loading" || state.status === "loading") {
-    return <LoadingState message="Loading shifts..." />;
-  }
-
   const openCount =
     state.status === "ready"
       ? state.shifts.filter((shift) => shift.status === "OPEN").length
@@ -271,137 +365,224 @@ export default function AdminShiftsScreen() {
       ? state.shifts.filter((shift) => shift.status === "CLOSED").length
       : 0;
 
+  const displayName = user?.fullName ?? user?.username ?? "Admin";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
+
+  if (referenceDataState.status === "loading" || state.status === "loading") {
+    return <LoadingState message="Loading shifts..." />;
+  }
+
   return (
-    <Screen padded={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.appBar}>
+        <View style={styles.appBarLeft}>
+          <Text style={styles.menuIcon}>≡</Text>
+          <Text style={styles.appBarTitle}>Shift Control</Text>
+        </View>
+
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Shifts</Text>
-            <Text style={styles.subtitle}>
-              Review all staff shifts across stores.
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Shifts</Text>
+            <Text style={styles.pageSubtitle}>
+              Filter and review all shift records.
             </Text>
           </View>
 
           {referenceDataState.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load filters</Text>
-              <ErrorMessage message={referenceDataState.errorMessage} />
-              <Button title="Try again" onPress={loadReferenceData} />
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Could not load filters</Text>
+              </View>
+
+              <View style={styles.cardBody}>
+                <ErrorMessage message={referenceDataState.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadReferenceData}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Filters</Text>
+          <View style={styles.filterCard}>
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Store Name</Text>
 
-            <Text style={styles.label}>Status</Text>
-            <View style={styles.options}>
-              {STATUS_FILTERS.map((filter) => (
-                <Button
-                  key={filter}
-                  title={filter === statusFilter ? `✓ ${filter}` : filter}
-                  onPress={() => setStatusFilter(filter)}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalChips}
+              >
+                <FilterChip
+                  label="All"
+                  selected={selectedStoreId === null}
+                  onPress={() => handleSelectStore(null)}
                 />
-              ))}
+
+                {activeStores.map((store) => (
+                  <FilterChip
+                    key={store.id}
+                    label={store.name}
+                    selected={store.id === selectedStoreId}
+                    onPress={() => handleSelectStore(store.id)}
+                  />
+                ))}
+              </ScrollView>
+
+              {selectedStore ? (
+                <Text style={styles.helperText}>
+                  Selected store: {selectedStore.name}
+                </Text>
+              ) : null}
             </View>
 
-            {referenceDataState.status === "ready" ? (
-              <>
-                <Text style={styles.label}>Store</Text>
-                <View style={styles.options}>
-                  <Button
-                    title={selectedStoreId === null ? "✓ All stores" : "All stores"}
-                    onPress={() => handleSelectStore(null)}
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Staff Member</Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalChips}
+              >
+                <FilterChip
+                  label="All staff"
+                  selected={selectedStaffId === null}
+                  onPress={() => setSelectedStaffId(null)}
+                />
+
+                {staffOptions.map((staffUser) => (
+                  <FilterChip
+                    key={staffUser.id}
+                    label={staffUser.fullName}
+                    selected={staffUser.id === selectedStaffId}
+                    onPress={() => setSelectedStaffId(staffUser.id)}
                   />
+                ))}
+              </ScrollView>
 
-                  {activeStores.map((store) => (
-                    <Button
-                      key={store.id}
-                      title={
-                        store.id === selectedStoreId
-                          ? `✓ ${store.name}`
-                          : store.name
-                      }
-                      onPress={() => handleSelectStore(store.id)}
-                    />
-                  ))}
-                </View>
+              {selectedStaff ? (
+                <Text style={styles.helperText}>
+                  Selected staff: {selectedStaff.fullName}
+                </Text>
+              ) : null}
+            </View>
 
-                {selectedStore ? (
-                  <Text style={styles.helpText}>
-                    Selected store: {selectedStore.name}
-                  </Text>
-                ) : null}
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Status</Text>
 
-                <Text style={styles.label}>Staff</Text>
-                <View style={styles.options}>
-                  <Button
-                    title={selectedStaffId === null ? "✓ All staff" : "All staff"}
-                    onPress={() => setSelectedStaffId(null)}
+              <View style={styles.statusSegments}>
+                {STATUS_FILTERS.map((filter) => (
+                  <StatusSegment
+                    key={filter}
+                    label={filter}
+                    selected={filter === statusFilter}
+                    onPress={() => setStatusFilter(filter)}
                   />
+                ))}
+              </View>
+            </View>
 
-                  {staffOptions.map((staff) => (
-                    <Button
-                      key={staff.id}
-                      title={
-                        staff.id === selectedStaffId
-                          ? `✓ ${staff.fullName}`
-                          : staff.fullName
-                      }
-                      onPress={() => setSelectedStaffId(staff.id)}
-                    />
-                  ))}
-                </View>
+            <View style={styles.dateRow}>
+              <View style={styles.dateInputGroup}>
+                <Text style={styles.filterLabel}>From</Text>
+                <TextInput
+                  style={[
+                    styles.dateInput,
+                    fromDate.length > 0 &&
+                      !isValidOptionalIsoDate(fromDate) &&
+                      styles.dateInputError,
+                  ]}
+                  value={fromDate}
+                  onChangeText={setFromDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#6d7a77"
+                  keyboardType="numbers-and-punctuation"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
 
-                {selectedStaff ? (
-                  <Text style={styles.helpText}>
-                    Selected staff: {selectedStaff.fullName}
-                  </Text>
-                ) : null}
-              </>
-            ) : null}
-
-            <TextField
-              label="From"
-              value={fromDate}
-              onChangeText={setFromDate}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numbers-and-punctuation"
-            />
+              <View style={styles.dateInputGroup}>
+                <Text style={styles.filterLabel}>To</Text>
+                <TextInput
+                  style={[
+                    styles.dateInput,
+                    toDate.length > 0 &&
+                      !isValidOptionalIsoDate(toDate) &&
+                      styles.dateInputError,
+                  ]}
+                  value={toDate}
+                  onChangeText={setToDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#6d7a77"
+                  keyboardType="numbers-and-punctuation"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+            </View>
 
             {fromDate.length > 0 && !isValidOptionalIsoDate(fromDate) ? (
-              <Text style={styles.helpText}>
+              <Text style={styles.validationText}>
                 From date must use YYYY-MM-DD format.
               </Text>
             ) : null}
 
-            <TextField
-              label="To"
-              value={toDate}
-              onChangeText={setToDate}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numbers-and-punctuation"
-            />
-
             {toDate.length > 0 && !isValidOptionalIsoDate(toDate) ? (
-              <Text style={styles.helpText}>
+              <Text style={styles.validationText}>
                 To date must use YYYY-MM-DD format.
               </Text>
             ) : null}
 
             <View style={styles.filterActions}>
-              <Button
-                title="Apply filters"
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnPrimary,
+                  !canLoadShifts && styles.btnDisabled,
+                  pressed && canLoadShifts && styles.buttonPressed,
+                ]}
                 onPress={loadShifts}
                 disabled={!canLoadShifts}
-              />
-              <Button title="Clear filters" onPress={handleClearFilters} />
+              >
+                <Text style={styles.btnPrimaryText}>Load shifts</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnClear,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={handleClearFilters}
+              >
+                <Text style={styles.btnClearText}>Clear filters</Text>
+              </Pressable>
             </View>
 
             {state.status === "ready" ? (
-              <Text style={styles.body}>
+              <Text style={styles.resultSummary}>
                 Open: {openCount} · Closed: {closedCount}
               </Text>
             ) : null}
@@ -409,117 +590,479 @@ export default function AdminShiftsScreen() {
 
           {state.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load shifts</Text>
-              <ErrorMessage message={state.errorMessage} />
-              <Button title="Try again" onPress={loadShifts} />
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Could not load shifts</Text>
+              </View>
+
+              <View style={styles.cardBody}>
+                <ErrorMessage message={state.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadShifts}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
           {state.status === "ready" && state.shifts.length === 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>No shifts found</Text>
-              <Text style={styles.body}>
-                There are no shifts for the selected filters.
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyIcon}>□</Text>
+              <Text style={styles.emptyTitle}>No shifts found</Text>
+              <Text style={styles.emptyText}>
+                Try adjusting your filters to find specific shift records.
               </Text>
             </View>
           ) : null}
 
           {state.status === "ready" && state.shifts.length > 0 ? (
-            <View style={styles.card}>
-              {state.shifts.map((shift) => (
-                <ShiftRow key={shift.id} shift={shift} />
+            <View style={styles.resultsCard}>
+              {state.shifts.map((shift, index) => (
+                <ShiftRow
+                  key={shift.id}
+                  shift={shift}
+                  isLast={index === state.shifts.length - 1}
+                />
               ))}
             </View>
           ) : null}
 
           <View style={styles.actions}>
-            <Button title="Refresh" onPress={loadShifts} />
-            <Button title="Back" onPress={() => router.back()} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnRefresh,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={loadShifts}
+            >
+              <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnBack,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.btnBackText}>← Back</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#faf8ff",
+  },
   keyboardView: {
     flex: 1,
   },
-  container: {
+  appBar: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+  },
+  appBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
-  },
-  card: {
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
-  },
-  cardTitle: {
+  menuIcon: {
     fontSize: 20,
-    fontWeight: "700",
+    color: "#00685f",
   },
-  body: {
-    fontSize: 16,
+  appBarTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#00685f",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#dde1ff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+  },
+  avatarText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#00217a",
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#131b2e",
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: 15,
+    color: "#3d4947",
     lineHeight: 22,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#333333",
+  filterCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    padding: 16,
+    gap: 16,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  helpText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#555555",
-  },
-  options: {
+  filterGroup: {
     gap: 8,
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#3d4947",
+  },
+  horizontalChips: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  filterChip: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    backgroundColor: "#f2f3ff",
+    borderWidth: 1,
+    borderColor: "#eaedff",
+  },
+  filterChipActive: {
+    backgroundColor: "#00685f",
+    borderColor: "#00685f",
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#3d4947",
+  },
+  filterChipTextActive: {
+    color: "#ffffff",
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#6d7a77",
+    lineHeight: 18,
+  },
+  statusSegments: {
+    flexDirection: "row",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#f8fafc",
+    padding: 4,
+  },
+  statusSegment: {
+    flex: 1,
+    minHeight: 38,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusSegmentActive: {
+    backgroundColor: "#ffffff",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  statusSegmentText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#3d4947",
+  },
+  statusSegmentTextActive: {
+    color: "#00685f",
+  },
+  dateRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dateInputGroup: {
+    flex: 1,
+    gap: 8,
+  },
+  dateInput: {
+    height: 48,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 12,
+    fontSize: 13,
+    color: "#131b2e",
+  },
+  dateInputError: {
+    borderColor: "#ba1a1a",
+  },
+  validationText: {
+    fontSize: 12,
+    color: "#ba1a1a",
+    lineHeight: 18,
   },
   filterActions: {
-    gap: 8,
+    gap: 10,
+  },
+  resultSummary: {
+    fontSize: 13,
+    color: "#3d4947",
+  },
+  btnPrimary: {
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#00685f",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  btnPrimaryText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#ffffff",
+  },
+  btnDisabled: {
+    backgroundColor: "#9ecbc7",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  btnClear: {
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnClearText: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#00685f",
+  },
+  resultsCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   shiftRow: {
+    minHeight: 104,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
+  },
+  shiftRowLast: {
+    borderBottomWidth: 0,
+  },
+  rowPressed: {
+    backgroundColor: "#f2f3ff",
   },
   shiftMain: {
     flex: 1,
+    gap: 5,
+  },
+  shiftTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  shiftStaff: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#131b2e",
+  },
+  shiftStore: {
+    fontSize: 14,
+    color: "#3d4947",
+  },
+  shiftDateBlock: {
+    gap: 3,
+    marginTop: 3,
+  },
+  shiftDateText: {
+    fontSize: 12,
+    color: "#6d7a77",
+    lineHeight: 17,
+  },
+  statusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  statusBadgeOpen: {
+    backgroundColor: "#d2f5f0",
+  },
+  statusBadgeClosed: {
+    backgroundColor: "#dde1ff",
+  },
+  statusBadgeText: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+  },
+  statusBadgeTextOpen: {
+    color: "#005049",
+  },
+  statusBadgeTextClosed: {
+    color: "#173bab",
+  },
+  viewGroup: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 4,
   },
-  shiftTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  shiftMeta: {
+  viewText: {
     fontSize: 14,
-    color: "#666666",
+    fontWeight: "900",
+    color: "#00685f",
   },
-  shiftAction: {
+  chevron: {
+    fontSize: 22,
+    color: "#00685f",
+    marginTop: -1,
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#131b2e",
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  emptyCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    padding: 20,
+    alignItems: "center",
+    gap: 8,
+  },
+  emptyIcon: {
+    fontSize: 34,
+    color: "#00685f",
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#131b2e",
+  },
+  emptyText: {
     fontSize: 14,
-    fontWeight: "700",
+    lineHeight: 20,
+    color: "#3d4947",
+    textAlign: "center",
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#005049",
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#3d4947",
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+  },
+  btnOutlineText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#00685f",
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

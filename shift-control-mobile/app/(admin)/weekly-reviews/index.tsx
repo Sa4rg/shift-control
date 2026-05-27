@@ -4,9 +4,11 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
@@ -17,18 +19,15 @@ import {
   listWeeklyReviews,
   type ListWeeklyReviewsParams,
 } from "@/src/api/weeklyReviews";
-import { Button } from "@/src/components/Button";
+import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
-import { TextField } from "@/src/components/TextField";
 import type {
   AdminUser,
   Store,
   WeeklyAdminReview,
   WeeklyAdminReviewStatus,
 } from "@/src/types/api";
-import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
 
 type ReviewsState =
@@ -90,35 +89,171 @@ function isValidOptionalIsoDate(value: string): boolean {
   return !Number.isNaN(date.getTime());
 }
 
-function ReviewRow({ review }: { review: WeeklyAdminReview }) {
+function formatStatusLabel(status: ReviewStatusFilter): string {
+  if (status === "ALL") {
+    return "ALL";
+  }
+
+  if (status === "REVIEWED_OK") {
+    return "REVIEWED OK";
+  }
+
+  return "WITH INCIDENT";
+}
+
+function getReviewStatusLabel(status: WeeklyAdminReviewStatus): string {
+  return status === "REVIEWED_OK" ? "Reviewed OK" : "With Incident";
+}
+
+function StatusChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
-      style={styles.reviewRow}
+      style={({ pressed }) => [
+        styles.statusChip,
+        selected && styles.statusChipActive,
+        pressed && styles.buttonPressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.statusChipText,
+          selected && styles.statusChipTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function FilterChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.filterChip,
+        selected && styles.filterChipActive,
+        pressed && styles.buttonPressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          selected && styles.filterChipTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function ReviewStatusBadge({ status }: { status: WeeklyAdminReviewStatus }) {
+  const isOk = status === "REVIEWED_OK";
+
+  return (
+    <View
+      style={[
+        styles.reviewStatusBadge,
+        isOk ? styles.reviewStatusBadgeOk : styles.reviewStatusBadgeIncident,
+      ]}
+    >
+      <Text
+        style={[
+          styles.reviewStatusBadgeText,
+          isOk
+            ? styles.reviewStatusBadgeTextOk
+            : styles.reviewStatusBadgeTextIncident,
+        ]}
+      >
+        {getReviewStatusLabel(status)}
+      </Text>
+    </View>
+  );
+}
+
+function ReviewRow({
+  review,
+  isLast,
+}: {
+  review: WeeklyAdminReview;
+  isLast: boolean;
+}) {
+  const hasIncident = review.status === "REVIEWED_WITH_INCIDENT";
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.reviewRow,
+        isLast && styles.reviewRowLast,
+        hasIncident ? styles.reviewRowIncident : styles.reviewRowOk,
+        pressed && styles.rowPressed,
+      ]}
       onPress={() => router.push(`/(admin)/weekly-reviews/${review.id}`)}
     >
       <View style={styles.reviewMain}>
-        <Text style={styles.reviewTitle}>
-          {review.staffName} · {review.status}
-        </Text>
-        <Text style={styles.reviewMeta}>{review.storeName}</Text>
+        <View style={styles.reviewTitleRow}>
+          <Text style={styles.reviewStaffName}>{review.staffName}</Text>
+          <ReviewStatusBadge status={review.status} />
+        </View>
+
         <Text style={styles.reviewMeta}>
-          {review.weekStart} to {review.weekEnd}
+          {review.storeName} · {review.weekStart} to {review.weekEnd}
         </Text>
-        <Text style={styles.reviewMeta}>
-          Sales: {formatMoney(review.totalSales)} · Incidents:{" "}
-          {review.incidentCount}
-        </Text>
-        <Text style={styles.reviewMeta}>
-          Created: {formatDateTime(review.createdAt)}
-        </Text>
+
+        <View style={styles.reviewSalesRow}>
+          <Text style={styles.reviewSales}>{formatMoney(review.totalSales)}</Text>
+          <Text style={styles.reviewSalesLabel}>Total Sales</Text>
+        </View>
       </View>
 
-      <Text style={styles.reviewAction}>View</Text>
+      <View style={styles.reviewSide}>
+        <Text style={styles.chevron}>›</Text>
+        <View
+          style={[
+            styles.incidentsBadge,
+            hasIncident
+              ? styles.incidentsBadgeWarning
+              : styles.incidentsBadgeNeutral,
+          ]}
+        >
+          <Text
+            style={[
+              styles.incidentsBadgeText,
+              hasIncident
+                ? styles.incidentsBadgeTextWarning
+                : styles.incidentsBadgeTextNeutral,
+            ]}
+          >
+            {review.incidentCount}{" "}
+            {review.incidentCount === 1 ? "Incident" : "Incidents"}
+          </Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
 
 export default function AdminWeeklyReviewsScreen() {
+  const { user } = useAuth();
+
   const [referenceDataState, setReferenceDataState] =
     useState<ReferenceDataState>({
       status: "loading",
@@ -127,14 +262,13 @@ export default function AdminWeeklyReviewsScreen() {
       errorMessage: null,
     });
 
-  const [statusFilter, setStatusFilter] =
-    useState<ReviewStatusFilter>("ALL");
+  const [statusFilter, setStatusFilter] = useState<ReviewStatusFilter>("ALL");
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
   const [weekStart, setWeekStart] = useState("");
 
   const [state, setState] = useState<ReviewsState>({
-    status: "loading",
+    status: "ready",
     reviews: [],
     errorMessage: null,
   });
@@ -153,7 +287,7 @@ export default function AdminWeeklyReviewsScreen() {
     () =>
       referenceDataState.status === "ready"
         ? referenceDataState.staffUsers.filter(
-            (user) => user.active && user.role === "STAFF"
+            (staffUser) => staffUser.active && staffUser.role === "STAFF"
           )
         : [],
     [referenceDataState]
@@ -164,7 +298,9 @@ export default function AdminWeeklyReviewsScreen() {
       return activeStaffUsers;
     }
 
-    return activeStaffUsers.filter((user) => user.storeId === selectedStoreId);
+    return activeStaffUsers.filter(
+      (staffUser) => staffUser.storeId === selectedStoreId
+    );
   }, [activeStaffUsers, selectedStoreId]);
 
   const selectedStore = useMemo(
@@ -173,7 +309,7 @@ export default function AdminWeeklyReviewsScreen() {
   );
 
   const selectedStaff = useMemo(
-    () => staffOptions.find((user) => user.id === selectedStaffId) ?? null,
+    () => staffOptions.find((staffUser) => staffUser.id === selectedStaffId) ?? null,
     [staffOptions, selectedStaffId]
   );
 
@@ -251,8 +387,7 @@ export default function AdminWeeklyReviewsScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadReferenceData();
-      void loadReviews();
-    }, [loadReferenceData, loadReviews])
+    }, [loadReferenceData])
   );
 
   function handleSelectStore(storeId: string | null) {
@@ -267,14 +402,9 @@ export default function AdminWeeklyReviewsScreen() {
     setWeekStart("");
   }
 
-  if (referenceDataState.status === "loading" || state.status === "loading") {
-    return <LoadingState message="Loading weekly reviews..." />;
-  }
-
   const reviewedOkCount =
     state.status === "ready"
-      ? state.reviews.filter((review) => review.status === "REVIEWED_OK")
-          .length
+      ? state.reviews.filter((review) => review.status === "REVIEWED_OK").length
       : 0;
 
   const reviewedWithIncidentCount =
@@ -284,127 +414,202 @@ export default function AdminWeeklyReviewsScreen() {
         ).length
       : 0;
 
+  const displayName = user?.fullName ?? user?.username ?? "Admin";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
+
+  if (referenceDataState.status === "loading" || state.status === "loading") {
+    return <LoadingState message="Loading weekly reviews..." />;
+  }
+
   return (
-    <Screen padded={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.appBar}>
+        <View style={styles.appBarLeft}>
+          <Text style={styles.menuIcon}>≡</Text>
+          <Text style={styles.appBarTitle}>Shift Control</Text>
+        </View>
+
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Weekly reviews</Text>
-            <Text style={styles.subtitle}>
-              Review weekly admin snapshots by store and staff.
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Weekly reviews</Text>
+            <Text style={styles.pageSubtitle}>
+              Manage and audit store performance logs for the current cycle.
             </Text>
           </View>
 
           {referenceDataState.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load filters</Text>
-              <ErrorMessage message={referenceDataState.errorMessage} />
-              <Button title="Try again" onPress={loadReferenceData} />
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load filters</Text>
+                <ErrorMessage message={referenceDataState.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadReferenceData}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Filters</Text>
+          <View style={styles.filterCard}>
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>STATUS</Text>
 
-            <Text style={styles.label}>Status</Text>
-            <View style={styles.options}>
-              {STATUS_FILTERS.map((filter) => (
-                <Button
-                  key={filter}
-                  title={filter === statusFilter ? `✓ ${filter}` : filter}
-                  onPress={() => setStatusFilter(filter)}
-                />
-              ))}
+              <View style={styles.statusChips}>
+                {STATUS_FILTERS.map((filter) => (
+                  <StatusChip
+                    key={filter}
+                    label={formatStatusLabel(filter)}
+                    selected={filter === statusFilter}
+                    onPress={() => setStatusFilter(filter)}
+                  />
+                ))}
+              </View>
             </View>
 
             {referenceDataState.status === "ready" ? (
               <>
-                <Text style={styles.label}>Store</Text>
-                <View style={styles.options}>
-                  <Button
-                    title={
-                      selectedStoreId === null ? "✓ All stores" : "All stores"
-                    }
-                    onPress={() => handleSelectStore(null)}
-                  />
+                <View style={styles.filterGroup}>
+                  <Text style={styles.filterLabel}>STORE</Text>
 
-                  {activeStores.map((store) => (
-                    <Button
-                      key={store.id}
-                      title={
-                        store.id === selectedStoreId
-                          ? `✓ ${store.name}`
-                          : store.name
-                      }
-                      onPress={() => handleSelectStore(store.id)}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalChips}
+                  >
+                    <FilterChip
+                      label="All Stores"
+                      selected={selectedStoreId === null}
+                      onPress={() => handleSelectStore(null)}
                     />
-                  ))}
+
+                    {activeStores.map((store) => (
+                      <FilterChip
+                        key={store.id}
+                        label={store.name}
+                        selected={store.id === selectedStoreId}
+                        onPress={() => handleSelectStore(store.id)}
+                      />
+                    ))}
+                  </ScrollView>
+
+                  {selectedStore ? (
+                    <Text style={styles.helperText}>
+                      Selected store: {selectedStore.name}
+                    </Text>
+                  ) : null}
                 </View>
 
-                {selectedStore ? (
-                  <Text style={styles.helpText}>
-                    Selected store: {selectedStore.name}
-                  </Text>
-                ) : null}
+                <View style={styles.filterGroup}>
+                  <Text style={styles.filterLabel}>STAFF</Text>
 
-                <Text style={styles.label}>Staff</Text>
-                <View style={styles.options}>
-                  <Button
-                    title={
-                      selectedStaffId === null ? "✓ All staff" : "All staff"
-                    }
-                    onPress={() => setSelectedStaffId(null)}
-                  />
-
-                  {staffOptions.map((staff) => (
-                    <Button
-                      key={staff.id}
-                      title={
-                        staff.id === selectedStaffId
-                          ? `✓ ${staff.fullName}`
-                          : staff.fullName
-                      }
-                      onPress={() => setSelectedStaffId(staff.id)}
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.horizontalChips}
+                  >
+                    <FilterChip
+                      label="All Staff"
+                      selected={selectedStaffId === null}
+                      onPress={() => setSelectedStaffId(null)}
                     />
-                  ))}
-                </View>
 
-                {selectedStaff ? (
-                  <Text style={styles.helpText}>
-                    Selected staff: {selectedStaff.fullName}
-                  </Text>
-                ) : null}
+                    {staffOptions.map((staffUser) => (
+                      <FilterChip
+                        key={staffUser.id}
+                        label={staffUser.fullName}
+                        selected={staffUser.id === selectedStaffId}
+                        onPress={() => setSelectedStaffId(staffUser.id)}
+                      />
+                    ))}
+                  </ScrollView>
+
+                  {selectedStaff ? (
+                    <Text style={styles.helperText}>
+                      Selected staff: {selectedStaff.fullName}
+                    </Text>
+                  ) : null}
+                </View>
               </>
             ) : null}
 
-            <TextField
-              label="Week start"
-              value={weekStart}
-              onChangeText={setWeekStart}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numbers-and-punctuation"
-            />
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>WEEK START DATE</Text>
 
-            {weekStart.length > 0 && !isValidOptionalIsoDate(weekStart) ? (
-              <Text style={styles.helpText}>
-                Week start must use YYYY-MM-DD format.
-              </Text>
-            ) : null}
+              <View
+                style={[
+                  styles.dateInputRow,
+                  weekStart.length > 0 &&
+                    !isValidOptionalIsoDate(weekStart) &&
+                    styles.dateInputRowError,
+                ]}
+              >
+                <Text style={styles.calendarIcon}>□</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  value={weekStart}
+                  onChangeText={setWeekStart}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#6d7a77"
+                  keyboardType="numbers-and-punctuation"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
 
-            <View style={styles.filterActions}>
-              <Button
-                title="Apply filters"
-                onPress={loadReviews}
-                disabled={!canLoadReviews}
-              />
-              <Button title="Clear filters" onPress={handleClearFilters} />
+              {weekStart.length > 0 && !isValidOptionalIsoDate(weekStart) ? (
+                <Text style={styles.validationText}>
+                  Week start must use YYYY-MM-DD format.
+                </Text>
+              ) : null}
             </View>
 
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnPrimary,
+                !canLoadReviews && styles.btnDisabled,
+                pressed && canLoadReviews && styles.buttonPressed,
+              ]}
+              onPress={loadReviews}
+              disabled={!canLoadReviews}
+            >
+              <Text style={styles.btnPrimaryText}>⟳ Load reviews</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnClear,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={handleClearFilters}
+            >
+              <Text style={styles.btnClearText}>Clear filters</Text>
+            </Pressable>
+
             {state.status === "ready" ? (
-              <Text style={styles.body}>
+              <Text style={styles.resultSummary}>
                 OK: {reviewedOkCount} · With incident:{" "}
                 {reviewedWithIncidentCount}
               </Text>
@@ -413,121 +618,525 @@ export default function AdminWeeklyReviewsScreen() {
 
           {state.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load reviews</Text>
-              <ErrorMessage message={state.errorMessage} />
-              <Button title="Try again" onPress={loadReviews} />
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load reviews</Text>
+                <ErrorMessage message={state.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadReviews}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
+
+          {state.status === "ready" ? (
+            <View style={styles.resultsHeader}>
+              <Text style={styles.resultsTitle}>
+                RESULTS ({state.reviews.length})
+              </Text>
+              <Text style={styles.sortText}>Sort: Date</Text>
             </View>
           ) : null}
 
           {state.status === "ready" && state.reviews.length === 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>No weekly reviews found</Text>
-              <Text style={styles.body}>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No weekly reviews found</Text>
+              <Text style={styles.emptyText}>
                 There are no weekly reviews for the selected filters.
               </Text>
             </View>
           ) : null}
 
           {state.status === "ready" && state.reviews.length > 0 ? (
-            <View style={styles.card}>
-              {state.reviews.map((review) => (
-                <ReviewRow key={review.id} review={review} />
+            <View style={styles.resultsCard}>
+              {state.reviews.map((review, index) => (
+                <ReviewRow
+                  key={review.id}
+                  review={review}
+                  isLast={index === state.reviews.length - 1}
+                />
               ))}
             </View>
           ) : null}
 
           <View style={styles.actions}>
-            <Button
-              title="Create weekly review"
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnPrimary,
+                pressed && styles.buttonPressed,
+              ]}
               onPress={() => router.push("/(admin)/weekly-reviews/new-review")}
-            />
-            <Button title="Refresh" onPress={loadReviews} />
-            <Button title="Back" onPress={() => router.back()} />
+            >
+              <Text style={styles.btnPrimaryText}>+ New review</Text>
+            </Pressable>
+
+            <View style={styles.actionRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnRefresh,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadReviews}
+              >
+                <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.btnBackText}>← Back</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#faf8ff",
+  },
   keyboardView: {
     flex: 1,
   },
-  container: {
-    gap: 16,
-    padding: 24,
-  },
-  header: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
-  },
-  card: {
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#333333",
-  },
-  helpText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#555555",
-  },
-  options: {
-    gap: 8,
-  },
-  filterActions: {
-    gap: 8,
-  },
-  reviewRow: {
+  appBar: {
+    height: 64,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingHorizontal: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+  },
+  appBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  menuIcon: {
+    fontSize: 20,
+    color: "#00685f",
+  },
+  appBarTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#00685f",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#dde1ff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+  },
+  avatarText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#00217a",
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#131b2e",
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: 15,
+    color: "#3d4947",
+    lineHeight: 22,
+  },
+  filterCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    padding: 16,
+    gap: 14,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  filterGroup: {
+    gap: 8,
+  },
+  filterLabel: {
+    fontSize: 11,
+    fontWeight: "900",
+    color: "#6d7a77",
+    letterSpacing: 0.9,
+  },
+  statusChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  statusChip: {
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    backgroundColor: "#f2f3ff",
+    borderWidth: 1,
+    borderColor: "#eaedff",
+  },
+  statusChipActive: {
+    backgroundColor: "#00685f",
+    borderColor: "#00685f",
+  },
+  statusChipText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#3d4947",
+  },
+  statusChipTextActive: {
+    color: "#ffffff",
+  },
+  horizontalChips: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  filterChip: {
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    backgroundColor: "#f2f3ff",
+    borderWidth: 1,
+    borderColor: "#eaedff",
+  },
+  filterChipActive: {
+    backgroundColor: "#f2fffc",
+    borderColor: "#00685f",
+  },
+  filterChipText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#3d4947",
+  },
+  filterChipTextActive: {
+    color: "#00685f",
+  },
+  helperText: {
+    fontSize: 12,
+    color: "#6d7a77",
+    lineHeight: 18,
+  },
+  dateInputRow: {
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  dateInputRowError: {
+    borderColor: "#ba1a1a",
+  },
+  calendarIcon: {
+    fontSize: 15,
+    color: "#6d7a77",
+  },
+  dateInput: {
+    flex: 1,
+    fontSize: 14,
+    color: "#131b2e",
+    paddingVertical: 0,
+  },
+  validationText: {
+    fontSize: 12,
+    color: "#ba1a1a",
+    lineHeight: 18,
+  },
+  resultSummary: {
+    fontSize: 13,
+    color: "#3d4947",
+  },
+  resultsHeader: {
+    paddingHorizontal: 2,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  resultsTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#3d4947",
+    letterSpacing: 1,
+  },
+  sortText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#00685f",
+  },
+  resultsCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  reviewRow: {
+    minHeight: 112,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+    flexDirection: "row",
+    justifyContent: "space-between",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
+  },
+  reviewRowLast: {
+    borderBottomWidth: 0,
+  },
+  reviewRowOk: {
+    borderLeftColor: "#00685f",
+  },
+  reviewRowIncident: {
+    borderLeftColor: "#a36700",
+  },
+  rowPressed: {
+    backgroundColor: "#f2f3ff",
   },
   reviewMain: {
     flex: 1,
-    gap: 4,
+    gap: 6,
   },
-  reviewTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+  reviewTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 7,
+  },
+  reviewStaffName: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#131b2e",
+  },
+  reviewStatusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+  },
+  reviewStatusBadgeOk: {
+    backgroundColor: "#d2f5f0",
+  },
+  reviewStatusBadgeIncident: {
+    backgroundColor: "#ffddb8",
+  },
+  reviewStatusBadgeText: {
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+  },
+  reviewStatusBadgeTextOk: {
+    color: "#005049",
+  },
+  reviewStatusBadgeTextIncident: {
+    color: "#653e00",
   },
   reviewMeta: {
-    fontSize: 14,
-    color: "#666666",
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#3d4947",
   },
-  reviewAction: {
+  reviewSalesRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 6,
+    marginTop: 2,
+  },
+  reviewSales: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#131b2e",
+  },
+  reviewSalesLabel: {
+    fontSize: 12,
+    color: "#3d4947",
+  },
+  reviewSide: {
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  chevron: {
+    fontSize: 24,
+    color: "#3d4947",
+  },
+  incidentsBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+  },
+  incidentsBadgeNeutral: {
+    backgroundColor: "#dde1ff",
+  },
+  incidentsBadgeWarning: {
+    backgroundColor: "#ffddb8",
+    borderWidth: 1,
+    borderColor: "#ffb95f",
+  },
+  incidentsBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  incidentsBadgeTextNeutral: {
+    color: "#3d4947",
+  },
+  incidentsBadgeTextWarning: {
+    color: "#653e00",
+  },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#00685f",
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  emptyCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    padding: 18,
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#131b2e",
+  },
+  emptyText: {
     fontSize: 14,
-    fontWeight: "700",
+    lineHeight: 20,
+    color: "#3d4947",
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: 10,
+    paddingTop: 4,
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  btnPrimary: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDisabled: {
+    backgroundColor: "#9ecbc7",
+  },
+  btnPrimaryText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#ffffff",
+  },
+  btnClear: {
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnClearText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#00685f",
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#005049",
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#3d4947",
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+  },
+  btnOutlineText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#00685f",
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

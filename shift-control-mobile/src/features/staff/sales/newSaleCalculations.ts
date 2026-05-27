@@ -1,6 +1,9 @@
 import type { CreateSaleDiscountRequest } from "@/src/types/api";
 
-import type { DiscountSelection } from "@/src/features/staff/sales/newSaleTypes";
+import type {
+  DiscountSelection,
+  SaleItemDraft,
+} from "@/src/features/staff/sales/newSaleTypes";
 
 export function parsePositiveNumber(value: string): number | null {
   const normalized = value.replace(",", ".").trim();
@@ -48,6 +51,26 @@ export function parsePositiveInteger(value: string): number | null {
 
 export function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+export function calculateSubtotalFromDrafts(
+  items: SaleItemDraft[]
+): number | null {
+  if (items.length === 0) {
+    return null;
+  }
+
+  let total = 0;
+
+  for (const item of items) {
+    if (item.productName.trim().length === 0) return null;
+    const qty = parsePositiveInteger(item.quantity);
+    const price = parsePositiveNumber(item.unitPrice);
+    if (qty === null || price === null) return null;
+    total += roundMoney(qty * price);
+  }
+
+  return roundMoney(total);
 }
 
 export function calculateDiscountAmount({

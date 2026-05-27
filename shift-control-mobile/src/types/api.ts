@@ -64,7 +64,6 @@ export type SaleDiscount = {
   type: DiscountType;
   reason: DiscountReason;
   value: number;
-  calculatedAmount: number;
   amountApplied: number;
   note: string | null;
 };
@@ -80,6 +79,8 @@ export type Sale = {
   shiftId: string;
   staffId: string;
   storeId: string;
+  staffName: string;
+  storeName: string;
   status: SaleStatus;
   invoiceStatus: InvoiceStatus;
   subtotalAmount: number;

@@ -1,23 +1,26 @@
-import { router } from "expo-router";
+﻿import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { createSale } from "@/src/api/sales";
-import { Button } from "@/src/components/Button";
+import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { Screen } from "@/src/components/Screen";
-import { TextField } from "@/src/components/TextField";
 import {
   buildDiscounts,
   calculateDiscountAmount,
+  calculateSubtotalFromDrafts,
   parseOptionalPositiveNumber,
   parsePositiveInteger,
   parsePositiveNumber,
@@ -33,15 +36,17 @@ import {
 import type {
   DiscountSelection,
   PaymentMode,
+  SaleItemDraft,
   SplitPaymentVariant,
 } from "@/src/features/staff/sales/newSaleTypes";
 import type { PaymentMethod } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
 
 export default function NewSaleScreen() {
-  const [productName, setProductName] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [unitPrice, setUnitPrice] = useState("");
+  const { user } = useAuth();
+  const [items, setItems] = useState<SaleItemDraft[]>([
+    { productName: "", quantity: "1", unitPrice: "" },
+  ]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("SINGLE");
   const [splitPaymentVariant, setSplitPaymentVariant] =
@@ -56,16 +61,7 @@ export default function NewSaleScreen() {
   const [note, setNote] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const quantityNumber = useMemo(
-    () => parsePositiveInteger(quantity),
-    [quantity]
-  );
-
-  const unitPriceNumber = useMemo(
-    () => parsePositiveNumber(unitPrice),
-    [unitPrice]
-  );
+  const [isDiscountExpanded, setIsDiscountExpanded] = useState(false);
 
   const manualDiscountAmountNumber = useMemo(
     () => parsePositiveNumber(manualDiscountAmount),
@@ -87,10 +83,7 @@ export default function NewSaleScreen() {
     [splitGlovoCashAmount]
   );
 
-  const subtotal =
-    quantityNumber !== null && unitPriceNumber !== null
-      ? roundMoney(quantityNumber * unitPriceNumber)
-      : null;
+  const subtotal = calculateSubtotalFromDrafts(items);
 
   const discountAmount = calculateDiscountAmount({
     subtotal,
@@ -140,9 +133,6 @@ export default function NewSaleScreen() {
     isManualDiscountValid;
 
   const canSubmit =
-    productName.trim().length > 0 &&
-    quantityNumber !== null &&
-    unitPriceNumber !== null &&
     subtotal !== null &&
     isDiscountValid &&
     finalTotal !== null &&
@@ -150,6 +140,42 @@ export default function NewSaleScreen() {
     isSplitPaymentAmountValid &&
     isSplitPaymentTotalValid &&
     !isSubmitting;
+
+  const displayName = user?.fullName ?? user?.username ?? "Staff";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+
+  function addItem() {
+    setItems((prev) => [
+      ...prev,
+      { productName: "", quantity: "1", unitPrice: "" },
+    ]);
+  }
+
+  function removeItem(index: number) {
+    if (items.length <= 1) return;
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateItem(
+    index: number,
+    field: keyof SaleItemDraft,
+    value: string
+  ) {
+    setItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
+  }
+
+  function handleClearDiscount() {
+    setSelectedDiscount("NONE");
+    setManualDiscountAmount("");
+    setManualDiscountNote("");
+    setIsDiscountExpanded(false);
+  }
 
   function buildPayments(finalAmount: number) {
     if (paymentMode === "SINGLE") {
@@ -199,12 +225,7 @@ export default function NewSaleScreen() {
   }
 
   async function handleSubmit() {
-    if (
-      !canSubmit ||
-      quantityNumber === null ||
-      unitPriceNumber === null ||
-      finalTotal === null
-    ) {
+    if (!canSubmit || finalTotal === null) {
       return;
     }
 
@@ -213,13 +234,11 @@ export default function NewSaleScreen() {
 
     try {
       await createSale({
-        items: [
-          {
-            productName: productName.trim(),
-            quantity: quantityNumber,
-            unitPrice: unitPriceNumber,
-          },
-        ],
+        items: items.map((item) => ({
+          productName: item.productName.trim(),
+          quantity: parsePositiveInteger(item.quantity)!,
+          unitPrice: parsePositiveNumber(item.unitPrice)!,
+        })),
         discounts: buildDiscounts({
           discount: selectedDiscount,
           manualDiscountAmount: manualDiscountAmountNumber,
@@ -239,145 +258,288 @@ export default function NewSaleScreen() {
   }
 
   return (
-    <Screen padded={false}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* AppBar */}
+      <View style={styles.appBar}>
+        <View style={styles.appBarLeft}>
+          <Text style={styles.menuIcon}>≡</Text>
+          <Text style={styles.appBarTitle}>New Sale</Text>
+        </View>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>New sale</Text>
-            <Text style={styles.subtitle}>
-              Create a paid sale for the current shift.
-            </Text>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Item details card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Item details</Text>
+
+            {items.map((item, index) => (
+              <View key={index}>
+                {index > 0 ? <View style={styles.itemSeparator} /> : null}
+                <View style={styles.itemBlock}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemLabel}>Item {index + 1}</Text>
+                    {items.length > 1 ? (
+                      <Pressable
+                        onPress={() => removeItem(index)}
+                        disabled={isSubmitting}
+                      >
+                        <Text style={styles.removeItemText}>Remove</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+
+                  <View style={styles.fieldGroup}>
+                    <Text style={styles.fieldLabel}>Product name</Text>
+                    <TextInput
+                      style={styles.textInput}
+                      value={item.productName}
+                      onChangeText={(v) => updateItem(index, "productName", v)}
+                      placeholder="e.g. Premium CBD Oil 10ml"
+                      autoCapitalize="sentences"
+                      placeholderTextColor="#9aaba8"
+                    />
+                  </View>
+
+                  <View style={styles.fieldRow}>
+                    <View style={[styles.fieldGroup, styles.fieldFlex]}>
+                      <Text style={styles.fieldLabel}>Quantity</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={item.quantity}
+                        onChangeText={(v) => updateItem(index, "quantity", v)}
+                        placeholder="1"
+                        keyboardType="number-pad"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
+                    <View style={[styles.fieldGroup, styles.fieldFlex]}>
+                      <Text style={styles.fieldLabel}>Unit price</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={item.unitPrice}
+                        onChangeText={(v) => updateItem(index, "unitPrice", v)}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
+                  </View>
+
+                  {parsePositiveInteger(item.quantity) !== null &&
+                  parsePositiveNumber(item.unitPrice) !== null ? (
+                    <Text style={styles.lineTotalText}>
+                      Line total:{" "}
+                      {formatMoney(
+                        roundMoney(
+                          parsePositiveInteger(item.quantity)! *
+                            parsePositiveNumber(item.unitPrice)!
+                        )
+                      )}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            ))}
+
+            <Pressable
+              style={styles.addItemBtn}
+              onPress={addItem}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.addItemBtnText}>+ Add item</Text>
+            </Pressable>
           </View>
 
+          {/* Discount card — collapsed by default */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Item</Text>
-
-            <TextField
-              label="Product name"
-              value={productName}
-              onChangeText={setProductName}
-              placeholder="Example: Coffee"
-              autoCapitalize="sentences"
-            />
-
-            <TextField
-              label="Quantity"
-              value={quantity}
-              onChangeText={setQuantity}
-              placeholder="1"
-              keyboardType="number-pad"
-            />
-
-            <TextField
-              label="Unit price"
-              value={unitPrice}
-              onChangeText={setUnitPrice}
-              placeholder="10.00"
-              keyboardType="decimal-pad"
-            />
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Discount</Text>
-
-            <View style={styles.options}>
-              {DISCOUNT_OPTIONS.map((discount) => {
-                const isDisabled =
-                  isSubmitting ||
-                  (discount === "LOYALTY_CARD" &&
-                    subtotal !== null &&
-                    subtotal < 25);
-
-                return (
-                  <Button
-                    key={discount}
-                    title={
-                      discount === selectedDiscount
-                        ? `✓ ${getDiscountLabel(discount)}`
-                        : getDiscountLabel(discount)
-                    }
-                    onPress={() => setSelectedDiscount(discount)}
-                    disabled={isDisabled}
-                  />
-                );
-              })}
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>Discount</Text>
+              <Pressable
+                onPress={() => setIsDiscountExpanded(!isDiscountExpanded)}
+              >
+                <Text style={styles.actionLink}>
+                  {isDiscountExpanded
+                    ? "Done"
+                    : selectedDiscount === "NONE"
+                    ? "Add discount"
+                    : "Edit discount"}
+                </Text>
+              </Pressable>
             </View>
 
-            <Text style={styles.helpText}>
-              {DISCOUNT_HELP[selectedDiscount]}
-            </Text>
-
-            {selectedDiscount === "LOYALTY_CARD" &&
-            subtotal !== null &&
-            subtotal < 25 ? (
-              <Text style={styles.warningText}>
-                Loyalty card discount requires subtotal of at least{" "}
-                {formatMoney(25)}.
-              </Text>
-            ) : null}
-
-            {selectedDiscount === "MANUAL_DISCOUNT" ? (
+            {!isDiscountExpanded ? (
+              selectedDiscount === "NONE" ? (
+                <Text style={styles.bodyText}>No discount applied.</Text>
+              ) : (
+                <View style={styles.discountSummaryRow}>
+                  <Text style={styles.bodyText}>
+                    {getDiscountLabel(selectedDiscount)}
+                  </Text>
+                  {discountAmount !== null && discountAmount > 0 ? (
+                    <Text style={styles.discountSummaryAmount}>
+                      -{formatMoney(discountAmount)}
+                    </Text>
+                  ) : null}
+                </View>
+              )
+            ) : (
               <>
-                <TextField
-                  label="Manual discount amount"
-                  value={manualDiscountAmount}
-                  onChangeText={setManualDiscountAmount}
-                  placeholder="5.00"
-                  keyboardType="decimal-pad"
-                />
+                <View style={styles.pillRow}>
+                  {DISCOUNT_OPTIONS.map((discount) => {
+                    const isSelected = discount === selectedDiscount;
+                    const isOptionDisabled =
+                      isSubmitting ||
+                      (discount === "LOYALTY_CARD" &&
+                        subtotal !== null &&
+                        subtotal < 25);
+                    return (
+                      <Pressable
+                        key={discount}
+                        style={[
+                          styles.pill,
+                          isSelected && styles.pillSelected,
+                          isOptionDisabled && styles.pillDisabled,
+                        ]}
+                        onPress={() => setSelectedDiscount(discount)}
+                        disabled={isOptionDisabled}
+                      >
+                        <Text
+                          style={[
+                            styles.pillText,
+                            isSelected && styles.pillTextSelected,
+                            isOptionDisabled && styles.pillTextDisabled,
+                          ]}
+                        >
+                          {getDiscountLabel(discount).toUpperCase()}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
 
-                {manualDiscountAmount.length > 0 &&
-                manualDiscountAmountNumber === null ? (
-                  <Text style={styles.warningText}>
-                    Manual discount amount must be greater than zero.
-                  </Text>
-                ) : null}
+                <Text style={styles.helpText}>
+                  {DISCOUNT_HELP[selectedDiscount]}
+                </Text>
 
-                {manualDiscountAmountNumber !== null &&
+                {selectedDiscount === "LOYALTY_CARD" &&
                 subtotal !== null &&
-                manualDiscountAmountNumber >= subtotal ? (
+                subtotal < 25 ? (
                   <Text style={styles.warningText}>
-                    Manual discount must be lower than subtotal.
+                    Loyalty card discount requires subtotal of at least{" "}
+                    {formatMoney(25)}.
                   </Text>
                 ) : null}
 
-                <TextField
-                  label="Manual discount note"
-                  value={manualDiscountNote}
-                  onChangeText={setManualDiscountNote}
-                  placeholder="Example: Manager approved"
-                  autoCapitalize="sentences"
-                />
+                {selectedDiscount === "MANUAL_DISCOUNT" ? (
+                  <View style={styles.manualDiscountBox}>
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>Discount amount</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={manualDiscountAmount}
+                        onChangeText={setManualDiscountAmount}
+                        placeholder="5.00"
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
 
-                {manualDiscountAmount.length > 0 &&
-                manualDiscountNote.trim().length === 0 ? (
-                  <Text style={styles.warningText}>
-                    Manual discount requires a note.
-                  </Text>
+                    {manualDiscountAmount.length > 0 &&
+                    manualDiscountAmountNumber === null ? (
+                      <Text style={styles.warningText}>
+                        Discount amount must be greater than zero.
+                      </Text>
+                    ) : null}
+
+                    {manualDiscountAmountNumber !== null &&
+                    subtotal !== null &&
+                    manualDiscountAmountNumber >= subtotal ? (
+                      <Text style={styles.warningText}>
+                        Manual discount must be lower than subtotal.
+                      </Text>
+                    ) : null}
+
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>Note</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={manualDiscountNote}
+                        onChangeText={setManualDiscountNote}
+                        placeholder="Reason for discount..."
+                        autoCapitalize="sentences"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
+
+                    {manualDiscountAmount.length > 0 &&
+                    manualDiscountNote.trim().length === 0 ? (
+                      <Text style={styles.warningText}>
+                        Manual discount requires a note.
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                {selectedDiscount !== "NONE" ? (
+                  <Pressable
+                    style={styles.clearDiscountBtn}
+                    onPress={handleClearDiscount}
+                  >
+                    <Text style={styles.clearDiscountText}>Clear discount</Text>
+                  </Pressable>
                 ) : null}
               </>
-            ) : null}
+            )}
+          </View>
 
-            <View style={styles.totalBox}>
-              <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalValue}>
+          {/* Totals — always visible */}
+          <View style={styles.totalsCard}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>
                 {subtotal !== null ? formatMoney(subtotal) : "—"}
               </Text>
             </View>
 
-            <View style={styles.totalBox}>
-              <Text style={styles.totalLabel}>Discount</Text>
-              <Text style={styles.totalValue}>
-                {discountAmount !== null ? formatMoney(discountAmount) : "—"}
+            <View style={styles.summaryRow}>
+              <Text
+                style={[
+                  styles.summaryLabel,
+                  discountAmount !== null &&
+                    discountAmount > 0 &&
+                    styles.labelError,
+                ]}
+              >
+                Discount
+              </Text>
+              <Text
+                style={[
+                  styles.summaryValue,
+                  discountAmount !== null &&
+                    discountAmount > 0 &&
+                    styles.valueError,
+                ]}
+              >
+                {discountAmount !== null && discountAmount > 0
+                  ? `-${formatMoney(discountAmount)}`
+                  : "—"}
               </Text>
             </View>
 
-            <View style={styles.totalBox}>
-              <Text style={styles.totalLabel}>Final total</Text>
-              <Text style={styles.totalValue}>
+            <View style={[styles.summaryRow, styles.summaryRowFinal]}>
+              <Text style={styles.finalLabel}>Final total</Text>
+              <Text style={styles.finalValue}>
                 {finalTotal !== null ? formatMoney(finalTotal) : "—"}
               </Text>
             </View>
@@ -389,48 +551,83 @@ export default function NewSaleScreen() {
             ) : null}
           </View>
 
+          {/* Payment method card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Payment</Text>
+            <Text style={styles.cardTitle}>Payment method</Text>
 
-            <View style={styles.options}>
-              <Button
-                title={
-                  paymentMode === "SINGLE" ? "✓ Single payment" : "Single payment"
-                }
+            {/* Segmented control */}
+            <View style={styles.segmentedControl}>
+              <Pressable
+                style={[
+                  styles.segmentBtn,
+                  paymentMode === "SINGLE" && styles.segmentBtnActive,
+                ]}
                 onPress={() => setPaymentMode("SINGLE")}
                 disabled={isSubmitting}
-              />
-              <Button
-                title={
-                  paymentMode === "SPLIT" ? "✓ Split payment" : "Split payment"
-                }
+              >
+                <Text
+                  style={[
+                    styles.segmentBtnText,
+                    paymentMode === "SINGLE" && styles.segmentBtnTextActive,
+                  ]}
+                >
+                  Single
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.segmentBtn,
+                  paymentMode === "SPLIT" && styles.segmentBtnActive,
+                ]}
                 onPress={() => setPaymentMode("SPLIT")}
                 disabled={isSubmitting}
-              />
+              >
+                <Text
+                  style={[
+                    styles.segmentBtnText,
+                    paymentMode === "SPLIT" && styles.segmentBtnTextActive,
+                  ]}
+                >
+                  Split
+                </Text>
+              </Pressable>
             </View>
 
             {paymentMode === "SINGLE" ? (
               <>
-                <Text style={styles.cardSubtitle}>Payment method</Text>
-
-                <View style={styles.options}>
-                  {PAYMENT_METHODS.map((method) => (
-                    <Button
-                      key={method}
-                      title={method === paymentMethod ? `✓ ${method}` : method}
-                      onPress={() => setPaymentMethod(method)}
-                      disabled={isSubmitting}
-                    />
-                  ))}
+                <View style={styles.methodGrid}>
+                  {PAYMENT_METHODS.map((method) => {
+                    const isSelected = method === paymentMethod;
+                    return (
+                      <Pressable
+                        key={method}
+                        style={[
+                          styles.methodBtn,
+                          isSelected && styles.methodBtnSelected,
+                        ]}
+                        onPress={() => setPaymentMethod(method)}
+                        disabled={isSubmitting}
+                      >
+                        <Text
+                          style={[
+                            styles.methodBtnText,
+                            isSelected && styles.methodBtnTextSelected,
+                          ]}
+                        >
+                          {method}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
                 </View>
 
                 <Text style={styles.helpText}>
                   {PAYMENT_METHOD_HELP[paymentMethod]}
                 </Text>
 
-                <View style={styles.totalBox}>
-                  <Text style={styles.totalLabel}>Payment amount</Text>
-                  <Text style={styles.totalValue}>
+                <View style={styles.paymentAmountRow}>
+                  <Text style={styles.summaryLabel}>Payment amount</Text>
+                  <Text style={styles.summaryValue}>
                     {finalTotal !== null && finalTotal > 0
                       ? formatMoney(finalTotal)
                       : "—"}
@@ -439,27 +636,45 @@ export default function NewSaleScreen() {
               </>
             ) : (
               <>
-                <Text style={styles.cardSubtitle}>Split type</Text>
-
-                <View style={styles.options}>
-                  <Button
-                    title={
-                      splitPaymentVariant === "REGISTER_METHODS"
-                        ? "✓ Cash / MB / Glovo cash"
-                        : "Cash / MB / Glovo cash"
-                    }
+                <View style={styles.pillRow}>
+                  <Pressable
+                    style={[
+                      styles.pill,
+                      splitPaymentVariant === "REGISTER_METHODS" &&
+                        styles.pillSelected,
+                    ]}
                     onPress={() => setSplitPaymentVariant("REGISTER_METHODS")}
                     disabled={isSubmitting}
-                  />
-                  <Button
-                    title={
-                      splitPaymentVariant === "GLOVO_ONLINE_ONLY"
-                        ? "✓ Glovo online only"
-                        : "Glovo online only"
-                    }
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        splitPaymentVariant === "REGISTER_METHODS" &&
+                          styles.pillTextSelected,
+                      ]}
+                    >
+                      CASH / MB / GLOVO CASH
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.pill,
+                      splitPaymentVariant === "GLOVO_ONLINE_ONLY" &&
+                        styles.pillSelected,
+                    ]}
                     onPress={() => setSplitPaymentVariant("GLOVO_ONLINE_ONLY")}
                     disabled={isSubmitting}
-                  />
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        splitPaymentVariant === "GLOVO_ONLINE_ONLY" &&
+                          styles.pillTextSelected,
+                      ]}
+                    >
+                      GLOVO ONLINE ONLY
+                    </Text>
+                  </Pressable>
                 </View>
 
                 {splitPaymentVariant === "GLOVO_ONLINE_ONLY" ? (
@@ -469,9 +684,11 @@ export default function NewSaleScreen() {
                       full final total will be assigned to GLOVO_ONLINE.
                     </Text>
 
-                    <View style={styles.totalBox}>
-                      <Text style={styles.totalLabel}>GLOVO_ONLINE amount</Text>
-                      <Text style={styles.totalValue}>
+                    <View style={styles.paymentAmountRow}>
+                      <Text style={styles.summaryLabel}>
+                        GLOVO_ONLINE amount
+                      </Text>
+                      <Text style={styles.summaryValue}>
                         {finalTotal !== null && finalTotal > 0
                           ? formatMoney(finalTotal)
                           : "—"}
@@ -485,13 +702,17 @@ export default function NewSaleScreen() {
                       methods empty.
                     </Text>
 
-                    <TextField
-                      label="CASH amount"
-                      value={splitCashAmount}
-                      onChangeText={setSplitCashAmount}
-                      placeholder="0.00"
-                      keyboardType="decimal-pad"
-                    />
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>CASH amount</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={splitCashAmount}
+                        onChangeText={setSplitCashAmount}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
 
                     {splitCashAmount.length > 0 && !splitCash.isValid ? (
                       <Text style={styles.warningText}>
@@ -499,13 +720,17 @@ export default function NewSaleScreen() {
                       </Text>
                     ) : null}
 
-                    <TextField
-                      label="MB amount"
-                      value={splitMbAmount}
-                      onChangeText={setSplitMbAmount}
-                      placeholder="0.00"
-                      keyboardType="decimal-pad"
-                    />
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>MB amount</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={splitMbAmount}
+                        onChangeText={setSplitMbAmount}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
 
                     {splitMbAmount.length > 0 && !splitMb.isValid ? (
                       <Text style={styles.warningText}>
@@ -513,13 +738,17 @@ export default function NewSaleScreen() {
                       </Text>
                     ) : null}
 
-                    <TextField
-                      label="GLOVO_CASH amount"
-                      value={splitGlovoCashAmount}
-                      onChangeText={setSplitGlovoCashAmount}
-                      placeholder="0.00"
-                      keyboardType="decimal-pad"
-                    />
+                    <View style={styles.fieldGroup}>
+                      <Text style={styles.fieldLabel}>GLOVO_CASH amount</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        value={splitGlovoCashAmount}
+                        onChangeText={setSplitGlovoCashAmount}
+                        placeholder="0.00"
+                        keyboardType="decimal-pad"
+                        placeholderTextColor="#9aaba8"
+                      />
+                    </View>
 
                     {splitGlovoCashAmount.length > 0 &&
                     !splitGlovoCash.isValid ? (
@@ -528,16 +757,16 @@ export default function NewSaleScreen() {
                       </Text>
                     ) : null}
 
-                    <View style={styles.totalBox}>
-                      <Text style={styles.totalLabel}>Split total</Text>
-                      <Text style={styles.totalValue}>
+                    <View style={styles.paymentAmountRow}>
+                      <Text style={styles.summaryLabel}>Split total</Text>
+                      <Text style={styles.summaryValue}>
                         {formatMoney(splitPaymentTotal)}
                       </Text>
                     </View>
 
-                    <View style={styles.totalBox}>
-                      <Text style={styles.totalLabel}>Remaining</Text>
-                      <Text style={styles.totalValue}>
+                    <View style={styles.paymentAmountRow}>
+                      <Text style={styles.summaryLabel}>Remaining</Text>
+                      <Text style={styles.summaryValue}>
                         {splitRemaining !== null
                           ? formatMoney(splitRemaining)
                           : "—"}
@@ -557,105 +786,449 @@ export default function NewSaleScreen() {
             )}
           </View>
 
+          {/* Notes card */}
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Optional note</Text>
-
-            <TextField
-              label="Note"
+            <Text style={styles.cardTitle}>Notes</Text>
+            <TextInput
+              style={[styles.textInput, styles.notesInput]}
               value={note}
               onChangeText={setNote}
-              placeholder="Optional"
+              placeholder="Add internal sale notes here..."
               autoCapitalize="sentences"
+              multiline
+              numberOfLines={3}
+              placeholderTextColor="#9aaba8"
+              textAlignVertical="top"
             />
           </View>
 
           <ErrorMessage message={errorMessage} />
 
+          {/* Bottom actions */}
           <View style={styles.actions}>
-            <Button
-              title="Create sale"
-              onPress={handleSubmit}
-              loading={isSubmitting}
+            <Pressable
+              style={[styles.btnPrimary, !canSubmit && styles.btnDisabled]}
+              onPress={() => void handleSubmit()}
               disabled={!canSubmit}
-            />
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.btnPrimaryText}>Create sale</Text>
+              )}
+            </Pressable>
 
-            <Button
-              title="Cancel"
+            <Pressable
+              style={styles.cancelBtn}
               onPress={() => router.back()}
               disabled={isSubmitting}
-            />
+            >
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#faf8ff",
+  },
+
+  // AppBar
+  appBar: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+  },
+  appBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  menuIcon: {
+    fontSize: 20,
+    color: "#00685f",
+  },
+  appBarTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#00685f",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#708cfd",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#00217a",
+  },
+
   keyboardView: {
     flex: 1,
   },
-  content: {
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
-  },
+
+  // Card
   card: {
-    gap: 12,
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: "#bcc9c6",
+    borderRadius: 12,
+    padding: 16,
+    gap: 12,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
   },
   cardTitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "600",
+    color: "#131b2e",
   },
-  cardSubtitle: {
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  // Form fields
+  fieldGroup: {
+    gap: 4,
+  },
+  fieldFlex: {
+    flex: 1,
+  },
+  fieldRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#3d4947",
+    letterSpacing: 0.3,
+  },
+  textInput: {
+    height: 48,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    borderRadius: 8,
+    paddingHorizontal: 12,
     fontSize: 16,
-    fontWeight: "700",
+    color: "#131b2e",
   },
-  options: {
+  notesInput: {
+    height: 80,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+
+  // Multi-item rows
+  itemBlock: {
+    gap: 12,
+  },
+  itemHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  itemLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#3d4947",
+    letterSpacing: 0.3,
+  },
+  removeItemText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#ba1a1a",
+  },
+  lineTotalText: {
+    fontSize: 12,
+    color: "#3d4947",
+  },
+  itemSeparator: {
+    height: 1,
+    backgroundColor: "#eaedff",
+    marginBottom: 4,
+  },
+  addItemBtn: {
+    alignSelf: "flex-start",
+    paddingTop: 4,
+  },
+  addItemBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#00685f",
+  },
+
+  // Discount collapsed summary
+  bodyText: {
+    fontSize: 14,
+    color: "#3d4947",
+    lineHeight: 20,
+  },
+  actionLink: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#00685f",
+  },
+  discountSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
+  discountSummaryAmount: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ba1a1a",
+  },
+
+  // Pill buttons (discount options, split type)
+  pillRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#ffffff",
+  },
+  pillSelected: {
+    backgroundColor: "#00685f",
+    borderColor: "#00685f",
+  },
+  pillDisabled: {
+    opacity: 0.4,
+  },
+  pillText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#131b2e",
+    letterSpacing: 0.3,
+  },
+  pillTextSelected: {
+    color: "#ffffff",
+  },
+  pillTextDisabled: {
+    color: "#9aaba8",
+  },
+
   helpText: {
     fontSize: 14,
+    color: "#3d4947",
     lineHeight: 20,
-    color: "#555555",
   },
   warningText: {
+    fontSize: 13,
+    color: "#825100",
+    lineHeight: 18,
+  },
+
+  // Manual discount expanded area
+  manualDiscountBox: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 10,
+    padding: 12,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "rgba(188,201,198,0.3)",
+  },
+
+  // Clear discount
+  clearDiscountBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: "#fff0f0",
+  },
+  clearDiscountText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#ba1a1a",
+  },
+
+  // Totals card
+  totalsCard: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+  },
+  summaryRowFinal: {
+    borderBottomWidth: 0,
+    paddingVertical: 14,
+  },
+  summaryLabel: {
     fontSize: 14,
-    lineHeight: 20,
-    color: "#7a5200",
+    color: "#3d4947",
+    fontWeight: "500",
   },
-  totalBox: {
-    gap: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
-  },
-  totalLabel: {
+  summaryValue: {
     fontSize: 14,
-    color: "#555555",
+    color: "#131b2e",
+    fontWeight: "500",
   },
-  totalValue: {
-    fontSize: 22,
+  labelError: {
+    color: "#ba1a1a",
+  },
+  valueError: {
+    color: "#ba1a1a",
+  },
+  finalLabel: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#131b2e",
+  },
+  finalValue: {
+    fontSize: 24,
     fontWeight: "700",
+    color: "#00685f",
   },
+
+  // Payment segmented control
+  segmentedControl: {
+    flexDirection: "row",
+    backgroundColor: "#f2f3ff",
+    borderRadius: 10,
+    padding: 4,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  segmentBtnActive: {
+    backgroundColor: "#ffffff",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  segmentBtnText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#3d4947",
+  },
+  segmentBtnTextActive: {
+    fontWeight: "600",
+    color: "#131b2e",
+  },
+
+  // Payment method grid (2×2)
+  methodGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  methodBtn: {
+    width: "47%",
+    height: 56,
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  methodBtnSelected: {
+    borderWidth: 2,
+    borderColor: "#00685f",
+    backgroundColor: "rgba(0,104,95,0.05)",
+  },
+  methodBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#3d4947",
+  },
+  methodBtnTextSelected: {
+    color: "#00685f",
+  },
+
+  // Payment amount display row
+  paymentAmountRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "rgba(226,231,255,0.3)",
+    borderRadius: 8,
+    padding: 12,
+  },
+
+  // Actions
   actions: {
     gap: 12,
-    marginTop: 8,
-    paddingBottom: 24,
+    paddingBottom: 40,
+  },
+  btnPrimary: {
+    height: 48,
+    backgroundColor: "#00685f",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#00685f",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  btnPrimaryText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#ffffff",
+  },
+  cancelBtn: {
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  cancelBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#6d7a77",
   },
 });

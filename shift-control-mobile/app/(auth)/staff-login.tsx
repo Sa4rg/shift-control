@@ -1,13 +1,21 @@
 import { Link, router } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { useAuth } from "@/src/auth/AuthContext";
-import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { Screen } from "@/src/components/Screen";
-import { TextField } from "@/src/components/TextField";
 
 export default function StaffLoginScreen() {
   const { loginStaff } = useAuth();
@@ -20,19 +28,13 @@ export default function StaffLoginScreen() {
   const canSubmit = username.trim().length > 0 && pin.length === 6;
 
   async function handleSubmit() {
-    if (!canSubmit || isSubmitting) {
-      return;
-    }
+    if (!canSubmit || isSubmitting) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      await loginStaff({
-        username: username.trim(),
-        pin,
-      });
-
+      await loginStaff({ username: username.trim(), pin });
       router.replace("/");
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error));
@@ -42,85 +44,194 @@ export default function StaffLoginScreen() {
   }
 
   return (
-    <Screen>
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <View style={styles.container}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Shift Control</Text>
             <Text style={styles.subtitle}>Staff login</Text>
           </View>
 
+          {/* Card */}
           <View style={styles.card}>
-            <TextField
-              label="Username"
-              value={username}
-              onChangeText={setUsername}
-              placeholder="Enter your username"
-              autoCapitalize="none"
-            />
+            <View style={styles.field}>
+              <Text style={styles.label}>Username</Text>
+              <TextInput
+                style={styles.input}
+                value={username}
+                onChangeText={setUsername}
+                placeholder="Enter your username"
+                placeholderTextColor="#9EACAA"
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isSubmitting}
+              />
+            </View>
 
-            <TextField
-              label="PIN"
-              value={pin}
-              onChangeText={setPin}
-              placeholder="Enter your 6-digit PIN"
-              secureTextEntry
-              keyboardType="number-pad"
-              maxLength={6}
-            />
+            <View style={styles.field}>
+              <Text style={styles.label}>PIN</Text>
+              <TextInput
+                style={styles.input}
+                value={pin}
+                onChangeText={setPin}
+                placeholder="••••••"
+                placeholderTextColor="#9EACAA"
+                secureTextEntry
+                keyboardType="number-pad"
+                maxLength={6}
+                editable={!isSubmitting}
+              />
+            </View>
 
             <ErrorMessage message={errorMessage} />
 
-            <Button
-              title="Login"
+            <Pressable
+              style={[
+                styles.button,
+                (!canSubmit || isSubmitting) && styles.buttonDisabled,
+              ]}
               onPress={handleSubmit}
-              loading={isSubmitting}
-              disabled={!canSubmit}
-            />
+              disabled={!canSubmit || isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.buttonText}>Login</Text>
+              )}
+            </Pressable>
 
-            <Link href="/(auth)/admin-login" style={styles.link}>
+            <Link href="/(auth)/admin-login" style={styles.adminLink}>
               Login as admin
             </Link>
           </View>
-        </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <View style={styles.footerHandle} />
+            <Text style={styles.footerText}>Internal Corporate Tool</Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#faf8ff",
+  },
   keyboardView: {
     flex: 1,
   },
-  container: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: "center",
-    gap: 32,
+    paddingHorizontal: 16,
+    paddingVertical: 32,
+    gap: 24,
   },
   header: {
+    alignItems: "center",
     gap: 8,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "700",
+    color: "#00685f",
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 18,
-    color: "#555555",
+    fontSize: 16,
+    color: "#3d4947",
+    opacity: 0.7,
   },
   card: {
-    gap: 16,
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: "#bcc9c6",
+    borderRadius: 12,
+    padding: 24,
+    gap: 20,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  link: {
-    alignSelf: "center",
-    fontSize: 16,
+  field: {
+    gap: 8,
+  },
+  label: {
+    fontSize: 14,
     fontWeight: "600",
+    color: "#3d4947",
+    letterSpacing: 0.7,
+    marginLeft: 4,
+  },
+  input: {
+    height: 48,
+    backgroundColor: "#f8fafc",
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: "#131b2e",
+  },
+  button: {
+    height: 48,
+    backgroundColor: "#00685f",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#00685f",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+    elevation: 0,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#ffffff",
+    letterSpacing: 0.7,
+  },
+  adminLink: {
+    alignSelf: "center",
+    fontSize: 12,
+    fontWeight: "500",
+    color: "#3755c3",
+    paddingVertical: 8,
+  },
+  footer: {
+    alignItems: "center",
+    gap: 16,
+    paddingBottom: 16,
+  },
+  footerHandle: {
+    width: 48,
+    height: 6,
+    backgroundColor: "rgba(188,201,198,0.3)",
+    borderRadius: 9999,
+  },
+  footerText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: "rgba(61,73,71,0.4)",
+    textTransform: "uppercase",
+    letterSpacing: 2,
   },
 });

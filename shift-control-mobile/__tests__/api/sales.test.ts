@@ -296,6 +296,67 @@ describe("createSale", () => {
     expect(result.finalTotalAmount).toBe(25);
     expect(result.discounts[0].reason).toBe("MANUAL_DISCOUNT");
   });
+
+  it("creates a sale with multiple items", async () => {
+    const request = {
+      items: [
+        { productName: "Coffee", quantity: 2, unitPrice: 10 },
+        { productName: "Croissant", quantity: 1, unitPrice: 5 },
+      ],
+      discounts: [],
+      payments: [{ method: "CASH" as const, amount: 25 }],
+      invoiceStatus: "PENDING" as const,
+    };
+
+    mockedApiClient.post.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Sale created successfully",
+        data: {
+          id: "sale-multi",
+          shiftId: "shift-1",
+          staffId: "staff-1",
+          storeId: "store-1",
+          status: "ACTIVE",
+          invoiceStatus: "PENDING",
+          subtotalAmount: 25,
+          discountTotalAmount: 0,
+          finalTotalAmount: 25,
+          note: null,
+          items: [
+            {
+              id: "item-1",
+              productName: "Coffee",
+              quantity: 2,
+              unitPrice: 10,
+              lineTotal: 20,
+            },
+            {
+              id: "item-2",
+              productName: "Croissant",
+              quantity: 1,
+              unitPrice: 5,
+              lineTotal: 5,
+            },
+          ],
+          discounts: [],
+          payments: [{ id: "payment-1", method: "CASH", amount: 25 }],
+          createdAt: "2026-05-16T10:00:00Z",
+          updatedAt: "2026-05-16T10:00:00Z",
+          cancelledAt: null,
+          cancelledReason: null,
+        },
+      },
+    });
+
+    const result = await createSale(request);
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/sales", request);
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0].productName).toBe("Coffee");
+    expect(result.items[1].productName).toBe("Croissant");
+    expect(result.finalTotalAmount).toBe(25);
+  });
 });
 
 describe("getSaleById", () => {

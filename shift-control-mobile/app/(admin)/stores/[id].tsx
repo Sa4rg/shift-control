@@ -1,13 +1,20 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, Alert } from "react-native";
+import {
+  Alert,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getStoreById, deactivateStore } from "@/src/api/stores";
-import { Button } from "@/src/components/Button";
+import { deactivateStore, getStoreById } from "@/src/api/stores";
+import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
 import type { Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
@@ -29,7 +36,15 @@ type StoreDetailState =
       errorMessage: string;
     };
 
-function DetailRow({ label, value }: { label: string; value: string | null }) {
+function DetailRow({
+  label,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  value: string | null;
+  valueStyle?: object;
+}) {
   if (!value) {
     return null;
   }
@@ -37,12 +52,35 @@ function DetailRow({ label, value }: { label: string; value: string | null }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    </View>
+  );
+}
+
+function StoreStatusBadge({ active }: { active: boolean }) {
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        active ? styles.statusBadgeActive : styles.statusBadgeInactive,
+      ]}
+    >
+      <Text
+        style={[
+          styles.statusBadgeText,
+          active
+            ? styles.statusBadgeTextActive
+            : styles.statusBadgeTextInactive,
+        ]}
+      >
+        {active ? "ACTIVE" : "INACTIVE"}
+      </Text>
     </View>
   );
 }
 
 export default function AdminStoreDetailScreen() {
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ id?: string }>();
   const storeId = params.id;
 
@@ -92,231 +130,603 @@ export default function AdminStoreDetailScreen() {
 
   async function handleDeactivateStore() {
     if (!storeId || state.status !== "ready" || !state.store.active) {
-        return;
+      return;
     }
 
     setIsDeactivating(true);
     setActionErrorMessage(null);
 
     try {
-        const updatedStore = await deactivateStore(storeId);
+      const updatedStore = await deactivateStore(storeId);
 
-        setState({
+      setState({
         status: "ready",
         store: updatedStore,
         errorMessage: null,
-        });
+      });
     } catch (error) {
-        setActionErrorMessage(getApiErrorMessage(error));
+      setActionErrorMessage(getApiErrorMessage(error));
     } finally {
-        setIsDeactivating(false);
+      setIsDeactivating(false);
     }
-    }
+  }
 
-    function confirmDeactivateStore() {
+  function confirmDeactivateStore() {
     if (state.status !== "ready") {
-        return;
+      return;
     }
 
     Alert.alert(
-        "Deactivate store",
-        `Are you sure you want to deactivate ${state.store.name}? This store should not be used for new operations after deactivation.`,
-        [
+      "Deactivate store",
+      `Are you sure you want to deactivate ${state.store.name}? This store should not be used for new operations after deactivation.`,
+      [
         {
-            text: "Cancel",
-            style: "cancel",
+          text: "Cancel",
+          style: "cancel",
         },
         {
-            text: "Deactivate",
-            style: "destructive",
-            onPress: () => {
+          text: "Deactivate",
+          style: "destructive",
+          onPress: () => {
             void handleDeactivateStore();
-            },
+          },
         },
-        ]
+      ]
     );
-    }
+  }
 
   useEffect(() => {
     void loadStore();
   }, [loadStore]);
 
+  const displayName = user?.fullName ?? user?.username ?? "Admin";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
+
   if (state.status === "loading") {
     return <LoadingState message="Loading store..." />;
   }
 
+  const appBar = (
+    <View style={styles.appBar}>
+      <View style={styles.appBarLeft}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.appBarBackButton,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => router.back()}
+          disabled={isDeactivating}
+        >
+          <Text style={styles.backIcon}>←</Text>
+        </Pressable>
+
+        <Text style={styles.appBarTitle}>Shift Control</Text>
+      </View>
+
+      <View style={styles.avatar}>
+        <Text style={styles.avatarText}>{initials}</Text>
+      </View>
+    </View>
+  );
+
   if (state.status === "error") {
     return (
-      <Screen>
-        <View style={styles.container}>
-          <Text style={styles.title}>Store detail</Text>
+      <SafeAreaView style={styles.safeArea}>
+        {appBar}
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Store detail</Text>
+          </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load store</Text>
-            <ErrorMessage message={state.errorMessage} />
-            <Button title="Try again" onPress={loadStore} />
-            <Button title="Back" onPress={() => router.back()} />
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Could not load store</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <ErrorMessage message={state.errorMessage} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadStore}
+              >
+                <Text style={styles.btnOutlineText}>Try again</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.btnBackText}>← Back</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Screen>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   const store = state.store;
 
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Store detail</Text>
-          <Text style={styles.subtitle}>Store {store.id.slice(0, 8)}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      {appBar}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Store detail</Text>
+          <Text style={styles.pageSubtitle}>ID: {store.id.slice(0, 8)}</Text>
         </View>
 
-        <View style={store.active ? styles.successCard : styles.warningCard}>
-          <Text style={store.active ? styles.successTitle : styles.warningTitle}>
-            {store.active ? "Active store" : "Inactive store"}
-          </Text>
-          <Text style={store.active ? styles.successText : styles.warningText}>
+        <View
+          style={[
+            styles.statusBanner,
+            store.active
+              ? styles.statusBannerActive
+              : styles.statusBannerInactive,
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              store.active ? styles.statusDotActive : styles.statusDotInactive,
+            ]}
+          />
+
+          <Text
+            style={[
+              styles.statusBannerText,
+              store.active
+                ? styles.statusBannerTextActive
+                : styles.statusBannerTextInactive,
+            ]}
+          >
             {store.active
-              ? "This store can be used for staff assignment and reports."
-              : "This store is inactive and should not be used for new operations."}
+              ? "Active store — can be used for operations"
+              : "Inactive store — cannot be used for new operations"}
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{store.name}</Text>
+          <View style={styles.cardBody}>
+            <View style={styles.storeTitleRow}>
+              <Text style={styles.storeName}>{store.name}</Text>
+              <StoreStatusBadge active={store.active} />
+            </View>
 
-          <DetailRow label="Address" value={store.address} />
-          <DetailRow
-            label="Base cash amount"
-            value={formatMoney(store.baseCashAmount)}
-          />
-          <DetailRow label="Status" value={store.active ? "Active" : "Inactive"} />
+            <DetailRow label="ADDRESS" value={store.address} />
+
+            <DetailRow
+              label="BASE CASH AMOUNT"
+              value={formatMoney(store.baseCashAmount)}
+              valueStyle={styles.primaryValue}
+            />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>STATUS</Text>
+
+              <View style={styles.inlineStatus}>
+                <View
+                  style={[
+                    styles.inlineStatusDot,
+                    store.active
+                      ? styles.statusDotActive
+                      : styles.statusDotInactive,
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.detailValue,
+                    store.active ? styles.primaryValue : styles.warningValue,
+                  ]}
+                >
+                  {store.active ? "Active" : "Inactive"}
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         {!store.active ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Deactivation</Text>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Deactivation</Text>
 
-            <DetailRow label="Deactivated by" value={store.deactivatedByName} />
-            <DetailRow
-              label="Deactivated at"
-              value={
-                store.deactivatedAt ? formatDateTime(store.deactivatedAt) : null
-              }
-            />
+              <DetailRow
+                label="DEACTIVATED BY"
+                value={store.deactivatedByName}
+              />
+
+              <DetailRow
+                label="DEACTIVATED AT"
+                value={
+                  store.deactivatedAt ? formatDateTime(store.deactivatedAt) : null
+                }
+              />
+            </View>
           </View>
         ) : null}
 
-        <ErrorMessage message={actionErrorMessage} />
-
-        <View style={styles.actions}>
-        {store.active ? (
-            <Button
-            title="Deactivate store"
-            onPress={confirmDeactivateStore}
-            loading={isDeactivating}
-            disabled={isDeactivating}
-            />
+        {actionErrorMessage ? (
+          <View style={styles.errorCard}>
+            <ErrorMessage message={actionErrorMessage} />
+          </View>
         ) : null}
 
-        <Button title="Refresh" onPress={loadStore} disabled={isDeactivating} />
-        <Button
-            title="Back"
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={loadStore}
+            disabled={isDeactivating}
+          >
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnBack,
+              pressed && styles.buttonPressed,
+            ]}
             onPress={() => router.back()}
             disabled={isDeactivating}
-        />
+          >
+            <Text style={styles.btnBackText}>← Back</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.adminActions}>
+          {store.active ? (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnDanger,
+                  (pressed || isDeactivating) && styles.buttonPressed,
+                ]}
+                onPress={confirmDeactivateStore}
+                disabled={isDeactivating}
+              >
+                <Text style={styles.btnDangerText}>
+                  {isDeactivating ? "Deactivating…" : "⊘ Deactivate store"}
+                </Text>
+              </Pressable>
+
+              <Text style={styles.dangerHelpText}>
+                This action will prevent new operations from this store.
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.inactiveHelpText}>
+              This store has already been deactivated.
+            </Text>
+          )}
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-    padding: 24,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#faf8ff",
   },
-  header: {
-    gap: 6,
+  appBar: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
   },
-  title: {
-    fontSize: 28,
+  appBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  appBarBackButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  backIcon: {
+    fontSize: 20,
     fontWeight: "700",
+    color: "#00685f",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
+  appBarTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#00685f",
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#dde1ff",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#bcc9c6",
+  },
+  avatarText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#00217a",
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#131b2e",
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#3d4947",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  statusBanner: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  statusBannerActive: {
+    backgroundColor: "#00685f",
+    borderColor: "#00685f",
+  },
+  statusBannerInactive: {
+    backgroundColor: "#fff8e6",
+    borderColor: "#f0d8a0",
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusDotActive: {
+    backgroundColor: "#ffffff",
+  },
+  statusDotInactive: {
+    backgroundColor: "#825100",
+  },
+  statusBannerText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    lineHeight: 20,
+  },
+  statusBannerTextActive: {
+    color: "#ffffff",
+  },
+  statusBannerTextInactive: {
+    color: "#825100",
   },
   card: {
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#dddddd",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 20,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    overflow: "hidden",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#131b2e",
   },
-  detailRow: {
+  cardBody: {
+    padding: 16,
+    gap: 18,
+  },
+  storeTitleRow: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
+  },
+  storeName: {
+    flex: 1,
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#131b2e",
+    letterSpacing: -0.2,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#00685f",
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  detailRow: {
+    gap: 5,
     paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#eaedff",
   },
   detailLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: "#555555",
+    fontSize: 11,
+    fontWeight: "900",
+    color: "#6d7a77",
+    letterSpacing: 0.8,
   },
   detailValue: {
-    flex: 1,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    textAlign: "right",
+    color: "#131b2e",
+    lineHeight: 21,
   },
-  successCard: {
+  primaryValue: {
+    color: "#00685f",
+  },
+  warningValue: {
+    color: "#825100",
+  },
+  inlineStatus: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
+  },
+  inlineStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  statusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusBadgeActive: {
+    backgroundColor: "#d2f5f0",
+  },
+  statusBadgeInactive: {
+    backgroundColor: "#fff8e6",
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.4,
+  },
+  statusBadgeTextActive: {
+    color: "#005049",
+  },
+  statusBadgeTextInactive: {
+    color: "#825100",
+  },
+  errorCard: {
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#9bd49b",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#edf9ed",
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1f6b1f",
-  },
-  successText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1f6b1f",
-  },
-  warningCard: {
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#f0d28a",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#fff8e5",
-  },
-  warningTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#7a5200",
-  },
-  warningText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7a5200",
+    borderColor: "#ffdad6",
+    backgroundColor: "#fff8f7",
+    padding: 14,
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#005049",
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#bcc9c6",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#3d4947",
+  },
+  adminActions: {
+    gap: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#eaedff",
+  },
+  btnDanger: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#ba1a1a",
+    backgroundColor: "#ffffff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDangerText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#ba1a1a",
+  },
+  dangerHelpText: {
+    fontSize: 13,
+    color: "#3d4947",
+    textAlign: "center",
+    lineHeight: 19,
+  },
+  inactiveHelpText: {
+    fontSize: 14,
+    color: "#3d4947",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+  },
+  btnOutlineText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#00685f",
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

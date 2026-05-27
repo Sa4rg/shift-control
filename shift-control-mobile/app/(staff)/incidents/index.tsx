@@ -1,15 +1,53 @@
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { listIncidents } from "@/src/api/incidents";
-import { Button } from "@/src/components/Button";
+import { getCurrentShift } from "@/src/api/shifts";
+import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
-import type { Incident } from "@/src/types/api";
+import type { Incident, IncidentSeverity, IncidentStatus } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
+
+function formatIncidentType(type: string): string {
+  return type.replace(/_/g, " ");
+}
+
+function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
+  const configs: Record<IncidentSeverity, { bg: string; color: string }> = {
+    LOW: { bg: "#e8ecf0", color: "#4d5b5a" },
+    MEDIUM: { bg: "#fff3d6", color: "#825100" },
+    HIGH: { bg: "#ffdad6", color: "#93000a" },
+  };
+  const { bg, color } = configs[severity];
+  return (
+    <Text style={[styles.badge, { backgroundColor: bg, color }]}>
+      {severity}
+    </Text>
+  );
+}
+
+function StatusBadge({ status }: { status: IncidentStatus }) {
+  const configs: Record<IncidentStatus, { bg: string; color: string }> = {
+    OPEN: { bg: "#e8eeff", color: "#3755c3" },
+    RESOLVED: { bg: "#d2f5f0", color: "#004f49" },
+  };
+  const { bg, color } = configs[status];
+  return (
+    <Text style={[styles.badge, { backgroundColor: bg, color }]}>
+      {status}
+    </Text>
+  );
+}
 
 type IncidentsState =
   | {
@@ -29,13 +67,26 @@ type IncidentsState =
     };
 
 export default function IncidentsIndexScreen() {
+  const { user } = useAuth();
   const params = useLocalSearchParams<{ shiftId?: string }>();
-  const shiftId = params.shiftId;
+  const [activeShiftId, setActiveShiftId] = useState<string | null>(null);
+  // Prefer an explicit shiftId param (sale/closure context); fall back to active shift
+  const effectiveShiftId = params.shiftId ?? activeShiftId;
   const [state, setState] = useState<IncidentsState>({
     status: "loading",
     incidents: [],
     errorMessage: null,
   });
+
+  const loadActiveShift = useCallback(async () => {
+    try {
+      const result = await getCurrentShift();
+      setActiveShiftId(result.status === "active" ? result.shift.id : null);
+    } catch {
+      // Non-blocking — incidents list still works without active shift
+      setActiveShiftId(null);
+    }
+  }, []);
 
   const loadIncidents = useCallback(async () => {
     setState({
@@ -64,151 +115,385 @@ export default function IncidentsIndexScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadIncidents();
-    }, [loadIncidents])
+      void loadActiveShift();
+    }, [loadIncidents, loadActiveShift])
   );
+
+  const displayName = user?.fullName ?? user?.username ?? "Staff";
+  const initials = displayName
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
 
   if (state.status === "loading") {
     return <LoadingState message="Loading incidents..." />;
   }
 
+  const newIncidentPath = "/(staff)/incidents/new-incident" as never;
+
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>My incidents</Text>
-          <Text style={styles.subtitle}>
+    <SafeAreaView style={styles.safeArea}>
+      {/* AppBar */}
+      <View style={styles.appBar}>
+        <View style={styles.appBarLeft}>
+          <Text style={styles.menuIcon}>≡</Text>
+          <Text style={styles.appBarTitle}>Shift Control</Text>
+        </View>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Page header */}
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>My incidents</Text>
+          <Text style={styles.pageSubtitle}>
             Incidents reported by you or related to your operational context.
           </Text>
         </View>
 
+        {/* Error state */}
         {state.status === "error" ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Could not load incidents</Text>
             <ErrorMessage message={state.errorMessage} />
-            <Button title="Try again" onPress={loadIncidents} />
+            <Pressable style={styles.btnOutline} onPress={loadIncidents}>
+              <Text style={styles.btnOutlineText}>Try again</Text>
+            </Pressable>
           </View>
         ) : null}
 
+        {/* Empty state */}
         {state.status === "ready" && state.incidents.length === 0 ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>No incidents</Text>
-            <Text style={styles.body}>
-              You have no incidents registered yet.
+            <Text style={styles.cardTitle}>No incidents yet</Text>
+            <Text style={styles.emptyBody}>
+              You have not reported any incidents.
             </Text>
+            {effectiveShiftId ? (
+              <Pressable
+                style={styles.btnPrimary}
+                onPress={() =>
+                  router.push({
+                    pathname: newIncidentPath,
+                    params: { shiftId: effectiveShiftId },
+                  })
+                }
+              >
+                <Text style={styles.btnPrimaryText}>+ New incident</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
+        {/* Incidents list */}
         {state.status === "ready" && state.incidents.length > 0 ? (
-          <View style={styles.card}>
-            {state.incidents.map((incident) => (
-            <Pressable
-                key={incident.id}
-                style={styles.incidentRow}
-                onPress={() => router.push(`/(staff)/incidents/${incident.id}`)}
-            >
-                <View style={styles.incidentMain}>
-                <Text style={styles.incidentTitle}>{incident.title}</Text>
-                <Text style={styles.incidentMeta}>
-                    {incident.type} · {incident.severity} · {incident.status}
-                </Text>
-                <Text style={styles.incidentMeta}>
-                    {formatDateTime(incident.createdAt)}
-                </Text>
-                </View>
-            </Pressable>
+          <View style={styles.listCard}>
+            {state.incidents.map((incident, index) => (
+              <View key={incident.id}>
+                {index > 0 && <View style={styles.rowDivider} />}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.incidentRow,
+                    pressed && styles.incidentRowPressed,
+                  ]}
+                  onPress={() =>
+                    router.push(`/(staff)/incidents/${incident.id}` as never)
+                  }
+                >
+                  <View style={styles.incidentTop}>
+                    <Text style={styles.incidentTitle} numberOfLines={2}>
+                      {incident.title || formatIncidentType(incident.type)}
+                    </Text>
+                    <Text style={styles.incidentDate}>
+                      {formatDateTime(incident.createdAt)}
+                    </Text>
+                  </View>
+                  <View style={styles.badgeRow}>
+                    <Text style={styles.typeBadge}>
+                      {formatIncidentType(incident.type)}
+                    </Text>
+                    <SeverityBadge severity={incident.severity} />
+                    <StatusBadge status={incident.status} />
+                  </View>
+                </Pressable>
+              </View>
             ))}
           </View>
         ) : null}
 
+        {/* Actions */}
         <View style={styles.actions}>
-          {shiftId ? (
-            <Button
-              title="New incident"
+          {effectiveShiftId ? (
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnPrimary,
+                pressed && styles.btnPressed,
+              ]}
               onPress={() =>
                 router.push({
-                  pathname: "/(staff)/incidents/new-incident" as never,
-                  params: { shiftId },
+                  pathname: newIncidentPath,
+                  params: { shiftId: effectiveShiftId },
                 })
               }
-            />
+            >
+              <Text style={styles.btnPrimaryText}>+ New incident</Text>
+            </Pressable>
           ) : (
             <View style={styles.infoCard}>
               <Text style={styles.infoText}>
-                To create an incident, open a shift first or create it from a sale or closure context.
+                To create an incident, open a shift first or create it from a
+                sale or closure context.
               </Text>
             </View>
           )}
-          <Button title="Back" onPress={() => router.back()} />
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnBack,
+              pressed && styles.btnPressed,
+            ]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.btnBackText}>Back</Text>
+          </Pressable>
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#faf8ff",
+  },
+
+  // AppBar
+  appBar: {
+    height: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    backgroundColor: "#ffffff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaedff",
+  },
+  appBarLeft: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
+  menuIcon: {
+    fontSize: 20,
+    color: "#00685f",
   },
-  title: {
+  appBarTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#00685f",
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#708cfd",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatarText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#00217a",
+  },
+
+  // Scroll
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 20,
+  },
+
+  // Page header
+  pageHeader: {
+    gap: 8,
+    marginBottom: 4,
+  },
+  pageTitle: {
     fontSize: 28,
     fontWeight: "700",
+    color: "#131b2e",
   },
-  subtitle: {
+  pageSubtitle: {
     fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
+    color: "#3d4947",
+    lineHeight: 24,
   },
+
+  // Generic card (error / empty)
   card: {
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#dddddd",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
     padding: 20,
+    gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   cardTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
+    color: "#131b2e",
   },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
+  emptyBody: {
+    fontSize: 15,
+    color: "#3d4947",
+    lineHeight: 21,
   },
+
+  // Incidents list card
+  listCard: {
+    backgroundColor: "#ffffff",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#d8e0dd",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  rowDivider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+    marginHorizontal: 16,
+  },
+
+  // Incident row
   incidentRow: {
-    gap: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    gap: 12,
   },
-  incidentMain: {
-    gap: 4,
+  incidentRowPressed: {
+    backgroundColor: "#f2f3ff",
+  },
+  incidentTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
   },
   incidentTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  incidentMeta: {
+    flex: 1,
     fontSize: 14,
-    color: "#666666",
+    fontWeight: "700",
+    color: "#131b2e",
+    lineHeight: 20,
   },
+  incidentDate: {
+    fontSize: 12,
+    color: "#6d7a77",
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  badgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+
+  // Badges
+  badge: {
+    fontSize: 10,
+    fontWeight: "700",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: "hidden",
+    letterSpacing: 0.5,
+  },
+  typeBadge: {
+    fontSize: 10,
+    fontWeight: "600",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "#e2e7ff",
+    color: "#131b2e",
+    letterSpacing: 0.5,
+  },
+
+  // Info card (no shiftId)
   infoCard: {
-    gap: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#cfe0ff",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#f1f6ff",
+    borderColor: "#bcc9c6",
+    backgroundColor: "#f2f3ff",
+    padding: 16,
   },
   infoText: {
     fontSize: 14,
-    lineHeight: 20,
-    color: "#1f4f8f",
+    color: "#3d4947",
+    lineHeight: 22,
   },
+
+  // Action buttons
   actions: {
     gap: 12,
-    paddingBottom: 24,
+    marginTop: 8,
+  },
+  btnPrimary: {
+    height: 48,
+    backgroundColor: "#00685f",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnPrimaryText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ffffff",
+    letterSpacing: 0.3,
+  },
+  btnBack: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#bcc9c6",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#00685f",
+  },
+  btnOutline: {
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: "#bcc9c6",
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnOutlineText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#131b2e",
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
 });
