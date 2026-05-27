@@ -17,6 +17,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { createSale } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import {
   buildDiscounts,
   calculateDiscountAmount,
@@ -835,7 +836,7 @@ export default function NewSaleScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -845,9 +846,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -856,54 +857,52 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
-    color: "#00685f",
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#708cfd",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondarySoft,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
     gap: 16,
   },
 
   // Card
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     padding: 16,
     gap: 12,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    ...shadows.card,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   cardHeaderRow: {
     flexDirection: "row",
@@ -923,20 +922,20 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   fieldLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
     letterSpacing: 0.3,
   },
   textInput: {
     height: 48,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
     paddingHorizontal: 12,
-    fontSize: 16,
-    color: "#131b2e",
+    fontSize: fontSize.xl,
+    color: colors.text,
   },
   notesInput: {
     height: 80,
@@ -954,23 +953,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   itemLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
     letterSpacing: 0.3,
   },
   removeItemText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#ba1a1a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.danger,
   },
   lineTotalText: {
-    fontSize: 12,
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
   itemSeparator: {
     height: 1,
-    backgroundColor: "#eaedff",
+    backgroundColor: colors.borderSoft,
     marginBottom: 4,
   },
   addItemBtn: {
@@ -978,21 +977,21 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   addItemBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
 
   // Discount collapsed summary
   bodyText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   actionLink: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
   discountSummaryRow: {
     flexDirection: "row",
@@ -1000,9 +999,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   discountSummaryAmount: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#ba1a1a",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.danger,
   },
 
   // Pill buttons (discount options, split type)
@@ -1014,46 +1013,46 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: 14,
     paddingVertical: 7,
-    borderRadius: 9999,
+    borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    backgroundColor: "#ffffff",
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
   },
   pillSelected: {
-    backgroundColor: "#00685f",
+    backgroundColor: colors.primary,
     borderColor: "#00685f",
   },
   pillDisabled: {
     opacity: 0.4,
   },
   pillText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
     letterSpacing: 0.3,
   },
   pillTextSelected: {
-    color: "#ffffff",
+    color: colors.surface,
   },
   pillTextDisabled: {
     color: "#9aaba8",
   },
 
   helpText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   warningText: {
-    fontSize: 13,
-    color: "#825100",
+    fontSize: fontSize.md,
+    color: colors.warning,
     lineHeight: 18,
   },
 
   // Manual discount expanded area
   manualDiscountBox: {
-    backgroundColor: "#f8fafc",
-    borderRadius: 10,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.md,
     padding: 12,
     gap: 12,
     borderWidth: 1,
@@ -1065,28 +1064,24 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     backgroundColor: "#fff0f0",
   },
   clearDiscountText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#ba1a1a",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.danger,
   },
 
   // Totals card
   totalsCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    ...shadows.card,
   },
   summaryRow: {
     flexDirection: "row",
@@ -1094,54 +1089,54 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   summaryRowFinal: {
     borderBottomWidth: 0,
     paddingVertical: 14,
   },
   summaryLabel: {
-    fontSize: 14,
-    color: "#3d4947",
-    fontWeight: "500",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    fontWeight: fontWeight.medium,
   },
   summaryValue: {
-    fontSize: 14,
-    color: "#131b2e",
-    fontWeight: "500",
+    fontSize: fontSize.base,
+    color: colors.text,
+    fontWeight: fontWeight.medium,
   },
   labelError: {
-    color: "#ba1a1a",
+    color: colors.danger,
   },
   valueError: {
-    color: "#ba1a1a",
+    color: colors.danger,
   },
   finalLabel: {
     fontSize: 20,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   finalValue: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#00685f",
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
 
   // Payment segmented control
   segmentedControl: {
     flexDirection: "row",
-    backgroundColor: "#f2f3ff",
-    borderRadius: 10,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.md,
     padding: 4,
   },
   segmentBtn: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     alignItems: "center",
   },
   segmentBtnActive: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -1149,13 +1144,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   segmentBtnText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
   },
   segmentBtnTextActive: {
-    fontWeight: "600",
-    color: "#131b2e",
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 
   // Payment method grid (2×2)
@@ -1168,8 +1163,8 @@ const styles = StyleSheet.create({
     width: "47%",
     height: 56,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1179,12 +1174,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,104,95,0.05)",
   },
   methodBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
   methodBtnTextSelected: {
-    color: "#00685f",
+    color: colors.primary,
   },
 
   // Payment amount display row
@@ -1193,7 +1188,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: "rgba(226,231,255,0.3)",
-    borderRadius: 8,
+    borderRadius: radius.sm,
     padding: 12,
   },
 
@@ -1203,32 +1198,28 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   btnPrimary: {
-    height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#00685f",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.primaryButton,
   },
   btnDisabled: {
     opacity: 0.5,
   },
   btnPrimaryText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
   },
   cancelBtn: {
     paddingVertical: 12,
     alignItems: "center",
   },
   cancelBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6d7a77",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
   },
 });

@@ -14,6 +14,7 @@ import { listIncidents } from "@/src/api/incidents";
 import { getCurrentShift } from "@/src/api/shifts";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Incident, IncidentSeverity, IncidentStatus } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -25,7 +26,7 @@ function formatIncidentType(type: string): string {
 function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
   const configs: Record<IncidentSeverity, { bg: string; color: string }> = {
     LOW: { bg: "#e8ecf0", color: "#4d5b5a" },
-    MEDIUM: { bg: "#fff3d6", color: "#825100" },
+    MEDIUM: { bg: "#fff3d6", color: colors.warning },
     HIGH: { bg: "#ffdad6", color: "#93000a" },
   };
   const { bg, color } = configs[severity];
@@ -38,7 +39,7 @@ function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
 
 function StatusBadge({ status }: { status: IncidentStatus }) {
   const configs: Record<IncidentStatus, { bg: string; color: string }> = {
-    OPEN: { bg: "#e8eeff", color: "#3755c3" },
+    OPEN: { bg: "#e8eeff", color: colors.secondary },
     RESOLVED: { bg: "#d2f5f0", color: "#004f49" },
   };
   const { bg, color } = configs[status];
@@ -270,7 +271,7 @@ export default function IncidentsIndexScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -280,9 +281,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -291,25 +292,27 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
-    color: "#00685f",
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#708cfd",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondarySoft,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   // Scroll
@@ -325,53 +328,45 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   pageSubtitle: {
-    fontSize: 16,
-    color: "#3d4947",
-    lineHeight: 24,
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
   },
 
   // Generic card (error / empty)
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
+    borderColor: colors.border,
     padding: 20,
     gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.card,
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   emptyBody: {
-    fontSize: 15,
-    color: "#3d4947",
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
     lineHeight: 21,
   },
 
   // Incidents list card
   listCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
+    borderColor: colors.border,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.card,
   },
   rowDivider: {
     height: 1,
@@ -386,7 +381,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   incidentRowPressed: {
-    backgroundColor: "#f2f3ff",
+    backgroundColor: colors.surfaceMuted,
   },
   incidentTop: {
     flexDirection: "row",
@@ -396,14 +391,14 @@ const styles = StyleSheet.create({
   },
   incidentTitle: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     lineHeight: 20,
   },
   incidentDate: {
-    fontSize: 12,
-    color: "#6d7a77",
+    fontSize: fontSize.sm,
+    color: colors.textSubtle,
     flexShrink: 0,
     marginTop: 1,
   },
@@ -415,37 +410,37 @@ const styles = StyleSheet.create({
 
   // Badges
   badge: {
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     overflow: "hidden",
     letterSpacing: 0.5,
   },
   typeBadge: {
-    fontSize: 10,
-    fontWeight: "600",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.semibold,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     overflow: "hidden",
     backgroundColor: "#e2e7ff",
-    color: "#131b2e",
+    color: colors.text,
     letterSpacing: 0.5,
   },
 
   // Info card (no shiftId)
   infoCard: {
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    backgroundColor: "#f2f3ff",
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceMuted,
     padding: 16,
   },
   infoText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 22,
   },
 
@@ -455,43 +450,44 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   btnPrimary: {
-    height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.primaryButton,
   },
   btnPrimaryText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
     letterSpacing: 0.3,
   },
   btnBack: {
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: "#bcc9c6",
+    borderColor: colors.borderStrong,
     alignItems: "center",
     justifyContent: "center",
   },
   btnBackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
   btnOutline: {
     height: 44,
     borderWidth: 1.5,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnOutlineText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   btnPressed: {
     opacity: 0.8,

@@ -19,6 +19,7 @@ import {
 import { listCurrentShiftSales } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale, ShiftType } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -386,7 +387,7 @@ export default function StaffHomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -396,9 +397,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -407,30 +408,32 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
-    color: "#00685f",
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#708cfd",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondarySoft,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   // Scroll
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
     gap: 16,
   },
@@ -441,29 +444,25 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   pageSubtitle: {
-    fontSize: 16,
-    color: "#3d4947",
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
   },
 
   // Card
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     padding: 16,
     gap: 16,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    ...shadows.card,
   },
   cardHeaderRow: {
     flexDirection: "row",
@@ -471,26 +470,26 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
 
   // Badge
   badge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: radius.pill,
   },
   badgeDay: {
     backgroundColor: "#89f5e7",
   },
   badgeNight: {
-    backgroundColor: "#dde1ff",
+    backgroundColor: colors.secondarySoft,
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
     letterSpacing: 0.5,
   },
   badgeTextDay: {
@@ -501,8 +500,8 @@ const styles = StyleSheet.create({
   },
 
   bodyText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 20,
   },
 
@@ -511,8 +510,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#f2f3ff",
-    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
     padding: 12,
     borderWidth: 1,
     borderColor: "rgba(188,201,198,0.3)",
@@ -521,15 +520,15 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   metricLabel: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
     marginBottom: 2,
   },
   metricValue: {
     fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
 
   // Sales list
@@ -542,7 +541,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   saleRowLast: {
     borderBottomWidth: 0,
@@ -552,8 +551,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   saleLabel: {
-    fontSize: 16,
-    color: "#131b2e",
+    fontSize: fontSize.xl,
+    color: colors.text,
   },
   paymentChip: {
     alignSelf: "flex-start",
@@ -563,22 +562,22 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   paymentChipText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#3d4947",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
     letterSpacing: 0.3,
   },
   saleAmount: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
     marginLeft: 8,
   },
 
   viewAllLink: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
     textAlign: "center",
   },
 
@@ -587,35 +586,31 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   btnPrimary: {
-    height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#00685f",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.primaryButton,
   },
   btnPrimaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
     letterSpacing: 0.3,
   },
   btnSecondary: {
     height: 48,
     borderWidth: 1.5,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnSecondaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
   btnDisabled: {
     opacity: 0.5,
@@ -630,14 +625,14 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 44,
     backgroundColor: "#e2e7ff",
-    borderRadius: 12,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   shiftTypeBtnText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 
   // Refresh/error button
@@ -645,13 +640,13 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f3ff",
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
   },
   refreshBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
 
   // Footer
@@ -665,12 +660,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   footerLinkText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
   logoutText: {
-    color: "#ba1a1a",
+    color: colors.danger,
   },
 
 

@@ -17,6 +17,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { cancelSale, getSaleById, markSaleAsInvoiced } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -549,7 +550,7 @@ export default function SaleDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -559,9 +560,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -570,32 +571,34 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
-    color: "#00685f",
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#708cfd",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondarySoft,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
     gap: 16,
   },
@@ -606,29 +609,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   pageSubtitle: {
-    fontSize: 16,
-    color: "#3d4947",
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
   },
 
   // Card
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     padding: 16,
     gap: 12,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    ...shadows.card,
   },
 
   // Summary card — top row
@@ -646,15 +645,15 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 9999,
+    borderRadius: radius.pill,
   },
   badgeText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
     letterSpacing: 0.3,
   },
   badgeActive: {
-    backgroundColor: "#d2f5f0",
+    backgroundColor: colors.primaryMuted,
   },
   badgeActiveText: {
     color: "#004f49",
@@ -669,23 +668,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff3d6",
   },
   badgePendingText: {
-    color: "#825100",
+    color: colors.warning,
   },
   badgeInvoiced: {
     backgroundColor: "#e8eeff",
   },
   badgeInvoicedText: {
-    color: "#3755c3",
+    color: colors.secondary,
   },
   dateText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
   },
 
   // Divider
   divider: {
     height: 1,
-    backgroundColor: "#bcc9c6",
+    backgroundColor: colors.borderSoft,
   },
 
   // Totals
@@ -698,47 +697,47 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   moneyLabel: {
-    fontSize: 16,
-    color: "#3d4947",
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
   },
   moneyValue: {
-    fontSize: 16,
-    color: "#131b2e",
+    fontSize: fontSize.xl,
+    color: colors.text,
   },
   moneyError: {
-    color: "#ba1a1a",
+    color: colors.danger,
   },
   moneyRowFinal: {
     paddingTop: 4,
   },
   finalLabel: {
     fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
   finalValue: {
     fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
 
   // Cancelled info block
   cancelledInfo: {
-    backgroundColor: "#f2f3ff",
-    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
     padding: 12,
     gap: 4,
   },
   cancelledInfoText: {
-    fontSize: 13,
+    fontSize: fontSize.md,
     color: "#4d5b5a",
   },
 
   // Section label (ITEMS, PAYMENTS, etc.)
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.textMuted,
     letterSpacing: 0.5,
   },
 
@@ -754,7 +753,7 @@ const styles = StyleSheet.create({
   },
   listRowWithDivider: {
     borderTopWidth: 1,
-    borderTopColor: "#eaedff",
+    borderTopColor: colors.borderSoft,
   },
   listRowMain: {
     flex: 1,
@@ -762,25 +761,25 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   listRowTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   listRowMeta: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
   },
   listRowAmount: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 
   // Discounts
   discountAmount: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#ba1a1a",
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.danger,
   },
 
   // Payments method chip
@@ -793,12 +792,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     backgroundColor: "#e2e7ff",
-    borderRadius: 8,
+    borderRadius: radius.sm,
   },
   methodChipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 
   // Invoice action info row
@@ -808,30 +807,30 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   infoIcon: {
-    fontSize: 18,
-    color: "#825100",
+    fontSize: fontSize.xxl,
+    color: colors.warning,
     lineHeight: 22,
   },
   infoText: {
     flex: 1,
-    fontSize: 16,
-    color: "#3d4947",
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
     lineHeight: 22,
   },
 
   // Text styles
   bodyText: {
-    fontSize: 16,
-    color: "#3d4947",
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
     lineHeight: 22,
   },
   warningText: {
-    fontSize: 14,
-    color: "#825100",
+    fontSize: fontSize.base,
+    color: colors.warning,
     lineHeight: 20,
   },
   cancelledReasonText: {
-    fontSize: 14,
+    fontSize: fontSize.base,
     color: "#4d5b5a",
     lineHeight: 20,
   },
@@ -841,53 +840,49 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   fieldLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
     letterSpacing: 0.3,
   },
   textInput: {
     height: 48,
-    backgroundColor: "#f8fafc",
+    backgroundColor: colors.surfaceSoft,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
-    borderRadius: 8,
+    borderColor: colors.border,
+    borderRadius: radius.sm,
     paddingHorizontal: 12,
-    fontSize: 16,
-    color: "#131b2e",
+    fontSize: fontSize.xl,
+    color: colors.text,
   },
 
   // Buttons
   btnPrimary: {
-    height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#00685f",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.primaryButton,
   },
   btnPrimaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
     letterSpacing: 0.05,
   },
   btnDanger: {
     height: 48,
     borderWidth: 2,
-    borderColor: "#ba1a1a",
-    borderRadius: 12,
+    borderColor: colors.danger,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnDangerText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#ba1a1a",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.danger,
     letterSpacing: 0.05,
   },
   btnDisabled: {
@@ -901,27 +896,27 @@ const styles = StyleSheet.create({
   },
   btnRefresh: {
     height: 48,
-    backgroundColor: "#f2f3ff",
-    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnRefreshText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3755c3",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
   },
   btnBack: {
     height: 48,
     borderWidth: 1,
     borderColor: "#6d7a77",
-    borderRadius: 12,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnBackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 });

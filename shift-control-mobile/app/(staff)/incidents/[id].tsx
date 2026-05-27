@@ -20,6 +20,7 @@ import type {
   IncidentStatus,
 } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type IncidentDetailState =
   | {
@@ -74,7 +75,7 @@ function getStatusCopy(status: IncidentStatus) {
 function getSeverityColors(severity: IncidentSeverity) {
   if (severity === "HIGH") {
     return {
-      backgroundColor: "#ffdad6",
+      backgroundColor: colors.dangerSoft,
       color: "#93000a",
       dotColor: "#ba1a1a",
     };
@@ -82,15 +83,15 @@ function getSeverityColors(severity: IncidentSeverity) {
 
   if (severity === "MEDIUM") {
     return {
-      backgroundColor: "#fff8e6",
-      color: "#825100",
+      backgroundColor: colors.warningSoft,
+      color: colors.warning,
       dotColor: "#825100",
     };
   }
 
   return {
-    backgroundColor: "#edf8f6",
-    color: "#00685f",
+    backgroundColor: colors.primarySoft,
+    color: colors.primary,
     dotColor: "#00685f",
   };
 }
@@ -513,7 +514,7 @@ export default function IncidentDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
   appBar: {
     height: 64,
@@ -521,9 +522,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -538,34 +539,34 @@ const styles = StyleSheet.create({
   },
   backIcon: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#00685f",
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
   },
   appBarSubtitle: {
     marginTop: 1,
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6d7a77",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
   },
   avatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#dde1ff",
+    backgroundColor: colors.secondarySoft,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#bcc9c6",
+    borderColor: colors.borderStrong,
   },
   avatarText: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,
@@ -585,7 +586,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffddb8",
   },
   statusBannerResolved: {
-    backgroundColor: "#edf8f6",
+    backgroundColor: colors.primarySoft,
   },
   statusBannerIcon: {
     width: 22,
@@ -594,74 +595,70 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textAlignVertical: "center",
     overflow: "hidden",
-    fontSize: 13,
+    fontSize: fontSize.md,
     fontWeight: "900",
   },
   statusBannerIconOpen: {
     backgroundColor: "#825100",
-    color: "#ffffff",
+    color: colors.surface,
   },
   statusBannerIconResolved: {
-    backgroundColor: "#00685f",
-    color: "#ffffff",
+    backgroundColor: colors.primary,
+    color: colors.surface,
   },
   statusBannerTextGroup: {
     flex: 1,
     gap: 1,
   },
   statusBannerTitle: {
-    fontSize: 13,
+    fontSize: fontSize.md,
     fontWeight: "900",
     letterSpacing: 2,
   },
   statusBannerMessage: {
-    fontSize: 12,
+    fontSize: fontSize.sm,
     lineHeight: 17,
   },
   statusBannerTextOpen: {
     color: "#653e00",
   },
   statusBannerTextResolved: {
-    color: "#00685f",
+    color: colors.primary,
   },
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
+    borderColor: colors.border,
     overflow: "hidden",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadows.card,
   },
   cardBody: {
     padding: 16,
     gap: 14,
   },
   incidentTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     letterSpacing: -0.2,
   },
   description: {
-    fontSize: 15,
+    fontSize: fontSize.lg,
     lineHeight: 24,
-    color: "#3d4947",
+    color: colors.textMuted,
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: fontSize.md,
     fontWeight: "900",
-    color: "#00685f",
+    color: colors.primary,
     letterSpacing: 0.7,
   },
   detailRow: {
     minHeight: 34,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -669,25 +666,25 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     flex: 1,
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#6d7a77",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
   },
   detailValue: {
     flex: 1,
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     textAlign: "right",
   },
   primaryValue: {
-    color: "#00685f",
+    color: colors.primary,
   },
   warningValue: {
-    color: "#825100",
+    color: colors.warning,
   },
   badge: {
-    borderRadius: 999,
+    borderRadius: radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 5,
     flexDirection: "row",
@@ -701,11 +698,11 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: fontWeight.extrabold,
   },
   contextList: {
-    borderRadius: 12,
-    backgroundColor: "#f2f3ff",
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
     overflow: "hidden",
   },
   contextRow: {
@@ -713,7 +710,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -722,35 +719,35 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#d2f5f0",
+    backgroundColor: colors.primaryMuted,
     alignItems: "center",
     justifyContent: "center",
   },
   contextIconText: {
     fontSize: 17,
     fontWeight: "900",
-    color: "#00685f",
+    color: colors.primary,
   },
   contextTextGroup: {
     flex: 1,
     gap: 3,
   },
   contextLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#6d7a77",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
   },
   contextValue: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#131b2e",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
   },
   chevron: {
     fontSize: 24,
-    color: "#00685f",
+    color: colors.primary,
   },
   rowPressed: {
-    backgroundColor: "#edf8f6",
+    backgroundColor: colors.primarySoft,
   },
   infoGrid: {
     flexDirection: "row",
@@ -762,7 +759,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#b9ddd8",
-    backgroundColor: "#edf8f6",
+    backgroundColor: colors.primarySoft,
     padding: 14,
     justifyContent: "space-between",
   },
@@ -772,35 +769,35 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#d8dcff",
-    backgroundColor: "#f2f3ff",
+    backgroundColor: colors.surfaceMuted,
     padding: 14,
     justifyContent: "space-between",
   },
   infoTileIcon: {
-    fontSize: 18,
+    fontSize: fontSize.xxl,
     fontWeight: "900",
-    color: "#00685f",
+    color: colors.primary,
   },
   infoTileIconSecondary: {
-    fontSize: 18,
+    fontSize: fontSize.xxl,
     fontWeight: "900",
-    color: "#3755c3",
+    color: colors.secondary,
   },
   infoTileLabel: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#00685f",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
   },
   infoTileLabelSecondary: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#3755c3",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.secondary,
   },
   infoTileValue: {
     marginTop: 3,
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
   },
   noteBlock: {
     borderLeftWidth: 4,
@@ -809,15 +806,15 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   noteText: {
-    fontSize: 15,
+    fontSize: fontSize.lg,
     lineHeight: 23,
-    color: "#3d4947",
+    color: colors.textMuted,
     fontStyle: "italic",
   },
   bodyText: {
-    fontSize: 14,
+    fontSize: fontSize.base,
     lineHeight: 20,
-    color: "#3d4947",
+    color: colors.textMuted,
   },
   actions: {
     flexDirection: "row",
@@ -827,59 +824,59 @@ const styles = StyleSheet.create({
   btnRefresh: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     backgroundColor: "#89f5e7",
     alignItems: "center",
     justifyContent: "center",
   },
   btnRefreshText: {
-    fontSize: 14,
+    fontSize: fontSize.base,
     fontWeight: "900",
-    color: "#005049",
+    color: colors.primaryDark,
   },
   btnBack: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: "#bcc9c6",
-    backgroundColor: "#ffffff",
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
   btnBackText: {
-    fontSize: 14,
+    fontSize: fontSize.base,
     fontWeight: "900",
-    color: "#3d4947",
+    color: colors.textMuted,
   },
   btnDashboard: {
     height: 48,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     borderWidth: 1.5,
     borderColor: "#00685f",
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 10,
   },
   btnDashboardText: {
-    fontSize: 14,
+    fontSize: fontSize.base,
     fontWeight: "900",
-    color: "#00685f",
+    color: colors.primary,
   },
   btnOutline: {
     height: 46,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: "#00685f",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
   },
   btnOutlineText: {
-    fontSize: 14,
+    fontSize: fontSize.base,
     fontWeight: "900",
-    color: "#00685f",
+    color: colors.primary,
   },
   buttonPressed: {
     opacity: 0.72,

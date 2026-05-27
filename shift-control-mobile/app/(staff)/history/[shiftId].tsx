@@ -28,6 +28,7 @@ import type {
 } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 function SaleStatusBadge({ status }: { status: SaleStatus }) {
   const bg = status === "ACTIVE" ? "#d2f5f0" : "#e8ecf0";
@@ -453,7 +454,7 @@ export default function ShiftHistoryDetailScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -463,9 +464,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   backBtn: {
     width: 40,
@@ -475,26 +476,26 @@ const styles = StyleSheet.create({
   },
   backBtnText: {
     fontSize: 22,
-    color: "#00685f",
-    fontWeight: "600",
+    color: colors.primary,
+    fontWeight: fontWeight.semibold,
   },
   appBarTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#708cfd",
+    backgroundColor: colors.secondaryContainer,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   // Status banner
@@ -504,26 +505,26 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   bannerClosed: {
-    backgroundColor: "#00685f",
+    backgroundColor: colors.primary,
   },
   bannerClosedText: {
-    color: "#ffffff",
+    color: colors.surface,
   },
   bannerOpen: {
-    backgroundColor: "#3755c3",
+    backgroundColor: colors.secondary,
   },
   bannerOpenText: {
-    color: "#ffffff",
+    color: colors.surface,
   },
   bannerWarning: {
     backgroundColor: "#fff3d6",
   },
   bannerWarningText: {
-    color: "#825100",
+    color: colors.warning,
   },
   bannerText: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
     letterSpacing: 1.2,
   },
 
@@ -536,30 +537,26 @@ const styles = StyleSheet.create({
 
   // Short ID
   shortId: {
-    fontSize: 13,
-    color: "#3d4947",
-    fontWeight: "500",
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    fontWeight: fontWeight.medium,
     marginBottom: 4,
   },
 
   // Card
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
+    borderColor: colors.border,
     padding: 16,
     gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.card,
   },
   cardLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: "#3d4947",
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
     letterSpacing: 1,
     marginBottom: 4,
   },
@@ -572,29 +569,29 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   infoLabel: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     flex: 1,
   },
   infoValue: {
-    fontSize: 15,
-    color: "#131b2e",
-    fontWeight: "500",
+    fontSize: fontSize.lg,
+    color: colors.text,
+    fontWeight: fontWeight.medium,
     textAlign: "right",
   },
   infoValueBold: {
-    fontSize: 15,
-    color: "#131b2e",
-    fontWeight: "700",
+    fontSize: fontSize.lg,
+    color: colors.text,
+    fontWeight: fontWeight.bold,
     textAlign: "right",
   },
   totalSalesValue: {
     fontSize: 20,
-    fontWeight: "700",
-    color: "#00685f",
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   differenceAlert: {
-    color: "#ba1a1a",
+    color: colors.danger,
   },
   rowDivider: {
     height: 1,
@@ -608,28 +605,24 @@ const styles = StyleSheet.create({
 
   // Note
   noteText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 20,
   },
   emptyText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     paddingVertical: 4,
   },
 
   // Sales card
   salesCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
+    borderColor: colors.border,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.card,
     padding: 16,
     gap: 8,
   },
@@ -640,13 +633,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   salesCount: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#3d4947",
-    backgroundColor: "#f2f3ff",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+    backgroundColor: colors.surfaceMuted,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: radius.pill,
   },
 
   // Sale row
@@ -663,25 +656,25 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   saleRowPressed: {
-    backgroundColor: "#f2f3ff",
-    borderRadius: 8,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
   },
   saleMain: {
     flex: 1,
     gap: 6,
   },
   saleShortId: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   saleBadgeRow: {
     flexDirection: "row",
     gap: 6,
   },
   saleBadge: {
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
     paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 6,
@@ -693,14 +686,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   saleTotalAmount: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   saleChevron: {
-    fontSize: 18,
-    color: "#6d7a77",
-    fontWeight: "400",
+    fontSize: fontSize.xxl,
+    color: colors.textSubtle,
+    fontWeight: fontWeight.regular,
   },
 
   // Actions
@@ -710,53 +703,53 @@ const styles = StyleSheet.create({
   },
   btnIncidents: {
     height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnIncidentsText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.surface,
     letterSpacing: 0.3,
   },
   btnRefresh: {
     height: 48,
-    backgroundColor: "#f2f3ff",
-    borderRadius: 12,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnRefreshText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3755c3",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
   },
   btnBack: {
     height: 48,
-    backgroundColor: "#eaedff",
-    borderRadius: 12,
+    backgroundColor: colors.borderSoft,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnBackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3755c3",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
   },
   btnOutline: {
     height: 44,
     borderWidth: 1.5,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnOutlineText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   btnPressed: {
     opacity: 0.8,

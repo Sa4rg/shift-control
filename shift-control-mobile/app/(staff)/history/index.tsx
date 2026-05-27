@@ -13,6 +13,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { listShifts } from "@/src/api/shifts";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Shift, ShiftStatus, ShiftType } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -233,7 +234,7 @@ export default function StaffHistoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -243,9 +244,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -254,30 +255,32 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
-    color: "#00685f",
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#708cfd",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondarySoft,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   // Scroll
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
     gap: 16,
   },
@@ -288,49 +291,45 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   pageSubtitle: {
-    fontSize: 16,
-    color: "#3d4947",
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
     lineHeight: 22,
   },
 
   // Card
   card: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#d8e0dd",
+    borderColor: colors.border,
     overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    ...shadows.card,
   },
 
   // Section header inside card
   sectionHeader: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: "#f2f3ff",
+    backgroundColor: colors.surfaceMuted,
     borderBottomWidth: 1,
-    borderBottomColor: "#d8e0dd",
+    borderBottomColor: colors.border,
   },
   sectionLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
     letterSpacing: 1,
   },
 
   // Empty state inside section
   emptyText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
@@ -352,7 +351,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   shiftRowPressed: {
-    backgroundColor: "#f2f3ff",
+    backgroundColor: colors.surfaceMuted,
   },
   shiftMain: {
     flex: 1,
@@ -366,15 +365,15 @@ const styles = StyleSheet.create({
 
   // Badges
   badge: {
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 999,
+    borderRadius: radius.pill,
     overflow: "hidden",
   },
   badgeDay: {
-    backgroundColor: "#d2f5f0",
+    backgroundColor: colors.primaryMuted,
   },
   badgeDayText: {
     color: "#004f49",
@@ -383,13 +382,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff3d6",
   },
   badgeNightText: {
-    color: "#825100",
+    color: colors.warning,
   },
   badgeOpen: {
     backgroundColor: "#e8eeff",
   },
   badgeOpenText: {
-    color: "#3755c3",
+    color: colors.secondary,
   },
   badgeClosed: {
     backgroundColor: "#e8ecf0",
@@ -400,19 +399,19 @@ const styles = StyleSheet.create({
 
   // Shift row text
   shiftStoreName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   shiftMeta: {
-    fontSize: 13,
-    color: "#3d4947",
+    fontSize: fontSize.md,
+    color: colors.textMuted,
     lineHeight: 18,
   },
   shiftViewAction: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
 
   // Action buttons
@@ -421,43 +420,44 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   btnPrimary: {
-    height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.primaryButton,
   },
   btnPrimaryText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
     letterSpacing: 0.3,
   },
   btnBack: {
     height: 48,
-    backgroundColor: "#eaedff",
-    borderRadius: 12,
+    backgroundColor: colors.borderSoft,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnBackText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3755c3",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
   },
   btnOutline: {
     height: 44,
     borderWidth: 1.5,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
     margin: 16,
   },
   btnOutlineText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   btnPressed: {
     opacity: 0.8,

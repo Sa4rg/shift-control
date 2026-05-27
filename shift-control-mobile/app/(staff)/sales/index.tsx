@@ -14,6 +14,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { listCurrentShiftSales } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -230,7 +231,7 @@ function InvoiceStatusBadge({ status }: { status: Sale["invoiceStatus"] }) {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#faf8ff",
+    backgroundColor: colors.background,
   },
 
   // AppBar
@@ -240,9 +241,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#eaedff",
+    borderBottomColor: colors.borderSoft,
   },
   appBarLeft: {
     flexDirection: "row",
@@ -251,30 +252,32 @@ const styles = StyleSheet.create({
   },
   menuIcon: {
     fontSize: 20,
-    color: "#00685f",
+    color: colors.primary,
   },
   appBarTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#00685f",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#708cfd",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.secondarySoft,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
   },
   avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#00217a",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
   },
 
   // Scroll
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 40,
     gap: 16,
   },
@@ -285,54 +288,46 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#131b2e",
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     letterSpacing: -0.5,
   },
   pageSubtitle: {
-    fontSize: 16,
-    color: "#3d4947",
-    lineHeight: 24,
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
   },
 
   // Card (generic)
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     padding: 16,
     gap: 12,
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    ...shadows.card,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   bodyText: {
-    fontSize: 14,
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
     lineHeight: 20,
   },
 
   // Sales card (no inner padding — rows have their own padding)
   salesCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: "#bcc9c6",
-    borderRadius: 12,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
     overflow: "hidden",
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 12,
-    elevation: 2,
+    ...shadows.card,
   },
 
   // Sale row
@@ -343,7 +338,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#bcc9c6",
+    borderBottomColor: colors.borderSoft,
   },
   saleRowLast: {
     borderBottomWidth: 0,
@@ -360,23 +355,23 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   saleId: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
     fontVariant: ["tabular-nums"],
   },
   saleDate: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: "#3d4947",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
   },
   saleAmount: {
     fontSize: 20,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
   saleAmountCancelled: {
-    color: "#6d7a77",
+    color: colors.textSubtle,
     textDecorationLine: "line-through",
     opacity: 0.6,
   } as TextStyle,
@@ -385,36 +380,36 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 9999,
+    borderRadius: radius.pill,
   },
   badgeText: {
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
     letterSpacing: 0.5,
   },
   badgeActive: {
     backgroundColor: "rgba(0,104,95,0.1)",
   },
   badgeActiveText: {
-    color: "#00685f",
+    color: colors.primary,
   },
   badgeCancelled: {
     backgroundColor: "rgba(61,73,71,0.1)",
   },
   badgeCancelledText: {
-    color: "#3d4947",
+    color: colors.textMuted,
   },
   badgePending: {
     backgroundColor: "rgba(163,103,0,0.1)",
   },
   badgePendingText: {
-    color: "#825100",
+    color: colors.warning,
   },
   badgeInvoiced: {
     backgroundColor: "rgba(112,140,253,0.1)",
   },
   badgeInvoicedText: {
-    color: "#3755c3",
+    color: colors.secondary,
   },
 
   // Buttons
@@ -422,34 +417,30 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   btnPrimary: {
-    height: 48,
-    backgroundColor: "#00685f",
-    borderRadius: 12,
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#00685f",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.primaryButton,
   },
   btnPrimaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#ffffff",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
     letterSpacing: 0.3,
   },
   btnSecondary: {
     height: 48,
     backgroundColor: "#e2e7ff",
-    borderRadius: 12,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
   btnSecondaryText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#131b2e",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 
   // Retry button
@@ -457,12 +448,12 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#f2f3ff",
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
   },
   retryBtnText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#3d4947",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
 });
