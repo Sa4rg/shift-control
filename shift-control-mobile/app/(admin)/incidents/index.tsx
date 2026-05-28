@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -14,12 +15,18 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { listIncidents, type ListIncidentsParams } from "@/src/api/incidents";
 import { listStores } from "@/src/api/stores";
 import { listUsers } from "@/src/api/users";
-import { Button } from "@/src/components/Button";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
-import type { AdminUser, Incident, IncidentStatus, Store } from "@/src/types/api";
+import type {
+  AdminUser,
+  Incident,
+  IncidentSeverity,
+  IncidentStatus,
+  Store,
+} from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type IncidentsState =
   | {
@@ -62,26 +69,181 @@ type IncidentStatusFilter = "ALL" | IncidentStatus;
 
 const STATUS_FILTERS: IncidentStatusFilter[] = ["ALL", "OPEN", "RESOLVED"];
 
-function IncidentRow({ incident }: { incident: Incident }) {
+function formatIncidentText(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getSeverityAccent(severity: IncidentSeverity): string {
+  if (severity === "HIGH") {
+    return "#ba1a1a";
+  }
+
+  if (severity === "MEDIUM") {
+    return "#825100";
+  }
+
+  return "#00685f";
+}
+
+function getSeverityBorderColor(severity: IncidentSeverity): string {
+  if (severity === "HIGH") {
+    return "#ffb4ab";
+  }
+
+  if (severity === "MEDIUM") {
+    return "#ffddb8";
+  }
+
+  return "#6bd8cb";
+}
+
+function FilterChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
   return (
     <Pressable
-      style={styles.incidentRow}
+      style={({ pressed }) => [
+        styles.filterChip,
+        selected && styles.filterChipActive,
+        pressed && styles.buttonPressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.filterChipText,
+          selected && styles.filterChipTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function StatusSegment({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.statusSegment,
+        selected && styles.statusSegmentActive,
+        pressed && styles.buttonPressed,
+      ]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          styles.statusSegmentText,
+          selected && styles.statusSegmentTextActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function Badge({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: "type" | "severity" | "open" | "resolved";
+}) {
+  return (
+    <View
+      style={[
+        styles.badge,
+        variant === "type" && styles.badgeType,
+        variant === "severity" && styles.badgeSeverity,
+        variant === "open" && styles.badgeOpen,
+        variant === "resolved" && styles.badgeResolved,
+      ]}
+    >
+      <Text
+        style={[
+          styles.badgeText,
+          variant === "type" && styles.badgeTextType,
+          variant === "severity" && styles.badgeTextSeverity,
+          variant === "open" && styles.badgeTextOpen,
+          variant === "resolved" && styles.badgeTextResolved,
+        ]}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function IncidentRow({
+  incident,
+  isLast,
+}: {
+  incident: Incident;
+  isLast: boolean;
+}) {
+  const severityAccent = getSeverityAccent(incident.severity);
+  const severityBorderColor = getSeverityBorderColor(incident.severity);
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.incidentRow,
+        isLast && styles.incidentRowLast,
+        { borderLeftColor: severityBorderColor },
+        pressed && styles.rowPressed,
+      ]}
       onPress={() => router.push(`/(admin)/incidents/${incident.id}`)}
     >
-      <View style={styles.incidentMain}>
+      <View style={styles.incidentTopRow}>
         <Text style={styles.incidentTitle}>{incident.title}</Text>
-        <Text style={styles.incidentMeta}>
-          {incident.type} · {incident.severity} · {incident.status}
-        </Text>
-        <Text style={styles.incidentMeta}>
-          Reported by {incident.reportedByName}
-        </Text>
-        <Text style={styles.incidentMeta}>
+        <Text style={styles.incidentDate}>
           {formatDateTime(incident.createdAt)}
         </Text>
       </View>
 
-      <Text style={styles.incidentAction}>View</Text>
+      <View style={styles.badgesRow}>
+        <Badge label={formatIncidentText(incident.type)} variant="type" />
+
+        <View
+          style={[
+            styles.badge,
+            styles.badgeSeverity,
+            { backgroundColor: `${severityAccent}16` },
+          ]}
+        >
+          <Text style={[styles.badgeText, { color: severityAccent }]}>
+            {formatIncidentText(incident.severity)}
+          </Text>
+        </View>
+
+        <Badge
+          label={formatIncidentText(incident.status)}
+          variant={incident.status === "RESOLVED" ? "resolved" : "open"}
+        />
+      </View>
+
+      <Text style={styles.reportedBy}>
+        ♙ Reported by {incident.reportedByName}
+      </Text>
     </Pressable>
   );
 }
@@ -117,7 +279,7 @@ export default function AdminIncidentsScreen() {
     () =>
       referenceDataState.status === "ready"
         ? referenceDataState.staffUsers.filter(
-            (user) => user.active && user.role === "STAFF"
+            (staffUser) => staffUser.active && staffUser.role === "STAFF"
           )
         : [],
     [referenceDataState]
@@ -128,7 +290,9 @@ export default function AdminIncidentsScreen() {
       return activeStaffUsers;
     }
 
-    return activeStaffUsers.filter((user) => user.storeId === selectedStoreId);
+    return activeStaffUsers.filter(
+      (staffUser) => staffUser.storeId === selectedStoreId
+    );
   }, [activeStaffUsers, selectedStoreId]);
 
   const selectedStore = useMemo(
@@ -137,7 +301,8 @@ export default function AdminIncidentsScreen() {
   );
 
   const selectedStaff = useMemo(
-    () => staffOptions.find((user) => user.id === selectedStaffId) ?? null,
+    () =>
+      staffOptions.find((staffUser) => staffUser.id === selectedStaffId) ?? null,
     [staffOptions, selectedStaffId]
   );
 
@@ -219,10 +384,6 @@ export default function AdminIncidentsScreen() {
     setSelectedStaffId(null);
   }
 
-  if (referenceDataState.status === "loading" || state.status === "loading") {
-    return <LoadingState message="Loading incidents..." />;
-  }
-
   const openCount =
     state.status === "ready"
       ? state.incidents.filter((incident) => incident.status === "OPEN").length
@@ -234,109 +395,147 @@ export default function AdminIncidentsScreen() {
           .length
       : 0;
 
+  if (referenceDataState.status === "loading" || state.status === "loading") {
+    return <LoadingState message="Loading incidents..." />;
+  }
+
   return (
-    <Screen padded={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <AppTopBar variant="back" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Incidents</Text>
-            <Text style={styles.subtitle}>
-              Review operational issues reported by staff.
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Incidents</Text>
+            <Text style={styles.pageSubtitle}>
+              Review and manage all operational issues across stores.
             </Text>
           </View>
 
           {referenceDataState.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load filters</Text>
-              <ErrorMessage message={referenceDataState.errorMessage} />
-              <Button title="Try again" onPress={loadReferenceData} />
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load filters</Text>
+                <ErrorMessage message={referenceDataState.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadReferenceData}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Filters</Text>
+          <View style={styles.filterCard}>
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Store</Text>
 
-            <Text style={styles.label}>Status</Text>
-            <View style={styles.options}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalChips}
+              >
+                <FilterChip
+                  label="All"
+                  selected={selectedStoreId === null}
+                  onPress={() => handleSelectStore(null)}
+                />
+
+                {activeStores.map((store) => (
+                  <FilterChip
+                    key={store.id}
+                    label={store.name}
+                    selected={store.id === selectedStoreId}
+                    onPress={() => handleSelectStore(store.id)}
+                  />
+                ))}
+              </ScrollView>
+
+              {selectedStore ? (
+                <Text style={styles.helperText}>
+                  Selected store: {selectedStore.name}
+                </Text>
+              ) : null}
+            </View>
+
+            <View style={styles.filterGroup}>
+              <Text style={styles.filterLabel}>Staff</Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.horizontalChips}
+              >
+                <FilterChip
+                  label="All"
+                  selected={selectedStaffId === null}
+                  onPress={() => setSelectedStaffId(null)}
+                />
+
+                {staffOptions.map((staffUser) => (
+                  <FilterChip
+                    key={staffUser.id}
+                    label={staffUser.fullName}
+                    selected={staffUser.id === selectedStaffId}
+                    onPress={() => setSelectedStaffId(staffUser.id)}
+                  />
+                ))}
+              </ScrollView>
+
+              {selectedStaff ? (
+                <Text style={styles.helperText}>
+                  Selected staff: {selectedStaff.fullName}
+                </Text>
+              ) : null}
+            </View>
+
+            <View style={styles.statusSegments}>
               {STATUS_FILTERS.map((filter) => (
-                <Button
+                <StatusSegment
                   key={filter}
-                  title={filter === statusFilter ? `✓ ${filter}` : filter}
+                  label={filter}
+                  selected={filter === statusFilter}
                   onPress={() => setStatusFilter(filter)}
                 />
               ))}
             </View>
 
-            {referenceDataState.status === "ready" ? (
-              <>
-                <Text style={styles.label}>Store</Text>
-                <View style={styles.options}>
-                  <Button
-                    title={
-                      selectedStoreId === null ? "✓ All stores" : "All stores"
-                    }
-                    onPress={() => handleSelectStore(null)}
-                  />
-
-                  {activeStores.map((store) => (
-                    <Button
-                      key={store.id}
-                      title={
-                        store.id === selectedStoreId
-                          ? `✓ ${store.name}`
-                          : store.name
-                      }
-                      onPress={() => handleSelectStore(store.id)}
-                    />
-                  ))}
-                </View>
-
-                {selectedStore ? (
-                  <Text style={styles.helpText}>
-                    Selected store: {selectedStore.name}
-                  </Text>
-                ) : null}
-
-                <Text style={styles.label}>Staff</Text>
-                <View style={styles.options}>
-                  <Button
-                    title={
-                      selectedStaffId === null ? "✓ All staff" : "All staff"
-                    }
-                    onPress={() => setSelectedStaffId(null)}
-                  />
-
-                  {staffOptions.map((staff) => (
-                    <Button
-                      key={staff.id}
-                      title={
-                        staff.id === selectedStaffId
-                          ? `✓ ${staff.fullName}`
-                          : staff.fullName
-                      }
-                      onPress={() => setSelectedStaffId(staff.id)}
-                    />
-                  ))}
-                </View>
-
-                {selectedStaff ? (
-                  <Text style={styles.helpText}>
-                    Selected staff: {selectedStaff.fullName}
-                  </Text>
-                ) : null}
-              </>
-            ) : null}
-
             <View style={styles.filterActions}>
-              <Button title="Apply filters" onPress={loadIncidents} />
-              <Button title="Clear filters" onPress={handleClearFilters} />
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnPrimary,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadIncidents}
+              >
+                <Text style={styles.btnPrimaryText}>⟳ Load incidents</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnClear,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={handleClearFilters}
+              >
+                <Text style={styles.btnClearText}>Clear filters</Text>
+              </Pressable>
             </View>
 
             {state.status === "ready" ? (
-              <Text style={styles.body}>
+              <Text style={styles.resultSummary}>
                 Open: {openCount} · Resolved: {resolvedCount}
               </Text>
             ) : null}
@@ -344,117 +543,370 @@ export default function AdminIncidentsScreen() {
 
           {state.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load incidents</Text>
-              <ErrorMessage message={state.errorMessage} />
-              <Button title="Try again" onPress={loadIncidents} />
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load incidents</Text>
+                <ErrorMessage message={state.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadIncidents}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
           {state.status === "ready" && state.incidents.length === 0 ? (
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>No incidents found</Text>
-              <Text style={styles.body}>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No incidents found</Text>
+              <Text style={styles.emptyText}>
                 There are no incidents for the selected filters.
               </Text>
             </View>
           ) : null}
 
           {state.status === "ready" && state.incidents.length > 0 ? (
-            <View style={styles.card}>
-              {state.incidents.map((incident) => (
-                <IncidentRow key={incident.id} incident={incident} />
+            <View style={styles.resultsCard}>
+              {state.incidents.map((incident, index) => (
+                <IncidentRow
+                  key={incident.id}
+                  incident={incident}
+                  isLast={index === state.incidents.length - 1}
+                />
               ))}
             </View>
           ) : null}
 
           <View style={styles.actions}>
-            <Button title="Refresh" onPress={loadIncidents} />
-            <Button title="Back" onPress={() => router.back()} />
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnRefresh,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={loadIncidents}
+            >
+              <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnBack,
+                pressed && styles.buttonPressed,
+              ]}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.btnBackText}>← Back</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
   },
-  container: {
-    gap: 16,
-    padding: 24,
-  },
-  header: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
-  },
-  card: {
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
+  scrollContent: {
     padding: 20,
+    paddingBottom: 48,
+    gap: 16,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+  pageHeader: {
+    gap: 5,
   },
-  body: {
-    fontSize: 16,
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
     lineHeight: 22,
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#333333",
+  filterCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    gap: 16,
+    ...shadows.card,
   },
-  helpText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#555555",
-  },
-  options: {
+  filterGroup: {
     gap: 8,
+  },
+  filterLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+    letterSpacing: 0.3,
+  },
+  horizontalChips: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  filterChip: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.borderSoft,
+  },
+  filterChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: "#00685f",
+  },
+  filterChipText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  filterChipTextActive: {
+    color: colors.surface,
+  },
+  helperText: {
+    fontSize: fontSize.sm,
+    color: colors.textSubtle,
+    lineHeight: 18,
+  },
+  statusSegments: {
+    flexDirection: "row",
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
+    padding: 4,
+  },
+  statusSegment: {
+    flex: 1,
+    minHeight: 36,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusSegmentActive: {
+    backgroundColor: colors.surface,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  statusSegmentText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+  statusSegmentTextActive: {
+    color: colors.primary,
   },
   filterActions: {
-    gap: 8,
+    gap: 10,
+  },
+  resultSummary: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+  },
+  resultsCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
   },
   incidentRow: {
+    padding: 16,
+    borderLeftWidth: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    gap: 10,
+  },
+  incidentRowLast: {
+    borderBottomWidth: 0,
+  },
+  rowPressed: {
+    opacity: 0.72,
+  },
+  incidentTopRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
-  },
-  incidentMain: {
-    flex: 1,
-    gap: 4,
+    alignItems: "flex-start",
   },
   incidentTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+    flex: 1,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
-  incidentMeta: {
-    fontSize: 14,
-    color: "#666666",
+  incidentDate: {
+    fontSize: 11,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
   },
-  incidentAction: {
-    fontSize: 14,
-    fontWeight: "700",
+  badgesRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  badge: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  badgeType: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  badgeSeverity: {
+    backgroundColor: colors.warningSoft,
+  },
+  badgeOpen: {
+    backgroundColor: colors.primaryMuted,
+  },
+  badgeResolved: {
+    backgroundColor: colors.secondarySoft,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: fontWeight.extrabold,
+  },
+  badgeTextType: {
+    color: colors.textMuted,
+  },
+  badgeTextSeverity: {
+    color: colors.warning,
+  },
+  badgeTextOpen: {
+    color: colors.primaryDark,
+  },
+  badgeTextResolved: {
+    color: "#173bab",
+  },
+  reportedBy: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    lineHeight: 19,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  emptyText: {
+    fontSize: fontSize.base,
+    lineHeight: 20,
+    color: colors.textMuted,
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+  },
+  btnClear: {
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnClearText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

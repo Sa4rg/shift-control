@@ -1,16 +1,24 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View, Alert } from "react-native";
+import {
+  Alert,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { getStoreById, deactivateStore } from "@/src/api/stores";
-import { Button } from "@/src/components/Button";
+import { deactivateStore, getStoreById } from "@/src/api/stores";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
 import type { Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type StoreDetailState =
   | {
@@ -29,7 +37,15 @@ type StoreDetailState =
       errorMessage: string;
     };
 
-function DetailRow({ label, value }: { label: string; value: string | null }) {
+function DetailRow({
+  label,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  value: string | null;
+  valueStyle?: object;
+}) {
   if (!value) {
     return null;
   }
@@ -37,7 +53,29 @@ function DetailRow({ label, value }: { label: string; value: string | null }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    </View>
+  );
+}
+
+function StoreStatusBadge({ active }: { active: boolean }) {
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        active ? styles.statusBadgeActive : styles.statusBadgeInactive,
+      ]}
+    >
+      <Text
+        style={[
+          styles.statusBadgeText,
+          active
+            ? styles.statusBadgeTextActive
+            : styles.statusBadgeTextInactive,
+        ]}
+      >
+        {active ? "ACTIVE" : "INACTIVE"}
+      </Text>
     </View>
   );
 }
@@ -92,50 +130,50 @@ export default function AdminStoreDetailScreen() {
 
   async function handleDeactivateStore() {
     if (!storeId || state.status !== "ready" || !state.store.active) {
-        return;
+      return;
     }
 
     setIsDeactivating(true);
     setActionErrorMessage(null);
 
     try {
-        const updatedStore = await deactivateStore(storeId);
+      const updatedStore = await deactivateStore(storeId);
 
-        setState({
+      setState({
         status: "ready",
         store: updatedStore,
         errorMessage: null,
-        });
+      });
     } catch (error) {
-        setActionErrorMessage(getApiErrorMessage(error));
+      setActionErrorMessage(getApiErrorMessage(error));
     } finally {
-        setIsDeactivating(false);
+      setIsDeactivating(false);
     }
-    }
+  }
 
-    function confirmDeactivateStore() {
+  function confirmDeactivateStore() {
     if (state.status !== "ready") {
-        return;
+      return;
     }
 
     Alert.alert(
-        "Deactivate store",
-        `Are you sure you want to deactivate ${state.store.name}? This store should not be used for new operations after deactivation.`,
-        [
+      "Deactivate store",
+      `Are you sure you want to deactivate ${state.store.name}? This store should not be used for new operations after deactivation.`,
+      [
         {
-            text: "Cancel",
-            style: "cancel",
+          text: "Cancel",
+          style: "cancel",
         },
         {
-            text: "Deactivate",
-            style: "destructive",
-            onPress: () => {
+          text: "Deactivate",
+          style: "destructive",
+          onPress: () => {
             void handleDeactivateStore();
-            },
+          },
         },
-        ]
+      ]
     );
-    }
+  }
 
   useEffect(() => {
     void loadStore();
@@ -145,178 +183,472 @@ export default function AdminStoreDetailScreen() {
     return <LoadingState message="Loading store..." />;
   }
 
+  const appBar = <AppTopBar variant="back" />;
+
   if (state.status === "error") {
     return (
-      <Screen>
-        <View style={styles.container}>
-          <Text style={styles.title}>Store detail</Text>
+      <SafeAreaView style={styles.safeArea}>
+        {appBar}
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Store detail</Text>
+          </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load store</Text>
-            <ErrorMessage message={state.errorMessage} />
-            <Button title="Try again" onPress={loadStore} />
-            <Button title="Back" onPress={() => router.back()} />
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Could not load store</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <ErrorMessage message={state.errorMessage} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadStore}
+              >
+                <Text style={styles.btnOutlineText}>Try again</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.btnBackText}>← Back</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Screen>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   const store = state.store;
 
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Store detail</Text>
-          <Text style={styles.subtitle}>Store {store.id.slice(0, 8)}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      {appBar}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Store detail</Text>
+          <Text style={styles.pageSubtitle}>ID: {store.id.slice(0, 8)}</Text>
         </View>
 
-        <View style={store.active ? styles.successCard : styles.warningCard}>
-          <Text style={store.active ? styles.successTitle : styles.warningTitle}>
-            {store.active ? "Active store" : "Inactive store"}
-          </Text>
-          <Text style={store.active ? styles.successText : styles.warningText}>
+        <View
+          style={[
+            styles.statusBanner,
+            store.active
+              ? styles.statusBannerActive
+              : styles.statusBannerInactive,
+          ]}
+        >
+          <View
+            style={[
+              styles.statusDot,
+              store.active ? styles.statusDotActive : styles.statusDotInactive,
+            ]}
+          />
+
+          <Text
+            style={[
+              styles.statusBannerText,
+              store.active
+                ? styles.statusBannerTextActive
+                : styles.statusBannerTextInactive,
+            ]}
+          >
             {store.active
-              ? "This store can be used for staff assignment and reports."
-              : "This store is inactive and should not be used for new operations."}
+              ? "Active store — can be used for operations"
+              : "Inactive store — cannot be used for new operations"}
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{store.name}</Text>
+          <View style={styles.cardBody}>
+            <View style={styles.storeTitleRow}>
+              <Text style={styles.storeName}>{store.name}</Text>
+              <StoreStatusBadge active={store.active} />
+            </View>
 
-          <DetailRow label="Address" value={store.address} />
-          <DetailRow
-            label="Base cash amount"
-            value={formatMoney(store.baseCashAmount)}
-          />
-          <DetailRow label="Status" value={store.active ? "Active" : "Inactive"} />
+            <DetailRow label="ADDRESS" value={store.address} />
+
+            <DetailRow
+              label="BASE CASH AMOUNT"
+              value={formatMoney(store.baseCashAmount)}
+              valueStyle={styles.primaryValue}
+            />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>STATUS</Text>
+
+              <View style={styles.inlineStatus}>
+                <View
+                  style={[
+                    styles.inlineStatusDot,
+                    store.active
+                      ? styles.statusDotActive
+                      : styles.statusDotInactive,
+                  ]}
+                />
+                <Text
+                  style={[
+                    styles.detailValue,
+                    store.active ? styles.primaryValue : styles.warningValue,
+                  ]}
+                >
+                  {store.active ? "Active" : "Inactive"}
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         {!store.active ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Deactivation</Text>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Deactivation</Text>
 
-            <DetailRow label="Deactivated by" value={store.deactivatedByName} />
-            <DetailRow
-              label="Deactivated at"
-              value={
-                store.deactivatedAt ? formatDateTime(store.deactivatedAt) : null
-              }
-            />
+              <DetailRow
+                label="DEACTIVATED BY"
+                value={store.deactivatedByName}
+              />
+
+              <DetailRow
+                label="DEACTIVATED AT"
+                value={
+                  store.deactivatedAt ? formatDateTime(store.deactivatedAt) : null
+                }
+              />
+            </View>
           </View>
         ) : null}
 
-        <ErrorMessage message={actionErrorMessage} />
-
-        <View style={styles.actions}>
-        {store.active ? (
-            <Button
-            title="Deactivate store"
-            onPress={confirmDeactivateStore}
-            loading={isDeactivating}
-            disabled={isDeactivating}
-            />
+        {actionErrorMessage ? (
+          <View style={styles.errorCard}>
+            <ErrorMessage message={actionErrorMessage} />
+          </View>
         ) : null}
 
-        <Button title="Refresh" onPress={loadStore} disabled={isDeactivating} />
-        <Button
-            title="Back"
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={loadStore}
+            disabled={isDeactivating}
+          >
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnBack,
+              pressed && styles.buttonPressed,
+            ]}
             onPress={() => router.back()}
             disabled={isDeactivating}
-        />
+          >
+            <Text style={styles.btnBackText}>← Back</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.adminActions}>
+          {store.active ? (
+            <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnDanger,
+                  (pressed || isDeactivating) && styles.buttonPressed,
+                ]}
+                onPress={confirmDeactivateStore}
+                disabled={isDeactivating}
+              >
+                <Text style={styles.btnDangerText}>
+                  {isDeactivating ? "Deactivating…" : "⊘ Deactivate store"}
+                </Text>
+              </Pressable>
+
+              <Text style={styles.dangerHelpText}>
+                This action will prevent new operations from this store.
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.inactiveHelpText}>
+              This store has already been deactivated.
+            </Text>
+          )}
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
+  pageHeader: {
+    gap: 5,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
+  pageSubtitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
+  statusBanner: {
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  statusBannerActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  statusBannerInactive: {
+    backgroundColor: colors.warningSoft,
+    borderColor: colors.warningBorder,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusDotActive: {
+    backgroundColor: colors.surface,
+  },
+  statusDotInactive: {
+    backgroundColor: "#825100",
+  },
+  statusBannerText: {
+    flex: 1,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    lineHeight: 20,
+  },
+  statusBannerTextActive: {
+    color: colors.surface,
+  },
+  statusBannerTextInactive: {
+    color: colors.warning,
   },
   card: {
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
-  detailRow: {
+  cardBody: {
+    padding: 16,
+    gap: 18,
+  },
+  storeTitleRow: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
+  },
+  storeName: {
+    flex: 1,
+    fontSize: 22,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.2,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  detailRow: {
+    gap: 5,
     paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
   },
   detailLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: "#555555",
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+    letterSpacing: 0.8,
   },
   detailValue: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
-    textAlign: "right",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    lineHeight: 21,
   },
-  successCard: {
+  primaryValue: {
+    color: colors.primary,
+  },
+  warningValue: {
+    color: colors.warning,
+  },
+  inlineStatus: {
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
+  },
+  inlineStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  statusBadge: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusBadgeActive: {
+    backgroundColor: colors.primaryMuted,
+  },
+  statusBadgeInactive: {
+    backgroundColor: colors.warningSoft,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: fontWeight.semibold,
+    letterSpacing: 0.4,
+  },
+  statusBadgeTextActive: {
+    color: colors.primaryDark,
+  },
+  statusBadgeTextInactive: {
+    color: colors.warning,
+  },
+  errorCard: {
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#9bd49b",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#edf9ed",
-  },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1f6b1f",
-  },
-  successText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1f6b1f",
-  },
-  warningCard: {
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#f0d28a",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#fff8e5",
-  },
-  warningTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#7a5200",
-  },
-  warningText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7a5200",
+    borderColor: colors.dangerSoft,
+    backgroundColor: "#fff8f7",
+    padding: 14,
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  adminActions: {
+    gap: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
+  },
+  btnDanger: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDangerText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.danger,
+  },
+  dangerHelpText: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 19,
+  },
+  inactiveHelpText: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

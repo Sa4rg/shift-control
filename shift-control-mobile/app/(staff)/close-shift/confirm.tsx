@@ -1,22 +1,24 @@
-import { router, useLocalSearchParams } from "expo-router";
+﻿import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { closeShift } from "@/src/api/shifts";
-import { Button } from "@/src/components/Button";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { Screen } from "@/src/components/Screen";
-import { TextField } from "@/src/components/TextField";
 import type { ShiftCloseResult } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 function parseNonNegativeNumber(value: string): number | null {
   const normalized = value.replace(",", ".").trim();
@@ -29,24 +31,14 @@ function parseNonNegativeNumber(value: string): number | null {
   return parsed;
 }
 
-function DifferenceText({
-  label,
-  value,
-}: {
-  label: string;
-  value: number;
-}) {
-  let message = `${label} matched`;
-
-  if (value > 0) {
-    message = `${label} over by ${formatMoney(value)}`;
+function parseOptionalParamNumber(value: string | undefined): number | null {
+  if (value == null) {
+    return null;
   }
 
-  if (value < 0) {
-    message = `${label} short by ${formatMoney(Math.abs(value))}`;
-  }
+  const parsed = Number(value);
 
-  return <Text style={styles.body}>{message}</Text>;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function getTotalGlovoAmount(result: ShiftCloseResult): number {
@@ -57,9 +49,34 @@ function getBaseCashAmount(result: ShiftCloseResult): number {
   return result.expectedPhysicalCash - result.cashToWithdraw;
 }
 
+function diffDotColor(diff: number | null): string {
+  if (diff === null || diff === 0) {
+    return "#9ca8a5";
+  }
+
+  return diff < 0 ? "#ba1a1a" : "#825100";
+}
+
+function diffTextColor(diff: number | null): string {
+  if (diff === null || diff === 0) {
+    return "#131b2e";
+  }
+
+  return diff < 0 ? "#ba1a1a" : "#825100";
+}
+
 export default function CloseShiftConfirmScreen() {
-  const params = useLocalSearchParams<{ shiftId?: string }>();
+  const params = useLocalSearchParams<{
+    shiftId?: string;
+    expectedCash?: string;
+    expectedMb?: string;
+    cashToWithdraw?: string;
+  }>();
+
   const shiftId = params.shiftId;
+  const expectedCashParam = parseOptionalParamNumber(params.expectedCash);
+  const expectedMbParam = parseOptionalParamNumber(params.expectedMb);
+  const cashToWithdrawParam = parseOptionalParamNumber(params.cashToWithdraw);
 
   const [confirmedCashAmount, setConfirmedCashAmount] = useState("");
   const [confirmedMbAmount, setConfirmedMbAmount] = useState("");
@@ -72,9 +89,27 @@ export default function CloseShiftConfirmScreen() {
     () => parseNonNegativeNumber(confirmedCashAmount),
     [confirmedCashAmount]
   );
+
   const confirmedMbNumber = useMemo(
     () => parseNonNegativeNumber(confirmedMbAmount),
     [confirmedMbAmount]
+  );
+
+  // Live UI differences only. Backend remains the source of truth after submit.
+  const liveCashDiff = useMemo(
+    () =>
+      confirmedCashNumber !== null && expectedCashParam !== null
+        ? confirmedCashNumber - expectedCashParam
+        : null,
+    [confirmedCashNumber, expectedCashParam]
+  );
+
+  const liveMbDiff = useMemo(
+    () =>
+      confirmedMbNumber !== null && expectedMbParam !== null
+        ? confirmedMbNumber - expectedMbParam
+        : null,
+    [confirmedMbNumber, expectedMbParam]
   );
 
   const canSubmit =
@@ -112,254 +147,612 @@ export default function CloseShiftConfirmScreen() {
     }
   }
 
+  if (result !== null) {
+    const isIncident = result.status === "CLOSED_WITH_INCIDENT";
+
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <AppTopBar variant="back" />
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={isIncident ? styles.warningBanner : styles.successBanner}>
+            <Text
+              style={
+                isIncident ? styles.warningBannerTitle : styles.successBannerTitle
+              }
+            >
+              {isIncident ? "Closed with incident" : "Shift closed successfully"}
+            </Text>
+
+            {result.cashDifference !== 0 || result.mbDifference !== 0 ? (
+              <View style={styles.bannerDiffRow}>
+                {result.cashDifference !== 0 ? (
+                  <Text style={styles.bannerDiffText}>
+                    Cash {result.cashDifference > 0 ? "over" : "short"} by{" "}
+                    {formatMoney(Math.abs(result.cashDifference))}
+                  </Text>
+                ) : null}
+
+                {result.mbDifference !== 0 ? (
+                  <Text style={styles.bannerDiffText}>
+                    MB {result.mbDifference > 0 ? "over" : "short"} by{" "}
+                    {formatMoney(Math.abs(result.mbDifference))}
+                  </Text>
+                ) : null}
+              </View>
+            ) : (
+              <Text style={styles.bannerMatchText}>All amounts matched.</Text>
+            )}
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardHeaderText}>Closure summary</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <View style={styles.prominentRow}>
+                <Text style={styles.prominentLabel}>Total sales</Text>
+                <Text style={styles.prominentValue}>
+                  {formatMoney(result.totalSales)}
+                </Text>
+              </View>
+
+              <View style={styles.cardDivider} />
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Cash</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.totalCash)}
+                </Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>MB</Text>
+                <Text style={styles.dataValue}>{formatMoney(result.totalMb)}</Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Glovo online</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.totalGlovoOnline)}
+                </Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Glovo cash</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.totalGlovoCash)}
+                </Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.tealLabel}>Total Glovo</Text>
+                <Text style={styles.tealValue}>
+                  {formatMoney(getTotalGlovoAmount(result))}
+                </Text>
+              </View>
+
+              <View style={styles.cardDivider} />
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Confirmed cash</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.confirmedCashAmount)}
+                </Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Confirmed MB</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.confirmedMbAmount)}
+                </Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Expected physical cash</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.expectedPhysicalCash)}
+                </Text>
+              </View>
+
+              <View style={styles.dataRow}>
+                <Text style={styles.dataLabel}>Cash to withdraw</Text>
+                <Text style={styles.dataValue}>
+                  {formatMoney(result.cashToWithdraw)}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.infoCard}>
+            <Text style={styles.infoText}>
+              Withdraw{" "}
+              <Text style={styles.infoTextBold}>
+                {formatMoney(result.cashToWithdraw)}
+              </Text>{" "}
+              from the register. Keep{" "}
+              <Text style={styles.infoTextBold}>
+                {formatMoney(getBaseCashAmount(result))}
+              </Text>{" "}
+              as base cash.
+            </Text>
+          </View>
+
+          <View style={styles.actions}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnPrimary,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={() => router.replace("/(staff)/home")}
+            >
+              <Text style={styles.btnPrimaryText}>Back to home</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <Screen padded={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <AppTopBar variant="back" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Confirm close shift</Text>
-            <Text style={styles.subtitle}>
-              Enter the total physical cash counted in the register and the MB
-              terminal total.
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Close shift</Text>
+            <Text style={styles.pageSubtitle}>
+              Enter the physical amounts counted at the register.
             </Text>
           </View>
 
-          {result ? (
-            <>
-              <View
-                style={
-                  result.status === "CLOSED_WITH_INCIDENT"
-                    ? styles.warningCard
-                    : styles.successCard
-                }
-              >
-                <Text
-                  style={
-                    result.status === "CLOSED_WITH_INCIDENT"
-                      ? styles.warningTitle
-                      : styles.successTitle
-                  }
-                >
-                  {result.status === "CLOSED_WITH_INCIDENT"
-                    ? "Closed with incident"
-                    : "Closed successfully"}
-                </Text>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={[styles.cardHeaderText, styles.cardHeaderTeal]}>
+                Register amounts
+              </Text>
+            </View>
 
-                <DifferenceText label="Cash" value={result.cashDifference} />
-                <DifferenceText label="MB" value={result.mbDifference} />
+            <View style={styles.cardBody}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Confirmed cash amount</Text>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputPrefix}>€</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={confirmedCashAmount}
+                    onChangeText={setConfirmedCashAmount}
+                    placeholder="0.00"
+                    placeholderTextColor="#9ca8a5"
+                    keyboardType="decimal-pad"
+                    autoCorrect={false}
+                  />
+                </View>
               </View>
 
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Closure summary</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>
+                  Confirmed MB/card terminal amount
+                </Text>
+                <View style={styles.inputRow}>
+                  <Text style={styles.inputPrefix}>€</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={confirmedMbAmount}
+                    onChangeText={setConfirmedMbAmount}
+                    placeholder="0.00"
+                    placeholderTextColor="#9ca8a5"
+                    keyboardType="decimal-pad"
+                    autoCorrect={false}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
 
-                <Text style={styles.body}>
-                  Total sales: {formatMoney(result.totalSales)}
-                </Text>
-                <Text style={styles.body}>
-                  Cash sales: {formatMoney(result.totalCash)}
-                </Text>
-                <Text style={styles.body}>
-                  MB sales: {formatMoney(result.totalMb)}
-                </Text>
-                <Text style={styles.body}>
-                  Glovo online: {formatMoney(result.totalGlovoOnline)}
-                </Text>
-                <Text style={styles.body}>
-                  Glovo cash: {formatMoney(result.totalGlovoCash)}
-                </Text>
-                <Text style={styles.body}>
-                  Total Glovo: {formatMoney(getTotalGlovoAmount(result))}
-                </Text>
-                <Text style={styles.body}>
-                  Cash to withdraw: {formatMoney(result.cashToWithdraw)}
-                </Text>
-                <Text style={styles.body}>
-                  Base cash to keep: {formatMoney(getBaseCashAmount(result))}
-                </Text>
-                <Text style={styles.body}>
-                  Expected physical cash:{" "}
-                  {formatMoney(result.expectedPhysicalCash)}
-                </Text>
-                <Text style={styles.body}>
-                  Confirmed cash: {formatMoney(result.confirmedCashAmount)}
-                </Text>
-                <Text style={styles.body}>
-                  Confirmed MB: {formatMoney(result.confirmedMbAmount)}
-                </Text>
+          <View style={styles.differencesCard}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardHeaderText}>Differences</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <View style={styles.diffRow}>
+                <Text style={styles.dataLabel}>Cash difference</Text>
+                <View style={styles.diffValueGroup}>
+                  <View
+                    style={[
+                      styles.diffDot,
+                      { backgroundColor: diffDotColor(liveCashDiff) },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.diffValue,
+                      { color: diffTextColor(liveCashDiff) },
+                    ]}
+                  >
+                    {liveCashDiff !== null
+                      ? formatMoney(Math.abs(liveCashDiff))
+                      : "–"}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.infoCard}>
-                <Text style={styles.infoTitle}>Cash handling</Text>
-                <Text style={styles.infoText}>
-                  Withdraw {formatMoney(result.cashToWithdraw)} from the
-                  register.
-                </Text>
-                <Text style={styles.infoText}>
-                  Keep {formatMoney(getBaseCashAmount(result))} as the base
-                  cash amount in the register.
-                </Text>
-                <Text style={styles.infoText}>
-                  Glovo online is included in sales and Glovo totals, but it does not affect physical cash or MB terminal totals.
-                </Text>
+              <View style={styles.cardDivider} />
+
+              <View style={styles.diffRow}>
+                <Text style={styles.dataLabel}>MB difference</Text>
+                <View style={styles.diffValueGroup}>
+                  <View
+                    style={[
+                      styles.diffDot,
+                      { backgroundColor: diffDotColor(liveMbDiff) },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.diffValue,
+                      { color: diffTextColor(liveMbDiff) },
+                    ]}
+                  >
+                    {liveMbDiff !== null
+                      ? formatMoney(Math.abs(liveMbDiff))
+                      : "–"}
+                  </Text>
+                </View>
               </View>
 
-              <View style={styles.actions}>
-                <Button
-                  title="Back to home"
-                  onPress={() => router.replace("/(staff)/home")}
-                />
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.infoCard}>
-                <Text style={styles.infoTitle}>What should I enter?</Text>
-                <Text style={styles.infoText}>
-                  Confirmed cash is the total physical cash currently in the
-                  register, not only the cash from sales.
-                </Text>
-                <Text style={styles.infoText}>
-                  It should include the base cash kept in the register plus
-                  today's cash and Glovo cash payments.
+              <View style={styles.cardDivider} />
+
+              <View style={styles.diffRow}>
+                <Text style={styles.dataLabel}>Cash to withdraw</Text>
+                <Text style={styles.cashToWithdrawValue}>
+                  {cashToWithdrawParam !== null
+                    ? formatMoney(cashToWithdrawParam)
+                    : "–"}
                 </Text>
               </View>
+            </View>
+          </View>
 
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>Confirmed totals</Text>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardHeaderText}>Optional note</Text>
+            </View>
 
-                <TextField
-                  label="Confirmed cash amount"
-                  value={confirmedCashAmount}
-                  onChangeText={setConfirmedCashAmount}
-                  placeholder="273.00"
-                  keyboardType="decimal-pad"
-                />
+            <View style={styles.cardBody}>
+              <TextInput
+                style={styles.noteInput}
+                value={note}
+                onChangeText={setNote}
+                placeholder="Add shift notes or issues..."
+                placeholderTextColor="#9ca8a5"
+                multiline
+                autoCapitalize="sentences"
+                autoCorrect={false}
+                textAlignVertical="top"
+              />
+            </View>
+          </View>
 
-                <TextField
-                  label="Confirmed MB amount"
-                  value={confirmedMbAmount}
-                  onChangeText={setConfirmedMbAmount}
-                  placeholder="80.00"
-                  keyboardType="decimal-pad"
-                />
+          {errorMessage ? (
+            <View style={styles.errorCard}>
+              <ErrorMessage message={errorMessage} />
+            </View>
+          ) : null}
 
-                <TextField
-                  label="Note"
-                  value={note}
-                  onChangeText={setNote}
-                  placeholder="Optional"
-                  autoCapitalize="sentences"
-                />
+          <View style={styles.actions}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnPrimary,
+                !canSubmit && styles.btnDisabled,
+                pressed && canSubmit && styles.btnPressed,
+              ]}
+              onPress={handleSubmit}
+              disabled={!canSubmit}
+            >
+              <Text style={styles.btnPrimaryText}>
+                {isSubmitting ? "Closing…" : "Close shift"}
+              </Text>
+            </Pressable>
 
-                <ErrorMessage message={errorMessage} />
-
-                <Button
-                  title="Close shift"
-                  onPress={handleSubmit}
-                  loading={isSubmitting}
-                  disabled={!canSubmit}
-                />
-              </View>
-
-              <View style={styles.actions}>
-                <Button
-                  title="Back to preview"
-                  onPress={() => router.back()}
-                  disabled={isSubmitting}
-                />
-              </View>
-            </>
-          )}
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnBackLink,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={() => router.back()}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.btnBackLinkText}>Back</Text>
+            </Pressable>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
   },
-  container: {
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
     gap: 16,
-    padding: 24,
   },
-  header: {
+  pageHeader: {
     gap: 6,
+    marginBottom: 4,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
+  pageSubtitle: {
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
+    lineHeight: 24,
   },
   card: {
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+  differencesCard: {
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
   },
-  body: {
-    fontSize: 16,
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  cardHeaderText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  cardHeaderTeal: {
+    color: colors.primary,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 14,
+  },
+  cardDivider: {
+    height: 1,
+    backgroundColor: "#e8ecef",
+  },
+  inputGroup: {
+    gap: 6,
+  },
+  inputLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
+    letterSpacing: 0.2,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 52,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 14,
+    gap: 6,
+  },
+  inputPrefix: {
+    fontSize: fontSize.xl,
+    color: colors.textSubtle,
+    fontWeight: fontWeight.medium,
+  },
+  input: {
+    flex: 1,
+    fontSize: fontSize.xl,
+    color: colors.text,
+    paddingVertical: 0,
+  },
+  noteInput: {
+    minHeight: 100,
+    backgroundColor: colors.surfaceSoft,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    fontSize: fontSize.lg,
+    color: colors.text,
     lineHeight: 22,
   },
-  infoCard: {
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#cfe0ff",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#f1f6ff",
+  diffRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1f4f8f",
+  diffValueGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1f4f8f",
+  diffDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  successCard: {
-    gap: 8,
+  diffValue: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  cashToWithdrawValue: {
+    fontSize: 20,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  prominentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  prominentLabel: {
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
+  },
+  prominentValue: {
+    fontSize: 22,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  dataRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  dataLabel: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    flexShrink: 1,
+  },
+  dataValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    textAlign: "right",
+  },
+  tealLabel: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  tealValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  successBanner: {
+    borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: "#9bd49b",
-    borderRadius: 16,
-    padding: 20,
     backgroundColor: "#edf9ed",
+    padding: 16,
+    gap: 8,
   },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+  successBannerTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
     color: "#1f6b1f",
   },
-  warningCard: {
-    gap: 8,
+  warningBanner: {
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#f0d28a",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#fff8e5",
+    borderColor: colors.warningBorder,
+    backgroundColor: colors.warningSoft,
+    padding: 16,
+    gap: 8,
   },
-  warningTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#7a5200",
+  warningBannerTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.warning,
+  },
+  bannerDiffRow: {
+    gap: 4,
+  },
+  bannerDiffText: {
+    fontSize: fontSize.base,
+    color: colors.warning,
+    lineHeight: 20,
+  },
+  bannerMatchText: {
+    fontSize: fontSize.base,
+    color: "#1f6b1f",
+    lineHeight: 20,
+  },
+  infoCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceMuted,
+    padding: 14,
+  },
+  infoText: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
+  infoTextBold: {
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  errorCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.dangerSoft,
+    backgroundColor: "#fff8f7",
+    padding: 14,
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: 10,
+    marginTop: 4,
+  },
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDisabled: {
+    backgroundColor: colors.primaryDisabled,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.surface,
+    letterSpacing: 0.3,
+  },
+  btnBackLink: {
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackLinkText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
 });

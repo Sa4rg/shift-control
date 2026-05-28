@@ -1,16 +1,24 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect } from "react";
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getWeeklyReviewById } from "@/src/api/weeklyReviews";
-import { Button } from "@/src/components/Button";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
 import type { WeeklyAdminReview } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
+import { useState } from "react";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type ReviewDetailState =
   | {
@@ -29,7 +37,15 @@ type ReviewDetailState =
       errorMessage: string;
     };
 
-function DetailRow({ label, value }: { label: string; value: string | null }) {
+function DetailRow({
+  label,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  value: string | null;
+  valueStyle?: object;
+}) {
   if (!value) {
     return null;
   }
@@ -37,13 +53,38 @@ function DetailRow({ label, value }: { label: string; value: string | null }) {
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    </View>
+  );
+}
+
+function MetricBox({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.metricBox}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
     </View>
   );
 }
 
 function getTotalGlovo(review: WeeklyAdminReview): number {
   return review.totalGlovoOnline + review.totalGlovoCash;
+}
+
+function getReviewStatusCopy(review: WeeklyAdminReview) {
+  if (review.status === "REVIEWED_OK") {
+    return {
+      title: "Weekly Review — Complete and Verified",
+      body: "This weekly review was completed without incident.",
+      isOk: true,
+    };
+  }
+
+  return {
+    title: "Weekly Review — Completed With Incident",
+    body: "This weekly review was completed with an incident marker.",
+    isOk: false,
+  };
 }
 
 export default function AdminWeeklyReviewDetailScreen() {
@@ -97,227 +138,519 @@ export default function AdminWeeklyReviewDetailScreen() {
     return <LoadingState message="Loading weekly review..." />;
   }
 
+  const appBar = <AppTopBar variant="back" />;
+
   if (state.status === "error") {
     return (
-      <Screen>
-        <View style={styles.container}>
-          <Text style={styles.title}>Weekly review detail</Text>
+      <SafeAreaView style={styles.safeArea}>
+        {appBar}
 
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load review</Text>
-            <ErrorMessage message={state.errorMessage} />
-            <Button title="Try again" onPress={loadReview} />
-            <Button title="Back" onPress={() => router.back()} />
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Could not load review</Text>
+              <ErrorMessage message={state.errorMessage} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadReview}
+              >
+                <Text style={styles.btnOutlineText}>Try again</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.btnBackText}>← Back</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Screen>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   const review = state.review;
+  const statusCopy = getReviewStatusCopy(review);
 
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Weekly review detail</Text>
-          <Text style={styles.subtitle}>Review {review.id.slice(0, 8)}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      {appBar}
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Weekly review detail</Text>
+          <Text style={styles.pageSubtitle}>
+            REVIEW ID: #{review.id.slice(0, 8).toUpperCase()}
+          </Text>
         </View>
 
         <View
-          style={
-            review.status === "REVIEWED_OK"
-              ? styles.successCard
-              : styles.warningCard
-          }
+          style={[
+            styles.statusBanner,
+            statusCopy.isOk
+              ? styles.statusBannerOk
+              : styles.statusBannerIncident,
+          ]}
         >
           <Text
-            style={
-              review.status === "REVIEWED_OK"
-                ? styles.successTitle
-                : styles.warningTitle
-            }
+            style={[
+              styles.statusBannerIcon,
+              statusCopy.isOk
+                ? styles.statusBannerIconOk
+                : styles.statusBannerIconIncident,
+            ]}
           >
-            {review.status === "REVIEWED_OK"
-              ? "Reviewed OK"
-              : "Reviewed with incident"}
+            ✓
           </Text>
-          <Text
-            style={
-              review.status === "REVIEWED_OK"
-                ? styles.successText
-                : styles.warningText
-            }
-          >
-            {review.status === "REVIEWED_OK"
-              ? "This weekly review was completed without incident."
-              : "This weekly review was completed with an incident marker."}
-          </Text>
+
+          <View style={styles.statusBannerTextGroup}>
+            <Text
+              style={[
+                styles.statusBannerTitle,
+                statusCopy.isOk
+                  ? styles.statusBannerTitleOk
+                  : styles.statusBannerTitleIncident,
+              ]}
+            >
+              {statusCopy.title}
+            </Text>
+            <Text
+              style={[
+                styles.statusBannerBody,
+                statusCopy.isOk
+                  ? styles.statusBannerBodyOk
+                  : styles.statusBannerBodyIncident,
+              ]}
+            >
+              {statusCopy.body}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Review context</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardHeaderIcon}>ⓘ</Text>
+            <Text style={styles.cardTitle}>Review context</Text>
+          </View>
 
-          <DetailRow label="Store" value={review.storeName} />
-          <DetailRow label="Staff" value={review.staffName} />
-          <DetailRow label="Reviewed by" value={review.reviewedByName} />
-          <DetailRow
-            label="Week"
-            value={`${review.weekStart} to ${review.weekEnd}`}
-          />
-          <DetailRow
-            label="Created at"
-            value={formatDateTime(review.createdAt)}
-          />
+          <View style={styles.cardBody}>
+            <DetailRow label="Store" value={review.storeName} />
+            <DetailRow label="Staff member" value={review.staffName} />
+            <DetailRow label="Reviewed by" value={review.reviewedByName} />
+            <DetailRow
+              label="Week range"
+              value={`${review.weekStart} - ${review.weekEnd}`}
+            />
+            <DetailRow
+              label="Created at"
+              value={formatDateTime(review.createdAt)}
+            />
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Sales totals</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardHeaderIcon}>↗</Text>
+            <Text style={styles.cardTitle}>Sales totals</Text>
+          </View>
 
-          <DetailRow
-            label="Total sales"
-            value={formatMoney(review.totalSales)}
-          />
-          <DetailRow label="Cash" value={formatMoney(review.totalCash)} />
-          <DetailRow label="MB" value={formatMoney(review.totalMb)} />
-          <DetailRow
-            label="Glovo online"
-            value={formatMoney(review.totalGlovoOnline)}
-          />
-          <DetailRow
-            label="Glovo cash"
-            value={formatMoney(review.totalGlovoCash)}
-          />
-          <DetailRow
-            label="Total Glovo"
-            value={formatMoney(getTotalGlovo(review))}
-          />
-          <DetailRow
-            label="Pending invoice"
-            value={formatMoney(review.pendingInvoiceTotal)}
-          />
+          <View style={styles.cardBody}>
+            <View style={styles.totalSalesBlock}>
+              <Text style={styles.totalSalesLabel}>Total sales</Text>
+              <Text style={styles.totalSalesValue}>
+                {formatMoney(review.totalSales)}
+              </Text>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <DetailRow label="Cash" value={formatMoney(review.totalCash)} />
+            <DetailRow label="MB" value={formatMoney(review.totalMb)} />
+            <DetailRow
+              label="Glovo online"
+              value={formatMoney(review.totalGlovoOnline)}
+            />
+            <DetailRow
+              label="Glovo cash"
+              value={formatMoney(review.totalGlovoCash)}
+            />
+
+            <View style={styles.totalGlovoRow}>
+              <Text style={styles.totalGlovoLabel}>Total Glovo</Text>
+              <Text style={styles.totalGlovoValue}>
+                {formatMoney(getTotalGlovo(review))}
+              </Text>
+            </View>
+
+            <DetailRow
+              label="Pending invoice total"
+              value={formatMoney(review.pendingInvoiceTotal)}
+              valueStyle={
+                review.pendingInvoiceTotal > 0 ? styles.warningValue : undefined
+              }
+            />
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Closures and incidents</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardHeaderIcon}>△</Text>
+            <Text style={styles.cardTitle}>Closures and incidents</Text>
+          </View>
 
-          <DetailRow label="Closures" value={String(review.closuresCount)} />
-          <DetailRow label="Incidents" value={String(review.incidentCount)} />
-          <DetailRow
-            label="Cash difference total"
-            value={formatMoney(review.cashDifferenceTotal)}
-          />
-          <DetailRow
-            label="MB difference total"
-            value={formatMoney(review.mbDifferenceTotal)}
-          />
+          <View style={styles.cardBody}>
+            <View style={styles.metricsGrid}>
+              <MetricBox label="Closures" value={String(review.closuresCount)} />
+              <MetricBox label="Incidents" value={String(review.incidentCount)} />
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <DetailRow
+              label="Cash difference total"
+              value={formatMoney(review.cashDifferenceTotal)}
+              valueStyle={
+                review.cashDifferenceTotal === 0
+                  ? styles.primaryValue
+                  : styles.warningValue
+              }
+            />
+
+            <DetailRow
+              label="MB difference total"
+              value={formatMoney(review.mbDifferenceTotal)}
+              valueStyle={
+                review.mbDifferenceTotal === 0
+                  ? styles.primaryValue
+                  : styles.warningValue
+              }
+            />
+          </View>
         </View>
 
         {review.note ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Review note</Text>
-            <Text style={styles.body}>{review.note}</Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardHeaderIcon}>≡</Text>
+              <Text style={styles.cardTitle}>Review note</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <View style={styles.noteBlock}>
+                <Text style={styles.noteText}>{review.note}</Text>
+              </View>
+            </View>
           </View>
         ) : null}
 
         <View style={styles.actions}>
-          <Button title="Refresh" onPress={loadReview} />
-          <Button title="Back" onPress={() => router.back()} />
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={loadReview}
+          >
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnBack,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.btnBackText}>← Back</Text>
+          </Pressable>
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
+  pageHeader: {
+    gap: 5,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
+  pageSubtitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+  },
+  sectionTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
+  },
+  statusBanner: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  statusBannerOk: {
+    backgroundColor: colors.primarySoft,
+    borderColor: "#b9ddd8",
+  },
+  statusBannerIncident: {
+    backgroundColor: colors.warningSoft,
+    borderColor: colors.warningBorder,
+  },
+  statusBannerIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.lg,
+    textAlign: "center",
+    textAlignVertical: "center",
+    overflow: "hidden",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.surface,
+  },
+  statusBannerIconOk: {
+    backgroundColor: colors.primary,
+  },
+  statusBannerIconIncident: {
+    backgroundColor: "#825100",
+  },
+  statusBannerTextGroup: {
+    flex: 1,
+    gap: 3,
+  },
+  statusBannerTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    letterSpacing: 0.7,
+  },
+  statusBannerTitleOk: {
+    color: colors.primary,
+  },
+  statusBannerTitleIncident: {
+    color: colors.warning,
+  },
+  statusBannerBody: {
+    fontSize: fontSize.md,
+    lineHeight: 18,
+  },
+  statusBannerBodyOk: {
+    color: colors.primary,
+  },
+  statusBannerBodyIncident: {
+    color: colors.warning,
   },
   card: {
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    minHeight: 52,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  cardHeaderIcon: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
+  cardBody: {
+    padding: 16,
+    gap: 12,
   },
   detailRow: {
+    minHeight: 34,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
   },
   detailLabel: {
     flex: 1,
-    fontSize: 16,
-    color: "#555555",
+    fontSize: fontSize.base,
+    color: colors.textMuted,
   },
   detailValue: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
     textAlign: "right",
   },
-  successCard: {
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#9bd49b",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#edf9ed",
+  primaryValue: {
+    color: colors.primary,
   },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1f6b1f",
+  warningValue: {
+    color: colors.warning,
   },
-  successText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1f6b1f",
+  totalSalesBlock: {
+    gap: 4,
+    paddingVertical: 4,
   },
-  warningCard: {
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#f0d28a",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#fff8e5",
+  totalSalesLabel: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
   },
-  warningTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#7a5200",
+  totalSalesValue: {
+    fontSize: 30,
+    fontWeight: "900",
+    color: colors.primary,
+    letterSpacing: 0.5,
   },
-  warningText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#7a5200",
+  cardDivider: {
+    height: 1,
+    backgroundColor: colors.borderSoft,
+  },
+  totalGlovoRow: {
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  totalGlovoLabel: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  totalGlovoValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  metricBox: {
+    flex: 1,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
+    padding: 14,
+    gap: 5,
+  },
+  metricLabel: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
+  },
+  metricValue: {
+    fontSize: 22,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  noteBlock: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#b9ddd8",
+    paddingLeft: 16,
+    paddingVertical: 4,
+  },
+  noteText: {
+    fontSize: fontSize.xl,
+    lineHeight: 25,
+    color: colors.textMuted,
+    fontStyle: "italic",
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

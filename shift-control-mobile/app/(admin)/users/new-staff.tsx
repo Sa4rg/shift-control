@@ -3,20 +3,22 @@ import { useCallback, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { listStores } from "@/src/api/stores";
 import { createStaff } from "@/src/api/users";
-import { Button } from "@/src/components/Button";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
-import { TextField } from "@/src/components/TextField";
 import type { Store } from "@/src/types/api";
 
 type StoresState =
@@ -79,20 +81,24 @@ export default function NewStaffScreen() {
 
     try {
       const stores = await listStores();
+      const activeStores = stores.filter((store) => store.active);
 
       setStoresState({
         status: "ready",
-        stores: stores.filter((store) => store.active),
+        stores: activeStores,
         errorMessage: null,
       });
 
-      if (!selectedStoreId && stores.length > 0) {
-        const firstActiveStore = stores.find((store) => store.active);
-
-        if (firstActiveStore) {
-          setSelectedStoreId(firstActiveStore.id);
+      setSelectedStoreId((currentStoreId) => {
+        if (
+          currentStoreId &&
+          activeStores.some((store) => store.id === currentStoreId)
+        ) {
+          return currentStoreId;
         }
-      }
+
+        return activeStores[0]?.id ?? null;
+      });
     } catch (error) {
       setStoresState({
         status: "error",
@@ -100,7 +106,7 @@ export default function NewStaffScreen() {
         errorMessage: getApiErrorMessage(error),
       });
     }
-  }, [selectedStoreId]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -132,173 +138,402 @@ export default function NewStaffScreen() {
     }
   }
 
+  function handlePinChange(value: string) {
+    setPin(value.replace(/\D/g, "").slice(0, 6));
+  }
+
   if (storesState.status === "loading") {
     return <LoadingState message="Loading stores..." />;
   }
 
   return (
-    <Screen padded={false}>
+    <SafeAreaView style={styles.safeArea}>
+      <AppTopBar variant="back" />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Create staff</Text>
-            <Text style={styles.subtitle}>
-              Create a staff account with a 6-digit PIN and assigned store.
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Create staff</Text>
+            <Text style={styles.pageSubtitle}>
+              Enter details to create a new staff account.
             </Text>
           </View>
 
           {storesState.status === "error" ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>Could not load stores</Text>
-              <ErrorMessage message={storesState.errorMessage} />
-              <Button title="Try again" onPress={loadStores} />
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Could not load stores</Text>
+              </View>
+
+              <View style={styles.cardBody}>
+                <ErrorMessage message={storesState.errorMessage} />
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
+                  ]}
+                  onPress={loadStores}
+                >
+                  <Text style={styles.btnOutlineText}>Try again</Text>
+                </Pressable>
+              </View>
             </View>
           ) : null}
 
           {storesState.status === "ready" && storesState.stores.length === 0 ? (
             <View style={styles.card}>
-              <Text style={styles.cardTitle}>No active stores</Text>
-              <Text style={styles.body}>
-                Create or activate a store before creating staff users.
-              </Text>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>No active stores</Text>
+              </View>
+
+              <View style={styles.cardBody}>
+                <Text style={styles.bodyText}>
+                  Create or activate a store before creating staff users.
+                </Text>
+              </View>
             </View>
           ) : null}
 
           {storesState.status === "ready" && storesState.stores.length > 0 ? (
             <>
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Staff information</Text>
+                <View style={styles.cardBody}>
+                  <Text style={styles.sectionTitle}>Account details</Text>
 
-                <TextField
-                  label="Full name"
-                  value={fullName}
-                  onChangeText={setFullName}
-                  placeholder="Example: Sara Staff"
-                  autoCapitalize="words"
-                />
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Full name</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={fullName}
+                      onChangeText={setFullName}
+                      placeholder="e.g. Maria Silva"
+                      placeholderTextColor="#6d7a77"
+                      autoCapitalize="words"
+                      autoCorrect={false}
+                      editable={!isSubmitting}
+                    />
+                  </View>
 
-                <TextField
-                  label="Username"
-                  value={username}
-                  onChangeText={setUsername}
-                  placeholder="Example: sara.staff"
-                  autoCapitalize="none"
-                />
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Username</Text>
+                    <TextInput
+                      style={styles.input}
+                      value={username}
+                      onChangeText={setUsername}
+                      placeholder="e.g. msilva"
+                      placeholderTextColor="#6d7a77"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      editable={!isSubmitting}
+                    />
+                  </View>
 
-                <TextField
-                  label="PIN"
-                  value={pin}
-                  onChangeText={setPin}
-                  placeholder="6 digits"
-                  keyboardType="number-pad"
-                  secureTextEntry
-                  maxLength={6}
-                />
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>PIN</Text>
+                    <TextInput
+                      style={[styles.input, styles.pinInput]}
+                      value={pin}
+                      onChangeText={handlePinChange}
+                      placeholder="••••••"
+                      placeholderTextColor="#6d7a77"
+                      keyboardType="number-pad"
+                      secureTextEntry
+                      maxLength={6}
+                      editable={!isSubmitting}
+                    />
+                  </View>
 
-                {pin.length > 0 && !isValidPin(pin) ? (
-                  <Text style={styles.helpText}>
-                    PIN must be exactly 6 digits.
-                  </Text>
-                ) : null}
+                  {pin.length > 0 && !isValidPin(pin) ? (
+                    <Text style={styles.helpText}>
+                      PIN must be exactly 6 digits.
+                    </Text>
+                  ) : null}
+                </View>
               </View>
 
               <View style={styles.card}>
-                <Text style={styles.cardTitle}>Assigned store</Text>
+                <View style={styles.cardBody}>
+                  <Text style={styles.sectionTitle}>Store assignment</Text>
 
-                <View style={styles.options}>
-                  {storesState.stores.map((store) => (
-                    <Button
-                      key={store.id}
-                      title={
-                        store.id === selectedStoreId
-                          ? `✓ ${store.name}`
-                          : store.name
-                      }
-                      onPress={() => setSelectedStoreId(store.id)}
-                      disabled={isSubmitting}
-                    />
-                  ))}
+                  <View style={styles.storeList}>
+                    {storesState.stores.map((store) => {
+                      const isSelected = store.id === selectedStoreId;
+
+                      return (
+                        <Pressable
+                          key={store.id}
+                          style={({ pressed }) => [
+                            styles.storeOption,
+                            isSelected && styles.storeOptionSelected,
+                            pressed && styles.buttonPressed,
+                          ]}
+                          onPress={() => setSelectedStoreId(store.id)}
+                          disabled={isSubmitting}
+                        >
+                          <View style={styles.storeOptionContent}>
+                            <Text
+                              style={[
+                                styles.storeOptionText,
+                                isSelected && styles.storeOptionTextSelected,
+                              ]}
+                            >
+                              {store.name}
+                            </Text>
+
+                            {store.address ? (
+                              <Text style={styles.storeAddress}>
+                                {store.address}
+                              </Text>
+                            ) : null}
+                          </View>
+
+                          {isSelected ? (
+                            <View style={styles.checkCircle}>
+                              <Text style={styles.checkText}>✓</Text>
+                            </View>
+                          ) : null}
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  {selectedStore ? (
+                    <Text style={styles.helpText}>
+                      Selected store: {selectedStore.name}
+                    </Text>
+                  ) : null}
                 </View>
-
-                {selectedStore ? (
-                  <Text style={styles.helpText}>
-                    Selected store: {selectedStore.name}
-                  </Text>
-                ) : null}
               </View>
 
-              <ErrorMessage message={errorMessage} />
+              {errorMessage ? <ErrorMessage message={errorMessage} /> : null}
 
               <View style={styles.actions}>
-                <Button
-                  title="Create staff"
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnPrimary,
+                    !canSubmit && styles.btnDisabled,
+                    pressed && canSubmit && styles.buttonPressed,
+                  ]}
                   onPress={handleSubmit}
-                  loading={isSubmitting}
                   disabled={!canSubmit}
-                />
+                >
+                  <Text style={styles.btnPrimaryText}>
+                    {isSubmitting ? "Creating…" : "Create staff"}
+                  </Text>
+                </Pressable>
 
-                <Button
-                  title="Cancel"
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.btnCancel,
+                    pressed && styles.buttonPressed,
+                  ]}
                   onPress={() => router.back()}
                   disabled={isSubmitting}
-                />
+                >
+                  <Text style={styles.btnCancelText}>Cancel</Text>
+                </Pressable>
               </View>
             </>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
   },
-  container: {
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
+  pageHeader: {
+    gap: 5,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
     lineHeight: 22,
   },
   card: {
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
+  cardBody: {
+    padding: 16,
+    gap: 14,
   },
-  options: {
-    gap: 8,
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  inputGroup: {
+    gap: 7,
+  },
+  inputLabel: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  input: {
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceSoft,
+    paddingHorizontal: 14,
+    fontSize: fontSize.lg,
+    color: colors.text,
+  },
+  pinInput: {
+    letterSpacing: 3,
   },
   helpText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#555555",
+    fontSize: fontSize.md,
+    lineHeight: 19,
+    color: colors.textMuted,
+  },
+  bodyText: {
+    fontSize: fontSize.lg,
+    lineHeight: 22,
+    color: colors.textMuted,
+  },
+  storeList: {
+    gap: 8,
+  },
+  storeOption: {
+    minHeight: 54,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  storeOptionSelected: {
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    backgroundColor: "#f2fffc",
+  },
+  storeOptionContent: {
+    flex: 1,
+    gap: 3,
+  },
+  storeOptionText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  storeOptionTextSelected: {
+    color: colors.primary,
+  },
+  storeAddress: {
+    fontSize: fontSize.sm,
+    color: colors.textSubtle,
+  },
+  checkCircle: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
   },
   actions: {
     gap: 12,
-    paddingBottom: 24,
+    paddingTop: 6,
+  },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnDisabled: {
+    backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+  },
+  btnCancel: {
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnCancelText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

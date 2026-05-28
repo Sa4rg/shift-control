@@ -1,15 +1,26 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getIncidentById } from "@/src/api/incidents";
-import { Button } from "@/src/components/Button";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
-import type { Incident } from "@/src/types/api";
+import type {
+  Incident,
+  IncidentSeverity,
+  IncidentStatus,
+} from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type IncidentDetailState =
   | {
@@ -28,12 +39,71 @@ type IncidentDetailState =
       errorMessage: string;
     };
 
+type IncidentWithOptionalContext = Incident & {
+  storeName?: string | null;
+  reportedByName?: string | null;
+};
+
+function formatShortId(id: string): string {
+  return `#${id.slice(0, 8).toUpperCase()}`;
+}
+
+function formatIncidentText(value: string): string {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function getStatusCopy(status: IncidentStatus) {
+  if (status === "RESOLVED") {
+    return {
+      label: "RESOLVED",
+      message: "This incident was reviewed and resolved.",
+      isResolved: true,
+    };
+  }
+
+  return {
+    label: "OPEN",
+    message: "This incident is still pending admin review.",
+    isResolved: false,
+  };
+}
+
+function getSeverityColors(severity: IncidentSeverity) {
+  if (severity === "HIGH") {
+    return {
+      backgroundColor: colors.dangerSoft,
+      color: "#93000a",
+      dotColor: "#ba1a1a",
+    };
+  }
+
+  if (severity === "MEDIUM") {
+    return {
+      backgroundColor: colors.warningSoft,
+      color: colors.warning,
+      dotColor: "#825100",
+    };
+  }
+
+  return {
+    backgroundColor: colors.primarySoft,
+    color: colors.primary,
+    dotColor: "#00685f",
+  };
+}
+
 function DetailRow({
   label,
   value,
+  valueStyle,
 }: {
   label: string;
   value: string | null;
+  valueStyle?: object;
 }) {
   if (!value) {
     return null;
@@ -42,8 +112,62 @@ function DetailRow({
   return (
     <View style={styles.detailRow}>
       <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={styles.detailValue}>{value}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
     </View>
+  );
+}
+
+function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
+  const colors = getSeverityColors(severity);
+
+  return (
+    <View style={[styles.badge, { backgroundColor: colors.backgroundColor }]}>
+      <View style={[styles.badgeDot, { backgroundColor: colors.dotColor }]} />
+      <Text style={[styles.badgeText, { color: colors.color }]}>
+        {formatIncidentText(severity)}
+      </Text>
+    </View>
+  );
+}
+
+function ContextRow({
+  label,
+  value,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  onPress?: () => void;
+}) {
+  const content = (
+    <>
+      <View style={styles.contextIcon}>
+        <Text style={styles.contextIconText}>◷</Text>
+      </View>
+
+      <View style={styles.contextTextGroup}>
+        <Text style={styles.contextLabel}>{label}</Text>
+        <Text style={styles.contextValue}>{value}</Text>
+      </View>
+
+      {onPress ? <Text style={styles.chevron}>›</Text> : null}
+    </>
+  );
+
+  if (!onPress) {
+    return <View style={styles.contextRow}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.contextRow,
+        pressed && styles.rowPressed,
+      ]}
+      onPress={onPress}
+    >
+      {content}
+    </Pressable>
   );
 }
 
@@ -100,233 +224,574 @@ export default function IncidentDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <Screen>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Incident detail</Text>
-          </View>
+      <SafeAreaView style={styles.safeArea}>
+        <AppTopBar variant="back" />
 
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load incident</Text>
-            <ErrorMessage message={state.errorMessage} />
-            <Button title="Try again" onPress={loadIncident} />
-            <Button title="Back" onPress={() => router.back()} />
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Could not load incident</Text>
+              <ErrorMessage message={state.errorMessage} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadIncident}
+              >
+                <Text style={styles.btnOutlineText}>Try again</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.btnBackText}>← Back</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Screen>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   const incident = state.incident;
+  const incidentWithContext = incident as IncidentWithOptionalContext;
+  const statusCopy = getStatusCopy(incident.status);
 
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Incident detail</Text>
-          <Text style={styles.subtitle}>Incident {incident.id.slice(0, 8)}</Text>
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      <AppTopBar variant="back" />
 
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View
-          style={
-            incident.status === "RESOLVED"
-              ? styles.successCard
-              : styles.warningCard
-          }
+          style={[
+            styles.statusBanner,
+            statusCopy.isResolved
+              ? styles.statusBannerResolved
+              : styles.statusBannerOpen,
+          ]}
         >
           <Text
-            style={
-              incident.status === "RESOLVED"
-                ? styles.successTitle
-                : styles.warningTitle
-            }
+            style={[
+              styles.statusBannerIcon,
+              statusCopy.isResolved
+                ? styles.statusBannerIconResolved
+                : styles.statusBannerIconOpen,
+            ]}
           >
-            {incident.status === "RESOLVED" ? "Resolved" : "Open"}
+            {statusCopy.isResolved ? "✓" : "!"}
           </Text>
-          <Text
-            style={
-              incident.status === "RESOLVED"
-                ? styles.successText
-                : styles.warningText
-            }
-          >
-            {incident.status === "RESOLVED"
-              ? "This incident was reviewed and resolved by admin."
-              : "This incident is still pending admin review."}
-          </Text>
+
+          <View style={styles.statusBannerTextGroup}>
+            <Text
+              style={[
+                styles.statusBannerTitle,
+                statusCopy.isResolved
+                  ? styles.statusBannerTextResolved
+                  : styles.statusBannerTextOpen,
+              ]}
+            >
+              {statusCopy.label}
+            </Text>
+            <Text
+              style={[
+                styles.statusBannerMessage,
+                statusCopy.isResolved
+                  ? styles.statusBannerTextResolved
+                  : styles.statusBannerTextOpen,
+              ]}
+            >
+              {statusCopy.message}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{incident.title}</Text>
-          <Text style={styles.description}>{incident.description}</Text>
+          <View style={styles.cardBody}>
+            <Text style={styles.incidentTitle}>{incident.title}</Text>
+            <Text style={styles.description}>{incident.description}</Text>
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Details</Text>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Details</Text>
 
-          <DetailRow label="Type" value={incident.type} />
-          <DetailRow label="Severity" value={incident.severity} />
-          <DetailRow label="Status" value={incident.status} />
-          <DetailRow
-            label="Created at"
-            value={formatDateTime(incident.createdAt)}
-          />
-          <DetailRow
-            label="Resolved at"
-            value={
-              incident.resolvedAt ? formatDateTime(incident.resolvedAt) : null
-            }
-          />
+            <DetailRow
+              label="Type"
+              value={formatIncidentText(incident.type)}
+            />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Severity</Text>
+              <SeverityBadge severity={incident.severity} />
+            </View>
+
+            <DetailRow
+              label="Status"
+              value={formatIncidentText(incident.status)}
+              valueStyle={
+                incident.status === "RESOLVED"
+                  ? styles.primaryValue
+                  : styles.warningValue
+              }
+            />
+
+            <DetailRow
+              label="Created at"
+              value={formatDateTime(incident.createdAt)}
+            />
+
+            <DetailRow
+              label="Resolved at"
+              value={
+                incident.resolvedAt ? formatDateTime(incident.resolvedAt) : null
+              }
+            />
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Related context</Text>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Related context</Text>
 
-          {incident.shiftId || incident.closureId || incident.saleId ? (
-            <>
-              <DetailRow
-                label="Shift"
-                value={incident.shiftId ? incident.shiftId.slice(0, 8) : null}
-              />
-              <DetailRow
-                label="Closure"
-                value={
-                  incident.closureId ? incident.closureId.slice(0, 8) : null
-                }
-              />
-              <DetailRow
-                label="Sale"
-                value={incident.saleId ? incident.saleId.slice(0, 8) : null}
-              />
+            {incident.shiftId || incident.closureId || incident.saleId ? (
+              <View style={styles.contextList}>
+                {incident.shiftId ? (
+                  <ContextRow
+                    label="Shift ID"
+                    value={formatShortId(incident.shiftId)}
+                    onPress={() =>
+                      router.push(`/(staff)/history/${incident.shiftId}`)
+                    }
+                  />
+                ) : null}
 
-              {incident.shiftId ? (
-                <Button
-                  title="View shift"
-                  onPress={() => router.push(`/(staff)/history/${incident.shiftId}`)}
-                />
-              ) : null}
+                {incident.saleId ? (
+                  <ContextRow
+                    label="Sale ID"
+                    value={formatShortId(incident.saleId)}
+                    onPress={() =>
+                      router.push(`/(staff)/sales/${incident.saleId}`)
+                    }
+                  />
+                ) : null}
 
-              {incident.saleId ? (
-                <Button
-                  title="View sale"
-                  onPress={() => router.push(`/(staff)/sales/${incident.saleId}`)}
-                />
-              ) : null}
-            </>
-          ) : (
-            <Text style={styles.body}>No related context available.</Text>
-          )}
+                {incident.closureId ? (
+                  <ContextRow
+                    label="Closure ID"
+                    value={formatShortId(incident.closureId)}
+                  />
+                ) : null}
+              </View>
+            ) : (
+              <Text style={styles.bodyText}>No related context available.</Text>
+            )}
+          </View>
         </View>
+
+        {incidentWithContext.storeName || incidentWithContext.reportedByName ? (
+          <View style={styles.infoGrid}>
+            {incidentWithContext.storeName ? (
+              <View style={styles.infoTilePrimary}>
+                <Text style={styles.infoTileIcon}>⌖</Text>
+                <View>
+                  <Text style={styles.infoTileLabel}>Location</Text>
+                  <Text style={styles.infoTileValue}>
+                    {incidentWithContext.storeName}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
+            {incidentWithContext.reportedByName ? (
+              <View style={styles.infoTileSecondary}>
+                <Text style={styles.infoTileIconSecondary}>♙</Text>
+                <View>
+                  <Text style={styles.infoTileLabelSecondary}>Reported by</Text>
+                  <Text style={styles.infoTileValue}>
+                    {incidentWithContext.reportedByName}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         {incident.resolutionNote ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Resolution note</Text>
-            <Text style={styles.description}>{incident.resolutionNote}</Text>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Resolution note</Text>
+              <View style={styles.noteBlock}>
+                <Text style={styles.noteText}>{incident.resolutionNote}</Text>
+              </View>
+            </View>
           </View>
         ) : null}
 
         <View style={styles.actions}>
-          <Button title="Refresh" onPress={loadIncident} />
-          <Button title="Back" onPress={() => router.back()} />
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={loadIncident}
+          >
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnBack,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.btnBackText}>← Back</Text>
+          </Pressable>
         </View>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.btnDashboard,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={() => router.replace("/(staff)/home")}
+        >
+          <Text style={styles.btnDashboardText}>← Return to Dashboard</Text>
+        </Pressable>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
     gap: 16,
-    padding: 24,
   },
-  header: {
-    gap: 6,
+  statusBanner: {
+    marginHorizontal: -20,
+    marginTop: -20,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
+  statusBannerOpen: {
+    backgroundColor: "#ffddb8",
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
-    lineHeight: 22,
+  statusBannerResolved: {
+    backgroundColor: colors.primarySoft,
+  },
+  statusBannerIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    textAlign: "center",
+    textAlignVertical: "center",
+    overflow: "hidden",
+    fontSize: fontSize.md,
+    fontWeight: "900",
+  },
+  statusBannerIconOpen: {
+    backgroundColor: "#825100",
+    color: colors.surface,
+  },
+  statusBannerIconResolved: {
+    backgroundColor: colors.primary,
+    color: colors.surface,
+  },
+  statusBannerTextGroup: {
+    flex: 1,
+    gap: 1,
+  },
+  statusBannerTitle: {
+    fontSize: fontSize.md,
+    fontWeight: "900",
+    letterSpacing: 2,
+  },
+  statusBannerMessage: {
+    fontSize: fontSize.sm,
+    lineHeight: 17,
+  },
+  statusBannerTextOpen: {
+    color: "#653e00",
+  },
+  statusBannerTextResolved: {
+    color: colors.primary,
   },
   card: {
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+  cardBody: {
+    padding: 16,
+    gap: 14,
   },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
+  incidentTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.2,
   },
   description: {
-    fontSize: 16,
+    fontSize: fontSize.lg,
     lineHeight: 24,
+    color: colors.textMuted,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: "900",
+    color: colors.primary,
+    letterSpacing: 0.7,
   },
   detailRow: {
+    minHeight: 34,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
   },
   detailLabel: {
     flex: 1,
-    fontSize: 16,
-    color: "#555555",
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
   },
   detailValue: {
     flex: 1,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
     textAlign: "right",
   },
-  successCard: {
-    gap: 8,
+  primaryValue: {
+    color: colors.primary,
+  },
+  warningValue: {
+    color: colors.warning,
+  },
+  badge: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  badgeDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+  },
+  badgeText: {
+    fontSize: 11,
+    fontWeight: fontWeight.extrabold,
+  },
+  contextList: {
+    borderRadius: radius.lg,
+    backgroundColor: colors.surfaceMuted,
+    overflow: "hidden",
+  },
+  contextRow: {
+    minHeight: 64,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  contextIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: colors.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  contextIconText: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: colors.primary,
+  },
+  contextTextGroup: {
+    flex: 1,
+    gap: 3,
+  },
+  contextLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    color: colors.textSubtle,
+  },
+  contextValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
+  },
+  chevron: {
+    fontSize: 24,
+    color: colors.primary,
+  },
+  rowPressed: {
+    backgroundColor: colors.primarySoft,
+  },
+  infoGrid: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  infoTilePrimary: {
+    flex: 1,
+    minHeight: 112,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#9bd49b",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#edf9ed",
+    borderColor: "#b9ddd8",
+    backgroundColor: colors.primarySoft,
+    padding: 14,
+    justifyContent: "space-between",
   },
-  successTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1f6b1f",
-  },
-  successText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1f6b1f",
-  },
-  warningCard: {
-    gap: 8,
+  infoTileSecondary: {
+    flex: 1,
+    minHeight: 112,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#f0d28a",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#fff8e5",
+    borderColor: "#d8dcff",
+    backgroundColor: colors.surfaceMuted,
+    padding: 14,
+    justifyContent: "space-between",
   },
-  warningTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#7a5200",
+  infoTileIcon: {
+    fontSize: fontSize.xxl,
+    fontWeight: "900",
+    color: colors.primary,
   },
-  warningText: {
-    fontSize: 14,
+  infoTileIconSecondary: {
+    fontSize: fontSize.xxl,
+    fontWeight: "900",
+    color: colors.secondary,
+  },
+  infoTileLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+  },
+  infoTileLabelSecondary: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.secondary,
+  },
+  infoTileValue: {
+    marginTop: 3,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
+  },
+  noteBlock: {
+    borderLeftWidth: 4,
+    borderLeftColor: "#b9ddd8",
+    paddingLeft: 14,
+    paddingVertical: 3,
+  },
+  noteText: {
+    fontSize: fontSize.lg,
+    lineHeight: 23,
+    color: colors.textMuted,
+    fontStyle: "italic",
+  },
+  bodyText: {
+    fontSize: fontSize.base,
     lineHeight: 20,
-    color: "#7a5200",
+    color: colors.textMuted,
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: "900",
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: "900",
+    color: colors.textMuted,
+  },
+  btnDashboard: {
+    height: 48,
+    borderRadius: radius.pill,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  btnDashboardText: {
+    fontSize: fontSize.base,
+    fontWeight: "900",
+    color: colors.primary,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: "900",
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

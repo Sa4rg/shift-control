@@ -244,3 +244,34 @@ Always:
 - Preserve auditability.
 - Keep the project mobile-first.
 - Maintain security as a first-class concern.
+
+## Mobile Frontend Rules
+
+- Mobile app uses Expo / React Native / TypeScript / Expo Router.
+- UI implementation must preserve existing behavior.
+- Do not copy Stitch HTML/Tailwind directly; translate designs into React Native.
+- Use the Stitch screens as visual reference only.
+- Keep code simple and reusable.
+- Reuse shared components when possible.
+- Avoid fake navigation items.
+- STAFF screens must never show ADMIN navigation.
+- ADMIN screens must never depend on STAFF routes.
+- Prefer reusable UI primitives for repeated patterns:
+  - AppCard
+  - StatusBadge
+  - MetricTile
+  - AppHeader
+  - EmptyState
+  - ActionFooter
+- Do not introduce new libraries without discussion.
+- Do not change API contracts during UI polish.
+- Run `pnpm test` and `pnpm exec tsc --noEmit` after changes.
+
+## Stitch UI Implementation Rules
+
+- Stitch HTML is not production code.
+- Do not paste HTML, Tailwind, scripts, or remote images into React Native.
+- Preserve app behavior first, then apply visual polish.
+- Remove fake tabs, fake links, demo data, and decorative-only actions.
+- Use real API data only.
+- If a design includes unavailable modules, omit them or map them only to real routes.

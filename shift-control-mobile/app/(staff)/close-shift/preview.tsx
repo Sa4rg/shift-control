@@ -1,45 +1,35 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getShiftClosePreview } from "@/src/api/shifts";
-import { Button } from "@/src/components/Button";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
 import type { ShiftClosePreview } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
-
-type ClosePreviewState =
-  | {
-      status: "loading";
-      preview: null;
-      errorMessage: null;
-    }
-  | {
-      status: "ready";
-      preview: ShiftClosePreview;
-      errorMessage: null;
-    }
-  | {
-      status: "error";
-      preview: null;
-      errorMessage: string;
-    };
 
 function getTotalGlovoAmount(preview: ShiftClosePreview): number {
   return preview.totalGlovoOnline + preview.totalGlovoCash;
 }
 
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.summaryRow}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={styles.summaryValue}>{value}</Text>
-    </View>
-  );
+function getBaseCashAmount(preview: ShiftClosePreview): number {
+  return preview.expectedPhysicalCash - preview.cashToWithdraw;
 }
+
+type ClosePreviewState =
+  | { status: "loading"; preview: null; errorMessage: null }
+  | { status: "ready"; preview: ShiftClosePreview; errorMessage: null }
+  | { status: "error"; preview: null; errorMessage: string };
 
 export default function CloseShiftPreviewScreen() {
   const params = useLocalSearchParams<{ shiftId?: string }>();
@@ -61,20 +51,11 @@ export default function CloseShiftPreviewScreen() {
       return;
     }
 
-    setState({
-      status: "loading",
-      preview: null,
-      errorMessage: null,
-    });
+    setState({ status: "loading", preview: null, errorMessage: null });
 
     try {
       const preview = await getShiftClosePreview(shiftId);
-
-      setState({
-        status: "ready",
-        preview,
-        errorMessage: null,
-      });
+      setState({ status: "ready", preview, errorMessage: null });
     } catch (error) {
       setState({
         status: "error",
@@ -94,200 +75,453 @@ export default function CloseShiftPreviewScreen() {
 
   if (state.status === "error") {
     return (
-      <Screen>
-        <View style={styles.container}>
-          <Text style={styles.title}>Close shift preview</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <AppTopBar variant="back" />
+
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Close shift preview</Text>
+          </View>
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Could not load preview</Text>
             <ErrorMessage message={state.errorMessage} />
-            <Button title="Try again" onPress={loadPreview} />
-            <Button title="Back" onPress={() => router.back()} />
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnPrimary,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={loadPreview}
+            >
+              <Text style={styles.btnPrimaryText}>Try again</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.btnBack,
+                pressed && styles.btnPressed,
+              ]}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.btnBackText}>Back</Text>
+            </Pressable>
           </View>
-        </View>
-      </Screen>
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
   const preview = state.preview;
 
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Close shift preview</Text>
-          <Text style={styles.subtitle}>
-            Review backend-calculated totals before closing the shift.
-          </Text>
+    <SafeAreaView style={styles.safeArea}>
+      <AppTopBar variant="back" />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Close shift preview</Text>
+          <Text style={styles.pageSubtitle}>Review totals before closing.</Text>
+
+          <View style={styles.shiftMeta}>
+            <Text style={styles.shiftMetaText}>{preview.staffName}</Text>
+            <Text style={styles.shiftMetaDot}>·</Text>
+            <Text style={styles.shiftMetaText}>{preview.storeName}</Text>
+            <Text style={styles.shiftMetaDot}>·</Text>
+            <Text style={styles.shiftMetaText}>
+              #{preview.shiftId.slice(0, 8).toUpperCase()}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Shift</Text>
-          <SummaryRow label="Staff" value={preview.staffName} />
-          <SummaryRow label="Store" value={preview.storeName} />
-          <SummaryRow label="Shift" value={preview.shiftId.slice(0, 8)} />
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardHeaderText}>Sales totals</Text>
+          </View>
+
+          <View style={styles.cardBody}>
+            <View style={styles.prominentRow}>
+              <Text style={styles.prominentLabel}>Total sales</Text>
+              <Text style={styles.prominentValue}>
+                {formatMoney(preview.totalSales)}
+              </Text>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Cash</Text>
+              <Text style={styles.dataValue}>
+                {formatMoney(preview.totalCash)}
+              </Text>
+            </View>
+
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>MB</Text>
+              <Text style={styles.dataValue}>{formatMoney(preview.totalMb)}</Text>
+            </View>
+
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Glovo online</Text>
+              <Text style={styles.dataValue}>
+                {formatMoney(preview.totalGlovoOnline)}
+              </Text>
+            </View>
+
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Glovo cash</Text>
+              <Text style={styles.dataValue}>
+                {formatMoney(preview.totalGlovoCash)}
+              </Text>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.dataRow}>
+              <Text style={styles.tealLabel}>Total Glovo</Text>
+              <Text style={styles.tealValue}>
+                {formatMoney(getTotalGlovoAmount(preview))}
+              </Text>
+            </View>
+
+            {preview.pendingInvoiceTotal > 0 ? (
+              <View style={styles.dataRow}>
+                <Text style={styles.amberLabel}>Pending invoice</Text>
+                <Text style={styles.amberValue}>
+                  {formatMoney(preview.pendingInvoiceTotal)}
+                </Text>
+              </View>
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Sales totals</Text>
-          <SummaryRow label="Total sales" value={formatMoney(preview.totalSales)} />
-          <SummaryRow
-            label="Pending invoice total"
-            value={formatMoney(preview.pendingInvoiceTotal)}
-          />
-        </View>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardHeaderText}>Cash calculation</Text>
+          </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Payment totals</Text>
-          <SummaryRow label="Cash" value={formatMoney(preview.totalCash)} />
-          <SummaryRow label="MB" value={formatMoney(preview.totalMb)} />
-          <SummaryRow
-            label="Glovo online"
-            value={formatMoney(preview.totalGlovoOnline)}
-          />
-          <SummaryRow
-            label="Glovo cash"
-            value={formatMoney(preview.totalGlovoCash)}
-          />
-          <SummaryRow
-            label="Total Glovo"
-            value={formatMoney(getTotalGlovoAmount(preview))}
-          />
+          <View style={styles.cardBody}>
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Cash payments</Text>
+              <Text style={styles.dataValue}>
+                {formatMoney(preview.totalCash)}
+              </Text>
+            </View>
+
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Cash to withdraw</Text>
+              <Text style={styles.dataValue}>
+                {formatMoney(preview.cashToWithdraw)}
+              </Text>
+            </View>
+
+            <View style={styles.cardDivider} />
+
+            <View style={styles.remainingRow}>
+              <Text style={styles.remainingLabel}>Remaining base cash</Text>
+              <View style={styles.remainingPill}>
+                <Text style={styles.remainingPillText}>
+                  {formatMoney(getBaseCashAmount(preview))}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.dataRow}>
+              <Text style={styles.dataLabel}>Expected physical cash</Text>
+              <Text style={styles.dataValue}>
+                {formatMoney(preview.expectedPhysicalCash)}
+              </Text>
+            </View>
+          </View>
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoTitle}>Glovo handling</Text>
           <Text style={styles.infoText}>
-            Glovo online is included in sales and Glovo totals, but it does not affect physical cash or MB terminal totals.
+            <Text style={styles.infoTextBold}>Glovo online</Text>
+            {
+              " is tracked in Glovo totals but does not affect physical cash or MB terminal. "
+            }
+            <Text style={styles.infoTextBold}>Glovo cash</Text>
+            {" affects physical cash."}
           </Text>
-          <Text style={styles.infoText}>
-            Glovo cash is included in Glovo totals and affects physical cash.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Cash register</Text>
-          <SummaryRow
-            label="Cash to withdraw"
-            value={formatMoney(preview.cashToWithdraw)}
-          />
-          <SummaryRow
-            label="Expected physical cash"
-            value={formatMoney(preview.expectedPhysicalCash)}
-          />
         </View>
 
         <View style={styles.warningCard}>
-          <Text style={styles.warningTitle}>Confirm carefully</Text>
           <Text style={styles.warningText}>
-            Closing the shift is final. Confirm the physical totals before continuing.
+            Closing this shift will finalize all recorded transactions and
+            incidents. This action cannot be undone.
           </Text>
         </View>
 
         <View style={styles.actions}>
-          <Button
-            title="Confirm close shift"
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnPrimary,
+              pressed && styles.btnPressed,
+            ]}
             onPress={() =>
               router.push({
                 pathname: "/(staff)/close-shift/confirm",
                 params: {
                   shiftId: preview.shiftId,
+                  expectedCash: String(preview.expectedPhysicalCash),
+                  expectedMb: String(preview.totalMb),
+                  cashToWithdraw: String(preview.cashToWithdraw),
                 },
               })
             }
-          />
-          <Button title="Refresh preview" onPress={loadPreview} />
-          <Button title="Back" onPress={() => router.back()} />
+          >
+            <Text style={styles.btnPrimaryText}>Proceed to close shift</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnOutline,
+              pressed && styles.btnPressed,
+            ]}
+            onPress={loadPreview}
+          >
+            <Text style={styles.btnOutlineText}>Refresh preview</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnBack,
+              pressed && styles.btnPressed,
+            ]}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.btnBackText}>Back</Text>
+          </Pressable>
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
     gap: 16,
-    padding: 24,
   },
-  header: {
+  pageHeader: {
     gap: 6,
+    marginBottom: 4,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
-  subtitle: {
-    fontSize: 16,
-    color: "#555555",
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
     lineHeight: 22,
   },
+  shiftMeta: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    alignItems: "center",
+    marginTop: 2,
+  },
+  shiftMetaText: {
+    fontSize: fontSize.md,
+    color: colors.textSubtle,
+  },
+  shiftMetaDot: {
+    fontSize: fontSize.md,
+    color: "#bcc9c6",
+  },
   card: {
-    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
     borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
-    padding: 20,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  cardHeaderText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.textMuted,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+  },
+  cardBody: {
+    padding: 16,
+    gap: 14,
   },
   cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    padding: 16,
   },
-  summaryRow: {
+  cardDivider: {
+    height: 1,
+    backgroundColor: "#f1f5f9",
+  },
+  prominentRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
+  },
+  prominentLabel: {
+    fontSize: fontSize.xl,
+    color: colors.textMuted,
+  },
+  prominentValue: {
+    fontSize: 22,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  dataRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
   },
-  summaryLabel: {
-    flex: 1,
-    fontSize: 16,
-    color: "#555555",
+  dataLabel: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    flexShrink: 1,
   },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: "700",
+  dataValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
     textAlign: "right",
   },
-  infoCard: {
-    gap: 8,
-    borderWidth: 1,
-    borderColor: "#cfe0ff",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#f1f6ff",
+  tealLabel: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
   },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#1f4f8f",
+  tealValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  amberLabel: {
+    fontSize: fontSize.base,
+    color: colors.warning,
+  },
+  amberValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.warning,
+  },
+  remainingRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  remainingLabel: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  remainingPill: {
+    backgroundColor: colors.primaryMuted,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "#a5e9e0",
+  },
+  remainingPillText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: "#004f49",
+  },
+  infoCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceMuted,
+    padding: 14,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: fontSize.md,
+    color: colors.textMuted,
     lineHeight: 20,
-    color: "#1f4f8f",
+  },
+  infoTextBold: {
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
   warningCard: {
-    gap: 8,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "#f0d28a",
-    borderRadius: 16,
-    padding: 20,
-    backgroundColor: "#fff8e5",
-  },
-  warningTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#7a5200",
+    borderColor: colors.warningBorder,
+    backgroundColor: colors.warningSoft,
+    padding: 14,
   },
   warningText: {
-    fontSize: 14,
+    fontSize: fontSize.md,
+    color: colors.warning,
     lineHeight: 20,
-    color: "#7a5200",
   },
   actions: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: 10,
+    marginTop: 4,
+  },
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+    letterSpacing: 0.3,
+  },
+  btnOutline: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  btnBack: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
 });

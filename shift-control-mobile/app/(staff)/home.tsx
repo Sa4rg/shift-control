@@ -1,6 +1,14 @@
-import { router, useFocusEffect } from "expo-router";
+﻿import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import {
@@ -10,53 +18,34 @@ import {
 } from "@/src/api/shifts";
 import { listCurrentShiftSales } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
-import { Button } from "@/src/components/Button";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { LoadingState } from "@/src/components/LoadingState";
-import { Screen } from "@/src/components/Screen";
 import type { Sale, ShiftType } from "@/src/types/api";
-
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
 
 type ShiftLoadState =
-  | {
-      status: "loading";
-      result: null;
-      errorMessage: null;
-    }
-  | {
-      status: "ready";
-      result: CurrentShiftResult;
-      errorMessage: null;
-    }
-  | {
-      status: "error";
-      result: null;
-      errorMessage: string;
-    };
+  | { status: "loading"; result: null; errorMessage: null }
+  | { status: "ready"; result: CurrentShiftResult; errorMessage: null }
+  | { status: "error"; result: null; errorMessage: string };
 
 type SalesLoadState =
-  | {
-      status: "idle";
-      sales: Sale[];
-      errorMessage: null;
-    }
-  | {
-      status: "loading";
-      sales: Sale[];
-      errorMessage: null;
-    }
-  | {
-      status: "ready";
-      sales: Sale[];
-      errorMessage: null;
-    }
-  | {
-      status: "error";
-      sales: Sale[];
-      errorMessage: string;
-    };
+  | { status: "idle"; sales: Sale[]; errorMessage: null }
+  | { status: "loading"; sales: Sale[]; errorMessage: null }
+  | { status: "ready"; sales: Sale[]; errorMessage: null }
+  | { status: "error"; sales: Sale[]; errorMessage: string };
+
+function getPaymentLabel(sale: Sale): string {
+  if (sale.payments.length === 0) return "—";
+  if (sale.payments.length === 1) return sale.payments[0].method;
+  return "SPLIT";
+}
+
+function getSaleLabel(sale: Sale): string {
+  return sale.items[0]?.productName ?? `Sale ${sale.id.slice(0, 8)}`;
+}
 
 export default function StaffHomeScreen() {
   const { user, logout } = useAuth();
@@ -79,41 +68,18 @@ export default function StaffHomeScreen() {
   >(null);
 
   const loadCurrentShift = useCallback(async () => {
-    setShiftState({
-      status: "loading",
-      result: null,
-      errorMessage: null,
-    });
-    setSalesState({
-      status: "idle",
-      sales: [],
-      errorMessage: null,
-    });
+    setShiftState({ status: "loading", result: null, errorMessage: null });
+    setSalesState({ status: "idle", sales: [], errorMessage: null });
 
     try {
       const result = await getCurrentShift();
-
-      setShiftState({
-        status: "ready",
-        result,
-        errorMessage: null,
-      });
+      setShiftState({ status: "ready", result, errorMessage: null });
 
       if (result.status === "active") {
-        setSalesState({
-          status: "loading",
-          sales: [],
-          errorMessage: null,
-        });
-
+        setSalesState({ status: "loading", sales: [], errorMessage: null });
         try {
           const sales = await listCurrentShiftSales();
-
-          setSalesState({
-            status: "ready",
-            sales,
-            errorMessage: null,
-          });
+          setSalesState({ status: "ready", sales, errorMessage: null });
         } catch (error) {
           setSalesState({
             status: "error",
@@ -131,23 +97,22 @@ export default function StaffHomeScreen() {
     }
   }, []);
 
-  const visibleSales = salesState.sales.slice(0, 5);
-  const hiddenSalesCount = Math.max(salesState.sales.length - visibleSales.length, 0);
-
   useFocusEffect(
     useCallback(() => {
       void loadCurrentShift();
     }, [loadCurrentShift])
   );
 
-  async function handleOpenShift(type: ShiftType) {
-    if (openingShiftType) {
-      return;
-    }
+  const visibleSales = salesState.sales.slice(0, 5);
+  const shiftTotal = salesState.sales.reduce(
+    (sum, s) => sum + s.finalTotalAmount,
+    0
+  );
 
+  async function handleOpenShift(type: ShiftType) {
+    if (openingShiftType) return;
     setOpeningShiftType(type);
     setOpenShiftErrorMessage(null);
-
     try {
       await openShift({ type });
       await loadCurrentShift();
@@ -175,247 +140,555 @@ export default function StaffHomeScreen() {
   const hasNoActiveShift =
     shiftState.status === "ready" && shiftState.result.status === "none";
 
+  const displayName = user?.fullName ?? user?.username ?? "Staff";
   return (
-    <Screen padded={false}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Staff home</Text>
-          <Text style={styles.subtitle}>Welcome, {user?.fullName}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <AppTopBar variant="root" />
+
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Page header */}
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Staff home</Text>
+          <Text style={styles.pageSubtitle}>Welcome, {displayName}</Text>
         </View>
 
+        {/* Error loading shift */}
         {shiftState.status === "error" ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load current shift</Text>
+            <Text style={styles.cardTitle}>Could not load shift</Text>
             <ErrorMessage message={shiftState.errorMessage} />
-            <Button title="Try again" onPress={loadCurrentShift} />
+            <Pressable style={styles.refreshBtn} onPress={loadCurrentShift}>
+              <Text style={styles.refreshBtnText}>Try again</Text>
+            </Pressable>
           </View>
         ) : null}
 
+        {/* No active shift */}
         {hasNoActiveShift ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>No active shift</Text>
-            <Text style={styles.body}>
-              You do not have an open shift right now.
+            <Text style={styles.bodyText}>
+              You don't have an active shift right now. Choose a shift type to
+              get started.
             </Text>
 
             <ErrorMessage message={openShiftErrorMessage} />
 
-            <View style={styles.actions}>
-              <Button
-                title="Open day shift"
+            <View style={styles.shiftTypeRow}>
+              <Pressable
+                style={[
+                  styles.shiftTypeBtn,
+                  openingShiftType !== null && styles.btnDisabled,
+                ]}
                 onPress={() => void handleOpenShift("DAY")}
-                loading={openingShiftType === "DAY"}
                 disabled={openingShiftType !== null}
-              />
-              <Button
-                title="Open night shift"
+              >
+                {openingShiftType === "DAY" ? (
+                  <ActivityIndicator size="small" color="#131b2e" />
+                ) : (
+                  <Text style={styles.shiftTypeBtnText}>Open day shift</Text>
+                )}
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.shiftTypeBtn,
+                  openingShiftType !== null && styles.btnDisabled,
+                ]}
                 onPress={() => void handleOpenShift("NIGHT")}
-                loading={openingShiftType === "NIGHT"}
                 disabled={openingShiftType !== null}
-              />
+              >
+                {openingShiftType === "NIGHT" ? (
+                  <ActivityIndicator size="small" color="#131b2e" />
+                ) : (
+                  <Text style={styles.shiftTypeBtnText}>Open night shift</Text>
+                )}
+              </Pressable>
             </View>
           </View>
         ) : null}
 
+        {/* Active shift */}
         {activeShift ? (
-          <>
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Active shift</Text>
-              <Text style={styles.body}>
-                Type: {activeShift.type}
-              </Text>
-              <Text style={styles.body}>
-                Status: {activeShift.status}
-              </Text>
-              <Text style={styles.body}>
-                Opened at: {formatDateTime(activeShift.openedAt)}
-              </Text>
+          <View style={styles.card}>
+            {/* Card header row */}
+            <View style={styles.cardHeaderRow}>
+              <Text style={styles.cardTitle}>Current shift</Text>
+              <View
+                style={[
+                  styles.badge,
+                  activeShift.type === "DAY"
+                    ? styles.badgeDay
+                    : styles.badgeNight,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.badgeText,
+                    activeShift.type === "DAY"
+                      ? styles.badgeTextDay
+                      : styles.badgeTextNight,
+                  ]}
+                >
+                  {activeShift.type}
+                </Text>
+              </View>
+            </View>
 
-              <Pressable onPress={loadCurrentShift}>
-                <Text style={styles.refreshLink}>Refresh</Text>
+            <Text style={styles.bodyText}>
+              Shift started at {formatDateTime(activeShift.openedAt)}
+            </Text>
+
+            {/* Summary metrics */}
+            <View style={styles.metricsRow}>
+              <View>
+                <Text style={styles.metricLabel}>Sales</Text>
+                <Text style={styles.metricValue}>
+                  {salesState.sales.length}
+                </Text>
+              </View>
+              <View style={styles.metricRight}>
+                <Text style={styles.metricLabel}>Total</Text>
+                <Text style={styles.metricValue}>
+                  {salesState.status === "loading"
+                    ? "…"
+                    : formatMoney(shiftTotal)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Sales list */}
+            {salesState.status === "loading" ? (
+              <ActivityIndicator
+                color="#00685f"
+                style={{ alignSelf: "center" }}
+              />
+            ) : null}
+
+            {salesState.status === "error" ? (
+              <ErrorMessage message={salesState.errorMessage} />
+            ) : null}
+
+            {salesState.status === "ready" &&
+            salesState.sales.length === 0 ? (
+              <Text style={styles.bodyText}>No sales registered yet.</Text>
+            ) : null}
+
+            {salesState.status === "ready" && visibleSales.length > 0 ? (
+              <View style={styles.salesList}>
+                {visibleSales.map((sale, index) => (
+                  <Pressable
+                    key={sale.id}
+                    style={[
+                      styles.saleRow,
+                      index === visibleSales.length - 1 &&
+                        styles.saleRowLast,
+                    ]}
+                    onPress={() => router.push(`/(staff)/sales/${sale.id}`)}
+                  >
+                    <View style={styles.saleLeft}>
+                      <Text style={styles.saleLabel}>
+                        {getSaleLabel(sale)}
+                      </Text>
+                      <View style={styles.paymentChip}>
+                        <Text style={styles.paymentChipText}>
+                          {getPaymentLabel(sale)}
+                        </Text>
+                      </View>
+                    </View>
+                    <Text style={styles.saleAmount}>
+                      {formatMoney(sale.finalTotalAmount)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {salesState.status === "ready" && salesState.sales.length > 0 ? (
+              <Pressable onPress={() => router.push("/(staff)/sales" as never)}>
+                <Text style={styles.viewAllLink}>View all sales</Text>
+              </Pressable>
+            ) : null}
+
+            {/* Action buttons */}
+            <View style={styles.actions}>
+              <Pressable
+                style={styles.btnPrimary}
+                onPress={() => router.push("/(staff)/sales/new-sale")}
+              >
+                <Text style={styles.btnPrimaryText}>+ New sale</Text>
               </Pressable>
 
-              <Button
-                title="Close shift"
+              <Pressable
+                style={styles.btnSecondary}
                 onPress={() =>
                   router.push({
                     pathname: "/(staff)/close-shift/preview",
-                    params: {
-                      shiftId: activeShift.id,
-                    },
+                    params: { shiftId: activeShift.id },
                   })
                 }
-              />
+              >
+                <Text style={styles.btnSecondaryText}>⊠ Close shift</Text>
+              </Pressable>
             </View>
-
-            <View style={styles.card}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.cardTitle}>Current shift sales</Text>
-                <Pressable onPress={loadCurrentShift}>
-                  <Text style={styles.refreshLink}>Refresh</Text>
-                </Pressable>
-              </View>
-
-              <Button
-                title="New sale"
-                onPress={() => router.push("/(staff)/sales/new-sale")}
-              />
-
-              {salesState.status === "loading" ? (
-                <Text style={styles.body}>Loading sales...</Text>
-              ) : null}
-
-              {salesState.status === "error" ? (
-                <ErrorMessage message={salesState.errorMessage} />
-              ) : null}
-
-              {salesState.status === "ready" &&
-              salesState.sales.length === 0 ? (
-                <Text style={styles.body}>No sales registered yet.</Text>
-              ) : null}
-
-              {salesState.status === "ready" &&
-              salesState.sales.length > 0 ? (
-                <View style={styles.salesList}>
-                  {visibleSales.map((sale) => (
-                    <Pressable
-                      key={sale.id}
-                      style={styles.saleRow}
-                      onPress={() =>
-                        router.push(`/(staff)/sales/${sale.id}`)
-                      }
-                    >
-                      <View style={styles.saleMain}>
-                        <Text style={styles.saleTitle}>
-                          Sale {sale.id.slice(0, 8)}
-                        </Text>
-                        <Text style={styles.saleMeta}>
-                          {sale.status} · {sale.invoiceStatus}
-                        </Text>
-                      </View>
-
-                      <Text style={styles.saleTotal}>
-                        {formatMoney(sale.finalTotalAmount)}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              ) : null}
-
-              {hiddenSalesCount > 0 ? (
-                <Button
-                  title={`View all sales (${salesState.sales.length})`}
-                  onPress={() => router.push("/(staff)/sales" as never)}
-                />
-              ) : null}
-            </View>
-          </>
+          </View>
         ) : null}
 
-        <View style={styles.footer}>
-          <Button title="My shifts" onPress={() => router.push("/(staff)/history")} />
-            
-          <Button
-            title="My incidents"
+        {/* Staff actions */}
+        <View style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Staff actions</Text>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              pressed && styles.quickActionRowPressed,
+            ]}
+            onPress={() => router.push("/(staff)/history")}
+          >
+            <View style={styles.quickActionLeft}>
+              <Text style={styles.quickActionIcon}>□</Text>
+              <Text style={styles.quickActionText}>My shifts</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              pressed && styles.quickActionRowPressed,
+            ]}
             onPress={() => router.push("/(staff)/incidents")}
-          />
+          >
+            <View style={styles.quickActionLeft}>
+              <Text style={styles.quickActionIcon}>△</Text>
+              <Text style={styles.quickActionText}>My incidents</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
+          </Pressable>
 
-          {activeShift ? (
-            <Button
-              title="New incident"
-              onPress={() =>
-                router.push({
-                  pathname: "/(staff)/incidents/new-incident",
-                  params: {
-                    shiftId: activeShift.id,
-                  },
-                })
-              }
-            />
-          ) : null}
+          <Pressable
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              pressed && styles.quickActionRowPressed,
+            ]}
+            onPress={loadCurrentShift}
+          >
+            <View style={styles.quickActionLeft}>
+              <Text style={styles.quickActionIcon}>↻</Text>
+              <Text style={styles.quickActionText}>Refresh</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
+          </Pressable>
 
-          <Button title="Logout" onPress={handleLogout} />
+          <Pressable
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              styles.quickActionRowLast,
+              pressed && styles.quickActionRowPressed,
+            ]}
+            onPress={() => void handleLogout()}
+          >
+            <View style={styles.quickActionLeft}>
+              <Text style={[styles.quickActionIcon, styles.quickActionIconDanger]}>
+                ⎋
+              </Text>
+              <Text style={[styles.quickActionText, styles.quickActionTextDanger]}>
+                Logout
+              </Text>
+            </View>
+            <Text style={[styles.quickActionChevron, styles.quickActionTextDanger]}>
+              ›
+            </Text>
+          </Pressable>
         </View>
       </ScrollView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 16,
-    padding: 24,
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
-  header: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    fontSize: 18,
-    color: "#555555",
-  },
-  card: {
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#dddddd",
-    borderRadius: 16,
+
+  // Scroll
+  scrollContent: {
     padding: 20,
+    paddingBottom: 40,
+    gap: 16,
   },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
+
+  // Page header
+  pageHeader: {
+    gap: 4,
+    marginTop: 8,
   },
-  body: {
-    fontSize: 16,
-    lineHeight: 22,
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.5,
   },
-  actions: {
-    gap: 12,
-    marginTop: 4,
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
   },
-  refreshLink: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginTop: 4,
+
+  // Card
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    padding: 16,
+    gap: 16,
+    ...shadows.card,
   },
-  sectionHeader: {
+  cardHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+
+  // Badge
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  badgeDay: {
+    backgroundColor: "#89f5e7",
+  },
+  badgeNight: {
+    backgroundColor: colors.secondarySoft,
+  },
+  badgeText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.bold,
+    letterSpacing: 0.5,
+  },
+  badgeTextDay: {
+    color: "#00201d",
+  },
+  badgeTextNight: {
+    color: "#001453",
+  },
+
+  bodyText: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
+
+  // Metrics row
+  metricsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.sm,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "rgba(188,201,198,0.3)",
+  },
+  metricRight: {
+    alignItems: "flex-end",
+  },
+  metricLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.medium,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  metricValue: {
+    fontSize: 20,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+
+  // Sales list
   salesList: {
-    gap: 12,
+    gap: 0,
   },
   saleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#eeeeee",
-    paddingTop: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
   },
-  saleMain: {
+  saleRowLast: {
+    borderBottomWidth: 0,
+  },
+  saleLeft: {
     flex: 1,
     gap: 4,
   },
-  saleTitle: {
-    fontSize: 16,
-    fontWeight: "700",
+  saleLabel: {
+    fontSize: fontSize.xl,
+    color: colors.text,
   },
-  saleMeta: {
-    fontSize: 14,
-    color: "#666666",
+  paymentChip: {
+    alignSelf: "flex-start",
+    backgroundColor: "#e2e7ff",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
   },
-  saleTotal: {
-    fontSize: 16,
-    fontWeight: "700",
+  paymentChipText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+    letterSpacing: 0.3,
   },
-  footer: {
-    marginTop: 8,
-    paddingBottom: 24,
+  saleAmount: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    marginLeft: 8,
+  },
+
+  viewAllLink: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+    textAlign: "center",
+  },
+
+  // Buttons
+  actions: {
+    gap: 10,
+  },
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+    letterSpacing: 0.3,
+  },
+  btnSecondary: {
+    height: 48,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnSecondaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+
+  // No active shift buttons
+  shiftTypeRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  shiftTypeBtn: {
+    flex: 1,
+    height: 44,
+    backgroundColor: "#e2e7ff",
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shiftTypeBtnText: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+
+  // Refresh/error button
+  refreshBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
+  },
+  refreshBtnText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+
+  // Staff actions card
+  quickActionsCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  quickActionsTitle: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    fontSize: fontSize.xl,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  quickActionRow: {
+    minHeight: 58,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  quickActionRowLast: {
+    borderBottomWidth: 0,
+  },
+  quickActionRowPressed: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  quickActionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  quickActionIcon: {
+    width: 24,
+    fontSize: fontSize.lg,
+    color: colors.primary,
+    textAlign: "center",
+  },
+  quickActionText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+  },
+  quickActionChevron: {
+    fontSize: 28,
+    color: colors.textSubtle,
+  },
+  quickActionIconDanger: {
+    color: colors.danger,
+  },
+  quickActionTextDanger: {
+    color: colors.danger,
   },
 });
