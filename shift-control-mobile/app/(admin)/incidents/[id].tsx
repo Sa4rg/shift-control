@@ -14,7 +14,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getIncidentById, resolveIncident } from "@/src/api/incidents";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type {
@@ -143,7 +143,6 @@ function SeverityBadge({ severity }: { severity: IncidentSeverity }) {
 }
 
 export default function AdminIncidentDetailScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{ id?: string }>();
   const incidentId = params.id;
 
@@ -228,39 +227,11 @@ export default function AdminIncidentDetailScreen() {
     void loadIncident();
   }, [loadIncident]);
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (state.status === "loading") {
     return <LoadingState message="Loading incident..." />;
   }
 
-  const appBar = (
-    <View style={styles.appBar}>
-      <View style={styles.appBarLeft}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.appBarBackButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={() => router.back()}
-          disabled={isResolving}
-        >
-          <Text style={styles.backIcon}>←</Text>
-        </Pressable>
-
-        <Text style={styles.appBarTitle}>Incident detail</Text>
-      </View>
-
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-    </View>
-  );
+  const appBar = <AppTopBar variant="back" />;
 
   if (state.status === "error") {
     return (
@@ -549,52 +520,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  appBarBackButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

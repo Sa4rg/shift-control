@@ -12,7 +12,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { listCurrentShiftSales } from "@/src/api/sales";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
@@ -38,7 +38,6 @@ type SalesState =
     };
 
 export default function SalesIndexScreen() {
-  const { user } = useAuth();
   const [state, setState] = useState<SalesState>({
     status: "loading",
     sales: [],
@@ -79,25 +78,9 @@ export default function SalesIndexScreen() {
     return <LoadingState message="Loading sales..." />;
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* AppBar */}
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -235,45 +218,7 @@ const styles = StyleSheet.create({
   },
 
   // AppBar
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
-  },
+
 
   // Scroll
   scrollContent: {

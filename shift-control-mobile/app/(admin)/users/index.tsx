@@ -11,7 +11,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { listUsers } from "@/src/api/users";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { AdminUser } from "@/src/types/api";
@@ -109,7 +109,6 @@ function UserRow({ user, isLast }: { user: AdminUser; isLast: boolean }) {
 }
 
 export default function AdminUsersScreen() {
-  const { user } = useAuth();
 
   const [state, setState] = useState<UsersState>({
     status: "loading",
@@ -175,29 +174,13 @@ export default function AdminUsersScreen() {
       ? state.users.filter((adminUser) => !adminUser.active).length
       : 0;
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (state.status === "loading") {
     return <LoadingState message="Loading users..." />;
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -359,45 +342,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#283044",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.surface,
   },
   scrollContent: {
     padding: 20,

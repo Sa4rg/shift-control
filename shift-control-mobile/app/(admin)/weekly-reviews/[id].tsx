@@ -11,7 +11,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getWeeklyReviewById } from "@/src/api/weeklyReviews";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { WeeklyAdminReview } from "@/src/types/api";
@@ -135,38 +135,11 @@ export default function AdminWeeklyReviewDetailScreen() {
     void loadReview();
   }, [loadReview]);
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (state.status === "loading") {
     return <LoadingState message="Loading weekly review..." />;
   }
 
-  const appBar = (
-    <View style={styles.appBar}>
-      <View style={styles.appBarLeft}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.appBarBackButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backIcon}>←</Text>
-        </Pressable>
-
-        <Text style={styles.appBarTitle}>Weekly review detail</Text>
-      </View>
-
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-    </View>
-  );
+  const appBar = <AppTopBar variant="back" />;
 
   if (state.status === "error") {
     return (
@@ -415,52 +388,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  appBarBackButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    flex: 1,
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.surface,
   },
   scrollContent: {
     padding: 20,

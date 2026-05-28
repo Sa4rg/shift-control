@@ -19,7 +19,7 @@ import {
   listWeeklyReviews,
   type ListWeeklyReviewsParams,
 } from "@/src/api/weeklyReviews";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type {
@@ -253,8 +253,6 @@ function ReviewRow({
 }
 
 export default function AdminWeeklyReviewsScreen() {
-  const { user } = useAuth();
-
   const [referenceDataState, setReferenceDataState] =
     useState<ReferenceDataState>({
       status: "loading",
@@ -415,29 +413,13 @@ export default function AdminWeeklyReviewsScreen() {
         ).length
       : 0;
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (referenceDataState.status === "loading" || state.status === "loading") {
     return <LoadingState message="Loading weekly reviews..." />;
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -712,45 +694,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

@@ -14,7 +14,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { closeShift } from "@/src/api/shifts";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import type { ShiftCloseResult } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
@@ -66,7 +66,6 @@ function diffTextColor(diff: number | null): string {
 }
 
 export default function CloseShiftConfirmScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{
     shiftId?: string;
     expectedCash?: string;
@@ -148,32 +147,12 @@ export default function CloseShiftConfirmScreen() {
     }
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
-  const appBar = (
-    <View style={styles.appBar}>
-      <View style={styles.appBarLeft}>
-        <Text style={styles.menuIcon}>≡</Text>
-        <Text style={styles.appBarTitle}>Shift Control</Text>
-      </View>
-
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-    </View>
-  );
-
   if (result !== null) {
     const isIncident = result.status === "CLOSED_WITH_INCIDENT";
 
     return (
       <SafeAreaView style={styles.safeArea}>
-        {appBar}
+        <AppTopBar variant="back" />
 
         <ScrollView
           contentContainerStyle={styles.scrollContent}
@@ -321,7 +300,7 @@ export default function CloseShiftConfirmScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {appBar}
+      <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -513,43 +492,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: 20,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.secondaryContainer,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

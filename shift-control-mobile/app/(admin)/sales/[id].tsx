@@ -11,7 +11,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getSaleById } from "@/src/api/sales";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale } from "@/src/types/api";
@@ -110,7 +110,7 @@ function PaymentMethodBadge({ method }: { method: string }) {
 }
 
 export default function AdminSaleDetailScreen() {
-  const { user } = useAuth();
+
   const params = useLocalSearchParams<{ id?: string }>();
   const saleId = params.id;
 
@@ -157,44 +157,14 @@ export default function AdminSaleDetailScreen() {
     void loadSale();
   }, [loadSale]);
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
 
   if (state.status === "loading") {
     return <LoadingState message="Loading sale..." />;
   }
 
-  const appBar = (
-    <View style={styles.appBar}>
-      <View style={styles.appBarLeft}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.appBarBackButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backIcon}>←</Text>
-        </Pressable>
-
-        <Text style={styles.appBarTitle}>Shift Control</Text>
-      </View>
-
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-    </View>
-  );
-
   if (state.status === "error") {
     return (
       <SafeAreaView style={styles.safeArea}>
-        {appBar}
-
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -240,7 +210,7 @@ export default function AdminSaleDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {appBar}
+      <AppTopBar variant="back" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -500,52 +470,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  appBarBackButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
-  },
+
   scrollContent: {
     padding: 20,
     paddingBottom: 48,

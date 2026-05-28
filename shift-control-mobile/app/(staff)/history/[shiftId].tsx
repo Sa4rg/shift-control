@@ -15,7 +15,7 @@ import {
   getShiftClosureByShiftId,
 } from "@/src/api/shifts";
 import { listSalesByShiftId } from "@/src/api/sales";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type {
@@ -96,7 +96,6 @@ function getBaseCashAmount(closure: ShiftClosure): number {
 }
 
 export default function ShiftHistoryDetailScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{ shiftId?: string }>();
   const shiftId = params.shiftId;
 
@@ -168,25 +167,10 @@ export default function ShiftHistoryDetailScreen() {
     return <LoadingState message="Loading shift history..." />;
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (state.status === "error") {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.appBar}>
-          <Pressable style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backBtnText}>←</Text>
-          </Pressable>
-          <Text style={styles.appBarTitle}>Shift detail</Text>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-        </View>
+        <AppTopBar variant="back" />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <ErrorMessage message={state.errorMessage} />
           <Pressable style={styles.btnOutline} onPress={loadShiftHistory}>
@@ -205,16 +189,7 @@ export default function ShiftHistoryDetailScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* AppBar */}
-      <View style={styles.appBar}>
-        <Pressable style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>←</Text>
-        </Pressable>
-        <Text style={styles.appBarTitle}>Shift detail</Text>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       {/* Status banner */}
       <View style={[styles.banner, getBannerStyle(shift, closureStatus)]}>
@@ -455,47 +430,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-
-  // AppBar
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backBtnText: {
-    fontSize: 22,
-    color: colors.primary,
-    fontWeight: fontWeight.semibold,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.secondaryContainer,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
 
   // Status banner

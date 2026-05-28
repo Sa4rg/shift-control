@@ -15,7 +15,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { cancelSale, getSaleById, markSaleAsInvoiced } from "@/src/api/sales";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
@@ -55,7 +55,6 @@ type SaleDetailState =
     };
 
 export default function SaleDetailScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{ id?: string }>();
   const saleId = params.id;
 
@@ -172,25 +171,12 @@ export default function SaleDetailScreen() {
     return <LoadingState message="Loading sale..." />;
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
+
 
   if (state.status === "error") {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.appBar}>
-          <View style={styles.appBarLeft}>
-            <Text style={styles.menuIcon}>≡</Text>
-            <Text style={styles.appBarTitle}>Shift Control</Text>
-          </View>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
-          </View>
-        </View>
+        <AppTopBar variant="back" />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.pageHeader}>
             <Text style={styles.pageTitle}>Sale detail</Text>
@@ -222,15 +208,7 @@ export default function SaleDetailScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* AppBar */}
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -551,47 +529,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-
-  // AppBar
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
 
   keyboardView: {

@@ -11,7 +11,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getShiftClosePreview } from "@/src/api/shifts";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
@@ -32,7 +32,6 @@ type ClosePreviewState =
   | { status: "error"; preview: null; errorMessage: string };
 
 export default function CloseShiftPreviewScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{ shiftId?: string }>();
   const shiftId = params.shiftId;
 
@@ -70,34 +69,14 @@ export default function CloseShiftPreviewScreen() {
     void loadPreview();
   }, [loadPreview]);
 
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (state.status === "loading") {
     return <LoadingState message="Loading close preview..." />;
   }
 
-  const appBar = (
-    <View style={styles.appBar}>
-      <View style={styles.appBarLeft}>
-        <Text style={styles.menuIcon}>≡</Text>
-        <Text style={styles.appBarTitle}>Shift Control</Text>
-      </View>
-
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-    </View>
-  );
-
   if (state.status === "error") {
     return (
       <SafeAreaView style={styles.safeArea}>
-        {appBar}
+        <AppTopBar variant="back" />
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.pageHeader}>
@@ -137,7 +116,7 @@ export default function CloseShiftPreviewScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {appBar}
+      <AppTopBar variant="back" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -327,45 +306,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

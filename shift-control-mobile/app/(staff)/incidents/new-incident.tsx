@@ -14,7 +14,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { createIncident } from "@/src/api/incidents";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import type { IncidentSeverity, IncidentType } from "@/src/types/api";
@@ -137,7 +137,6 @@ function SeverityOption({
 }
 
 export default function NewIncidentScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{
     shiftId?: string;
     closureId?: string;
@@ -191,25 +190,9 @@ export default function NewIncidentScreen() {
     }
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>New incident</Text>
-        </View>
-
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -359,45 +342,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

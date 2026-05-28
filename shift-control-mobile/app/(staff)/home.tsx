@@ -20,6 +20,7 @@ import { listCurrentShiftSales } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale, ShiftType } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -140,24 +141,9 @@ export default function StaffHomeScreen() {
     shiftState.status === "ready" && shiftState.result.status === "none";
 
   const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* AppBar */}
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="root" />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -350,32 +336,70 @@ export default function StaffHomeScreen() {
           </View>
         ) : null}
 
-        {/* Footer actions */}
-        <View style={styles.footer}>
+        {/* Staff actions */}
+        <View style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Staff actions</Text>
+
           <Pressable
-            style={styles.footerLink}
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              pressed && styles.quickActionRowPressed,
+            ]}
             onPress={() => router.push("/(staff)/history")}
           >
-            <Text style={styles.footerLinkText}>My shifts</Text>
+            <View style={styles.quickActionLeft}>
+              <Text style={styles.quickActionIcon}>□</Text>
+              <Text style={styles.quickActionText}>My shifts</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
           </Pressable>
 
           <Pressable
-            style={styles.footerLink}
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              pressed && styles.quickActionRowPressed,
+            ]}
             onPress={() => router.push("/(staff)/incidents")}
           >
-            <Text style={styles.footerLinkText}>My incidents</Text>
-          </Pressable>
-
-          <Pressable style={styles.footerLink} onPress={loadCurrentShift}>
-            <Text style={styles.footerLinkText}>↻ Refresh</Text>
+            <View style={styles.quickActionLeft}>
+              <Text style={styles.quickActionIcon}>△</Text>
+              <Text style={styles.quickActionText}>My incidents</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
           </Pressable>
 
           <Pressable
-            style={styles.footerLink}
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              pressed && styles.quickActionRowPressed,
+            ]}
+            onPress={loadCurrentShift}
+          >
+            <View style={styles.quickActionLeft}>
+              <Text style={styles.quickActionIcon}>↻</Text>
+              <Text style={styles.quickActionText}>Refresh</Text>
+            </View>
+            <Text style={styles.quickActionChevron}>›</Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.quickActionRow,
+              styles.quickActionRowLast,
+              pressed && styles.quickActionRowPressed,
+            ]}
             onPress={() => void handleLogout()}
           >
-            <Text style={[styles.footerLinkText, styles.logoutText]}>
-              ⎋ Logout
+            <View style={styles.quickActionLeft}>
+              <Text style={[styles.quickActionIcon, styles.quickActionIconDanger]}>
+                ⎋
+              </Text>
+              <Text style={[styles.quickActionText, styles.quickActionTextDanger]}>
+                Logout
+              </Text>
+            </View>
+            <Text style={[styles.quickActionChevron, styles.quickActionTextDanger]}>
+              ›
             </Text>
           </Pressable>
         </View>
@@ -388,47 +412,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-
-  // AppBar
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
 
   // Scroll
@@ -649,24 +632,63 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  // Footer
-  footer: {
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 8,
+  // Staff actions card
+  quickActionsCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    ...shadows.card,
   },
-  footerLink: {
-    paddingVertical: 10,
+  quickActionsTitle: {
     paddingHorizontal: 16,
-  },
-  footerLinkText: {
-    fontSize: fontSize.base,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    fontSize: fontSize.xl,
     fontWeight: fontWeight.semibold,
-    color: colors.textMuted,
+    color: colors.text,
   },
-  logoutText: {
+  quickActionRow: {
+    minHeight: 58,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  quickActionRowLast: {
+    borderBottomWidth: 0,
+  },
+  quickActionRowPressed: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  quickActionLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  quickActionIcon: {
+    width: 24,
+    fontSize: fontSize.lg,
+    color: colors.primary,
+    textAlign: "center",
+  },
+  quickActionText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+  },
+  quickActionChevron: {
+    fontSize: 28,
+    color: colors.textSubtle,
+  },
+  quickActionIconDanger: {
     color: colors.danger,
   },
-
-
+  quickActionTextDanger: {
+    color: colors.danger,
+  },
 });

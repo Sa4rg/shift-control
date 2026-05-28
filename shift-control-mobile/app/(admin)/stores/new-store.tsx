@@ -14,7 +14,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { createStore } from "@/src/api/stores";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { formatMoney } from "@/src/utils/money";
@@ -31,7 +31,6 @@ function parsePositiveNumber(value: string): number | null {
 }
 
 export default function NewStoreScreen() {
-  const { user } = useAuth();
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -77,35 +76,9 @@ export default function NewStoreScreen() {
     setBaseCashAmount(value.replace(/[^\d.,]/g, ""));
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.appBarBackButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={() => router.back()}
-            disabled={isSubmitting}
-          >
-            <Text style={styles.backIcon}>←</Text>
-          </Pressable>
-
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -235,52 +208,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  appBarBackButton: {
-    width: 32,
-    height: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  backIcon: {
-    fontSize: 20,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

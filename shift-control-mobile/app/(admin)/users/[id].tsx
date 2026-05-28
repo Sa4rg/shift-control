@@ -13,7 +13,7 @@ import {
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getStoreById } from "@/src/api/stores";
 import { deactivateUser, getUserById } from "@/src/api/users";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { AdminUser, Store } from "@/src/types/api";
@@ -98,7 +98,6 @@ function RoleBadge({ role }: { role: AdminUser["role"] }) {
 }
 
 export default function AdminUserDetailScreen() {
-  const { user: authUser } = useAuth();
   const params = useLocalSearchParams<{ id?: string }>();
   const userId = params.id;
 
@@ -223,29 +222,11 @@ export default function AdminUserDetailScreen() {
     void loadUser();
   }, [loadUser]);
 
-  const displayName = authUser?.fullName ?? authUser?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (state.status === "loading") {
     return <LoadingState message="Loading user..." />;
   }
 
-  const appBar = (
-    <View style={styles.appBar}>
-      <View style={styles.appBarLeft}>
-        <Text style={styles.menuIcon}>≡</Text>
-        <Text style={styles.appBarTitle}>Shift Control</Text>
-      </View>
-
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{initials}</Text>
-      </View>
-    </View>
-  );
+  const appBar = <AppTopBar variant="back" />;
 
   if (state.status === "error") {
     return (
@@ -486,45 +467,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#283044",
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.surface,
-  },
   scrollContent: {
     padding: 20,
     paddingBottom: 48,
@@ -574,7 +516,7 @@ const styles = StyleSheet.create({
   },
   statusBannerText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.extrabold,
   },
   statusBannerTextActive: {
     color: colors.primary,
@@ -601,8 +543,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
+    fontSize: 20,
+    fontWeight: fontWeight.extrabold,
     color: colors.text,
   },
   cardHeaderIcon: {
@@ -618,10 +560,10 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   detailLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    fontSize: 11,
+    fontWeight: fontWeight.extrabold,
     color: colors.textSubtle,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   detailValue: {
     fontSize: fontSize.lg,
@@ -668,7 +610,7 @@ const styles = StyleSheet.create({
   },
   btnDangerText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.extrabold,
     color: colors.danger,
   },
   btnRefresh: {
@@ -681,7 +623,7 @@ const styles = StyleSheet.create({
   },
   btnRefreshText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.extrabold,
     color: colors.secondaryDark,
   },
   btnBack: {
@@ -696,21 +638,21 @@ const styles = StyleSheet.create({
   },
   btnBackText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.extrabold,
     color: colors.textMuted,
   },
   btnOutline: {
     height: 46,
     borderRadius: radius.lg,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: "#00685f",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.surface,
   },
   btnOutlineText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.extrabold,
     color: colors.primary,
   },
   buttonPressed: {

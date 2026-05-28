@@ -19,7 +19,6 @@ import {
   getWeeklyReport,
 } from "@/src/api/reports";
 import { listStores } from "@/src/api/stores";
-import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { DailyReportView } from "@/src/features/admin/reports/DailyReportView";
@@ -36,6 +35,7 @@ import type {
   WeeklyReport,
 } from "@/src/types/api";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { AppTopBar } from "@/src/components/AppTopBar";
 
 type ReportMode = "DAILY" | "WEEKLY" | "MONTHLY";
 
@@ -147,7 +147,6 @@ function ReportModeSegment({
 }
 
 export default function AdminReportsScreen() {
-  const { user } = useAuth();
 
   const [storesState, setStoresState] = useState<StoresState>({
     status: "loading",
@@ -376,13 +375,6 @@ export default function AdminReportsScreen() {
     return null;
   }
 
-  const displayName = user?.fullName ?? user?.username ?? "Admin";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((word) => word[0]?.toUpperCase() ?? "")
-    .join("");
-
   if (storesState.status === "loading") {
     return <LoadingState message="Loading stores..." />;
   }
@@ -391,21 +383,7 @@ export default function AdminReportsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>Shift Control</Text>
-        </View>
-
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
-
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardView}
-      >
+      <AppTopBar variant="back" />
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
@@ -624,7 +602,6 @@ export default function AdminReportsScreen() {
             </Pressable>
           </View>
         </ScrollView>
-      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -636,45 +613,6 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     flex: 1,
-  },
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
   scrollContent: {
     padding: 20,

@@ -15,7 +15,7 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { createSale } from "@/src/api/sales";
-import { useAuth } from "@/src/auth/AuthContext";
+import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import {
@@ -44,7 +44,6 @@ import type { PaymentMethod } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
 
 export default function NewSaleScreen() {
-  const { user } = useAuth();
   const [items, setItems] = useState<SaleItemDraft[]>([
     { productName: "", quantity: "1", unitPrice: "" },
   ]);
@@ -141,13 +140,6 @@ export default function NewSaleScreen() {
     isSplitPaymentAmountValid &&
     isSplitPaymentTotalValid &&
     !isSubmitting;
-
-  const displayName = user?.fullName ?? user?.username ?? "Staff";
-  const initials = displayName
-    .split(" ")
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
 
   function addItem() {
     setItems((prev) => [
@@ -260,16 +252,7 @@ export default function NewSaleScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* AppBar */}
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Text style={styles.menuIcon}>≡</Text>
-          <Text style={styles.appBarTitle}>New Sale</Text>
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-      </View>
+      <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -837,47 +820,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-
-  // AppBar
-  appBar: {
-    height: 64,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  appBarLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  menuIcon: {
-    fontSize: 20,
-    color: colors.primary,
-  },
-  appBarTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-  },
-  avatarText: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
   },
 
   keyboardView: {
