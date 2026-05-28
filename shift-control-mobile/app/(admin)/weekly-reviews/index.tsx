@@ -267,7 +267,7 @@ export default function AdminWeeklyReviewsScreen() {
   const [weekStart, setWeekStart] = useState("");
 
   const [state, setState] = useState<ReviewsState>({
-    status: "ready",
+    status: "loading",
     reviews: [],
     errorMessage: null,
   });
@@ -342,23 +342,12 @@ export default function AdminWeeklyReviewsScreen() {
     }
   }, []);
 
-  const loadReviews = useCallback(async () => {
-    if (!canLoadReviews) {
-      return;
-    }
-
+  const fetchReviews = useCallback(async (params: ListWeeklyReviewsParams = {}) => {
     setState({
       status: "loading",
       reviews: [],
       errorMessage: null,
     });
-
-    const params: ListWeeklyReviewsParams = {
-      storeId: selectedStoreId ?? undefined,
-      staffId: selectedStaffId ?? undefined,
-      status: statusFilter === "ALL" ? undefined : statusFilter,
-      weekStart: weekStart.trim().length > 0 ? weekStart.trim() : undefined,
-    };
 
     try {
       const reviews = await listWeeklyReviews(params);
@@ -375,8 +364,24 @@ export default function AdminWeeklyReviewsScreen() {
         errorMessage: getApiErrorMessage(error),
       });
     }
+  }, []);
+
+  const loadReviews = useCallback(() => {
+    if (!canLoadReviews) {
+      return;
+    }
+
+    const params: ListWeeklyReviewsParams = {
+      storeId: selectedStoreId ?? undefined,
+      staffId: selectedStaffId ?? undefined,
+      status: statusFilter === "ALL" ? undefined : statusFilter,
+      weekStart: weekStart.trim().length > 0 ? weekStart.trim() : undefined,
+    };
+
+    void fetchReviews(params);
   }, [
     canLoadReviews,
+    fetchReviews,
     selectedStoreId,
     selectedStaffId,
     statusFilter,
@@ -386,7 +391,8 @@ export default function AdminWeeklyReviewsScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadReferenceData();
-    }, [loadReferenceData])
+      void fetchReviews({});
+    }, [loadReferenceData, fetchReviews])
   );
 
   function handleSelectStore(storeId: string | null) {

@@ -88,7 +88,6 @@ function getReviewStatusCopy(review: WeeklyAdminReview) {
 }
 
 export default function AdminWeeklyReviewDetailScreen() {
-  const { user } = useAuth();
   const params = useLocalSearchParams<{ id?: string }>();
   const reviewId = params.id;
 
