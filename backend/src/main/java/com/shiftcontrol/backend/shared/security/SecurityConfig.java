@@ -70,6 +70,9 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Health endpoint is public — required for Render health checks.
+                        // All other actuator paths remain denied by anyRequest().denyAll() below.
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/staff/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/admin/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()

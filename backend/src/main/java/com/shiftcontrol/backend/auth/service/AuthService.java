@@ -10,6 +10,8 @@ import com.shiftcontrol.backend.shared.security.JwtService;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
 import com.shiftcontrol.backend.users.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import java.util.UUID;
 
 @Service
 public class AuthService {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -36,22 +40,28 @@ public class AuthService {
         String username = request.username().trim();
 
         User user = userRepository.findByUsernameIgnoreCase(username)
-                .orElseThrow(() -> new BusinessException("Invalid credentials"));
+                .orElseThrow(() -> {
+                    log.warn("Login attempt failed [role=STAFF]");
+                    return new BusinessException("Invalid credentials");
+                });
 
         if (user.getRole() != Role.STAFF) {
+            log.warn("Login attempt failed [role=STAFF]");
             throw new BusinessException("Invalid credentials");
         }
 
         if (!user.isActive()) {
+            log.warn("Login attempt failed [role=STAFF]");
             throw new BusinessException("Invalid credentials");
         }
 
         if (!passwordEncoder.matches(request.pin(), user.getPinHash())) {
+            log.warn("Login attempt failed [role=STAFF]");
             throw new BusinessException("Invalid credentials");
         }
 
         String token = jwtService.generateAccessToken(user);
-
+        log.info("Login successful [role=STAFF, userId={}]", user.getId());
         return new AuthResponse(
                 token,
                 "Bearer",
@@ -64,22 +74,28 @@ public class AuthService {
         String username = request.username().trim();
 
         User user = userRepository.findByUsernameIgnoreCase(username)
-                .orElseThrow(() -> new BusinessException("Invalid credentials"));
+                .orElseThrow(() -> {
+                    log.warn("Login attempt failed [role=ADMIN]");
+                    return new BusinessException("Invalid credentials");
+                });
 
         if (user.getRole() != Role.ADMIN) {
+            log.warn("Login attempt failed [role=ADMIN]");
             throw new BusinessException("Invalid credentials");
         }
 
         if (!user.isActive()) {
+            log.warn("Login attempt failed [role=ADMIN]");
             throw new BusinessException("Invalid credentials");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            log.warn("Login attempt failed [role=ADMIN]");
             throw new BusinessException("Invalid credentials");
         }
 
         String token = jwtService.generateAccessToken(user);
-
+        log.info("Login successful [role=ADMIN, userId={}]", user.getId());
         return new AuthResponse(
                 token,
                 "Bearer",

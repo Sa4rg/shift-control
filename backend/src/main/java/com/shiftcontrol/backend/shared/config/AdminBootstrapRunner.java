@@ -3,6 +3,8 @@ package com.shiftcontrol.backend.shared.config;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
 import com.shiftcontrol.backend.users.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,6 +33,8 @@ import java.time.Instant;
  */
 @Component
 public class AdminBootstrapRunner implements ApplicationRunner {
+
+    private static final Logger log = LoggerFactory.getLogger(AdminBootstrapRunner.class);
 
     static final int MINIMUM_PASSWORD_LENGTH = 12;
 
@@ -66,6 +70,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
                         "or set app.bootstrap.admin.enabled=false once the admin is in place."
                 );
             }
+            log.info("Bootstrap skipped — active admin already exists");
             return;
         }
 
@@ -113,7 +118,8 @@ public class AdminBootstrapRunner implements ApplicationRunner {
         admin.setCreatedAt(now);
         admin.setUpdatedAt(now);
 
-        userRepository.save(admin);
+        User saved = userRepository.save(admin);
+        log.info("Bootstrap admin created successfully [userId={}]", saved.getId());
     }
 
     private String resolveFullName() {

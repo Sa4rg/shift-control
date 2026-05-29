@@ -5,6 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -30,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class LoginRateLimitFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(LoginRateLimitFilter.class);
 
     static final String STAFF_LOGIN_PATH = "/api/auth/staff/login";
     static final String ADMIN_LOGIN_PATH = "/api/auth/admin/login";
@@ -91,6 +95,7 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
         String key = clientIp + ":" + path;
 
         if (isRateLimitExceeded(key, maxAttempts)) {
+            log.warn("Login rate limit exceeded [endpoint={}, clientIp={}]", path, clientIp);
             response.setStatus(429);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setHeader("Retry-After", String.valueOf(properties.getWindowSeconds()));

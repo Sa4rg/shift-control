@@ -70,6 +70,7 @@ class AdminBootstrapRunnerTest {
         when(userRepository.findByRoleAndActiveTrue(Role.ADMIN)).thenReturn(Collections.emptyList());
         when(userRepository.existsByUsernameIgnoreCase(VALID_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(VALID_PASSWORD)).thenReturn("$argon2id$hashed");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
 
         runner.run(null);
 
@@ -86,6 +87,7 @@ class AdminBootstrapRunnerTest {
         when(userRepository.findByRoleAndActiveTrue(Role.ADMIN)).thenReturn(Collections.emptyList());
         when(userRepository.existsByUsernameIgnoreCase(VALID_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(VALID_PASSWORD)).thenReturn("$argon2id$hashed");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
 
         runner.run(null);
 
@@ -114,6 +116,7 @@ class AdminBootstrapRunnerTest {
         when(userRepository.findByRoleAndActiveTrue(Role.ADMIN)).thenReturn(Collections.emptyList());
         when(userRepository.existsByUsernameIgnoreCase(VALID_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(VALID_PASSWORD)).thenReturn("$argon2id$hashed");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
 
         runner.run(null);
 
@@ -134,6 +137,7 @@ class AdminBootstrapRunnerTest {
         when(userRepository.findByRoleAndActiveTrue(Role.ADMIN)).thenReturn(Collections.emptyList());
         when(userRepository.existsByUsernameIgnoreCase(VALID_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(VALID_PASSWORD)).thenReturn("$argon2id$hashed");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
 
         runner.run(null);
 
@@ -247,6 +251,7 @@ class AdminBootstrapRunnerTest {
         when(userRepository.findByRoleAndActiveTrue(Role.ADMIN)).thenReturn(Collections.emptyList());
         when(userRepository.existsByUsernameIgnoreCase(VALID_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("$argon2id$hashed");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
 
         runner.run(null);
 
@@ -268,6 +273,7 @@ class AdminBootstrapRunnerTest {
         when(userRepository.findByRoleAndActiveTrue(Role.ADMIN)).thenReturn(Collections.emptyList());
         when(userRepository.existsByUsernameIgnoreCase(VALID_USERNAME)).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("$argon2id$hashed");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
 
         runner.run(null);
 
