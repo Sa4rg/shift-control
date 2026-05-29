@@ -33,9 +33,16 @@ build/
 .vscode/
 
 ### Secrets & local config (NEVER commit credentials) ###
+# Ignore all .env variants
 .env
+.env.*
+# But allow example files — these are documentation, not secrets
+!.env.example
+!.env.*.example
+# Legacy patterns (belt-and-suspenders)
 .env.local
 .env.*.local
+# Spring profile files that may contain credentials
 application-local.properties
 application-local.yml
 application-local.yaml
@@ -43,6 +50,16 @@ application-dev.properties
 application-dev.yml
 application-prod.properties
 application-prod.yml
+# Backend-scoped env files
+backend/.env
+backend/.env.*
+!backend/.env.example
+!backend/.env.*.example
+# Mobile-scoped env files (handled in shift-control-mobile/.gitignore too)
+shift-control-mobile/.env
+shift-control-mobile/.env.*
+!shift-control-mobile/.env.example
+!shift-control-mobile/.env.*.example
 
 ### Docker local overrides ###
 docker-compose.override.yml

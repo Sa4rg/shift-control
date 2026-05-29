@@ -1,0 +1,63 @@
+# =============================================================================
+# backend/.dockerignore
+# Controls what is sent to the Docker daemon as build context.
+# Keeping the context small speeds up builds and prevents secrets from
+# accidentally entering the image layer cache.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Build output — compiled artifacts from the host must never enter the image.
+# Stage 1 builds a fresh jar inside the container.
+# -----------------------------------------------------------------------------
+target/
+
+# -----------------------------------------------------------------------------
+# Environment and secret files — must never be included in any Docker layer.
+# Railway env vars are injected at runtime; they must not be baked into images.
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# -----------------------------------------------------------------------------
+# Version control metadata
+# -----------------------------------------------------------------------------
+.git/
+.gitignore
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+*.log
+logs/
+
+# -----------------------------------------------------------------------------
+# OS artifacts
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# -----------------------------------------------------------------------------
+# IDE and editor folders — not needed for the build
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+
+# -----------------------------------------------------------------------------
+# Documentation files — not needed inside the build context
+# -----------------------------------------------------------------------------
+HELP.md
+README.md
+
+# -----------------------------------------------------------------------------
+# Test reports — generated inside the container during CI if needed
+# -----------------------------------------------------------------------------
+surefire-reports/

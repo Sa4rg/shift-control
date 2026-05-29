@@ -23,9 +23,11 @@ public class SecurityConfig {
             "{\"success\":false,\"message\":\"Forbidden\",\"data\":null}";
 
     private final CorsProperties corsProperties;
+    private final LoginRateLimitFilter loginRateLimitFilter;
 
-    public SecurityConfig(CorsProperties corsProperties) {
+    public SecurityConfig(CorsProperties corsProperties, LoginRateLimitFilter loginRateLimitFilter) {
         this.corsProperties = corsProperties;
+        this.loginRateLimitFilter = loginRateLimitFilter;
     }
 
     @Bean
@@ -68,15 +70,24 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // Health endpoint is public — required for Render health checks.
+                        // All other actuator paths remain denied by anyRequest().denyAll() below.
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/staff/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/admin/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/stores").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/stores/**").hasRole("ADMIN")
+                        // Defense-in-depth: resolve incident requires ADMIN at URL level.
+                        // The service layer also enforces this rule independently.
+                        .requestMatchers(HttpMethod.PATCH, "/api/incidents/*/resolve").hasRole("ADMIN")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll()
                 )
+                // loginRateLimitFilter inserted first → runs before jwtAuthenticationFilter
+                // (stable sort preserves insertion order for same-priority filters)
+                .addFilterBefore(loginRateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
