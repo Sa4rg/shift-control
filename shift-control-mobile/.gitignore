@@ -31,7 +31,13 @@ yarn-error.*
 *.pem
 
 # local env files
+# Ignore all .env variants — secrets must not be committed
+.env
+.env.*
 .env*.local
+# Allow example files — these are documentation, not secrets
+!.env.example
+!.env.*.example
 
 # typescript
 *.tsbuildinfo
