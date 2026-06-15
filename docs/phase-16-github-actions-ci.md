@@ -687,3 +687,5 @@ pnpm lint # Verificar que pasa
 ---
 
 **Fin del documento.**
+
+## Test final for the configuration with github actions
