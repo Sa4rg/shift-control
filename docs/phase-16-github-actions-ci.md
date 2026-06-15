@@ -276,7 +276,7 @@ concurrency:
 5. **TypeScript type check**
    - Comando: `pnpm exec tsc --noEmit`
 6. **Run tests**
-   - Comando: `pnpm test -- --runInBand --ci`
+   - Comando: `pnpm test`
 7. **Lint**
    - Comando: `pnpm lint`
 
@@ -314,7 +314,7 @@ chmod +x mvnw
 cd shift-control-mobile
 pnpm install --frozen-lockfile
 pnpm exec tsc --noEmit
-pnpm test -- --runInBand --ci
+pnpm test
 pnpm lint
 ```
 

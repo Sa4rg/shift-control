@@ -75,7 +75,7 @@ jobs:
 
       - name: Run tests
         working-directory: shift-control-mobile
-        run: pnpm test -- --runInBand --ci
+        run: pnpm test
 
       - name: Lint
         working-directory: shift-control-mobile
