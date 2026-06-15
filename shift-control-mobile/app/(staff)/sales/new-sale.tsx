@@ -40,7 +40,7 @@ import type {
   SaleItemDraft,
   SplitPaymentVariant,
 } from "@/src/features/staff/sales/newSaleTypes";
-import type { PaymentMethod } from "@/src/types/api";
+import type { InvoiceStatus, PaymentMethod } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
 
 export default function NewSaleScreen() {
@@ -59,6 +59,7 @@ export default function NewSaleScreen() {
   const [manualDiscountAmount, setManualDiscountAmount] = useState("");
   const [manualDiscountNote, setManualDiscountNote] = useState("");
   const [note, setNote] = useState("");
+  const [invoiceStatus, setInvoiceStatus] = useState<"PENDING" | "INVOICED">("PENDING");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDiscountExpanded, setIsDiscountExpanded] = useState(false);
@@ -238,7 +239,7 @@ export default function NewSaleScreen() {
           manualDiscountNote,
         }),
         payments: buildPayments(finalTotal),
-        invoiceStatus: "PENDING",
+        invoiceStatus: invoiceStatus,
         note: note.trim().length > 0 ? note.trim() : undefined,
       });
 
@@ -770,6 +771,40 @@ export default function NewSaleScreen() {
             )}
           </View>
 
+          {/* Invoice status card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Invoice status</Text>
+            <Text style={styles.helpText}>
+              Mark as &quot;Already invoiced&quot; only if a physical invoice was issued to the customer immediately.
+            </Text>
+
+            <View style={styles.radioGroup}>
+              <Pressable
+                style={styles.radioOption}
+                onPress={() => setInvoiceStatus("PENDING")}
+                disabled={isSubmitting}
+              >
+                <View style={[styles.radio, invoiceStatus === "PENDING" && styles.radioSelected]} />
+                <View style={styles.radioTextGroup}>
+                  <Text style={styles.radioLabel}>Pending invoice</Text>
+                  <Text style={styles.radioHint}>Invoice will be issued later</Text>
+                </View>
+              </Pressable>
+
+              <Pressable
+                style={styles.radioOption}
+                onPress={() => setInvoiceStatus("INVOICED")}
+                disabled={isSubmitting}
+              >
+                <View style={[styles.radio, invoiceStatus === "INVOICED" && styles.radioSelected]} />
+                <View style={styles.radioTextGroup}>
+                  <Text style={styles.radioLabel}>Already invoiced</Text>
+                  <Text style={styles.radioHint}>Physical invoice was issued immediately</Text>
+                </View>
+              </Pressable>
+            </View>
+          </View>
+
           {/* Notes card */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Notes</Text>
@@ -1163,5 +1198,41 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
     color: colors.textSubtle,
+  },
+
+  radioGroup: {
+    gap: 12,
+  },
+  radioOption: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    paddingVertical: 4,
+  },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    marginTop: 2,
+  },
+  radioSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary,
+  },
+  radioTextGroup: {
+    flex: 1,
+  },
+  radioLabel: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.medium,
+    color: colors.text,
+    marginBottom: 2,
+  },
+  radioHint: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
   },
 });
