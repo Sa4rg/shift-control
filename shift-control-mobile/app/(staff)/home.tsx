@@ -104,7 +104,9 @@ export default function StaffHomeScreen() {
   );
 
   const visibleSales = salesState.sales.slice(0, 5);
-  const shiftTotal = salesState.sales.reduce(
+  const activeSales = salesState.sales.filter(s => s.status === "ACTIVE");
+  const activeSalesCount = activeSales.length;
+  const shiftTotal = activeSales.reduce(
     (sum, s) => sum + s.finalTotalAmount,
     0
   );
@@ -246,7 +248,7 @@ export default function StaffHomeScreen() {
               <View>
                 <Text style={styles.metricLabel}>Sales</Text>
                 <Text style={styles.metricValue}>
-                  {salesState.sales.length}
+                  {activeSalesCount}
                 </Text>
               </View>
               <View style={styles.metricRight}>
@@ -289,16 +291,35 @@ export default function StaffHomeScreen() {
                     onPress={() => router.push(`/(staff)/sales/${sale.id}`)}
                   >
                     <View style={styles.saleLeft}>
-                      <Text style={styles.saleLabel}>
+                      <Text
+                        style={[
+                          styles.saleLabel,
+                          sale.status === "CANCELLED" && styles.saleLabelCancelled,
+                        ]}
+                      >
                         {getSaleLabel(sale)}
                       </Text>
-                      <View style={styles.paymentChip}>
-                        <Text style={styles.paymentChipText}>
-                          {getPaymentLabel(sale)}
-                        </Text>
+                      <View style={styles.paymentChipRow}>
+                        <View style={styles.paymentChip}>
+                          <Text style={styles.paymentChipText}>
+                            {getPaymentLabel(sale)}
+                          </Text>
+                        </View>
+                        {sale.status === "CANCELLED" ? (
+                          <View style={styles.cancelledChip}>
+                            <Text style={styles.cancelledChipText}>
+                              CANCELLED
+                            </Text>
+                          </View>
+                        ) : null}
                       </View>
                     </View>
-                    <Text style={styles.saleAmount}>
+                    <Text
+                      style={[
+                        styles.saleAmount,
+                        sale.status === "CANCELLED" && styles.saleAmountCancelled,
+                      ]}
+                    >
                       {formatMoney(sale.finalTotalAmount)}
                     </Text>
                   </Pressable>
@@ -555,6 +576,32 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text,
     marginLeft: 8,
+  },
+  saleLabelCancelled: {
+    color: colors.textMuted,
+    opacity: 0.6,
+  },
+  saleAmountCancelled: {
+    color: colors.textMuted,
+    opacity: 0.6,
+    textDecorationLine: "line-through",
+  },
+  paymentChipRow: {
+    flexDirection: "row",
+    gap: 6,
+    alignItems: "center",
+  },
+  cancelledChip: {
+    backgroundColor: "#ffebee",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  cancelledChipText: {
+    fontSize: fontSize.xs,
+    fontWeight: fontWeight.bold,
+    color: "#c62828",
+    letterSpacing: 0.3,
   },
 
   viewAllLink: {
