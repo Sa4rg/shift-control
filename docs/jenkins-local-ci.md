@@ -100,6 +100,7 @@ The local Jenkins job is configured with Poll SCM:
 
 ```txt
 H/2 * * * *
+```
 
 This makes Jenkins check GitHub approximately every 2 minutes.
 
@@ -107,5 +108,45 @@ When a push is detected, Jenkins automatically runs the pipeline.
 
 Expected build trigger message:
 
+```
 Started by an SCM change
 ```
+
+---
+
+## Jenkins Local vs GitHub Actions
+
+### Jenkins Local — Herramienta de Aprendizaje
+
+**Jenkins local es:**
+- ✅ Herramienta de **aprendizaje** de pipelines declarativos y CI/CD
+- ✅ Validación **opcional** local antes de hacer push
+- ✅ Referencia de configuración Testcontainers en Docker
+- ✅ Entorno de **desarrollo** para probar cambios de CI
+
+**Jenkins local NO es:**
+- ❌ Gate de branch protection de GitHub
+- ❌ CI oficial del proyecto
+- ❌ Requerido para contribuir al proyecto
+- ❌ Accesible públicamente (solo localhost)
+- ❌ Capaz de publicar status checks a GitHub
+
+### GitHub Actions — CI Oficial
+
+**GitHub Actions es:**
+- ✅ CI oficial del proyecto
+- ✅ Gate de branch protection en `main`
+- ✅ Requerido para hacer merge de PRs
+- ✅ Automático (webhooks nativos de GitHub)
+- ✅ Publica status checks a PRs
+
+**Workflow oficial:** `.github/workflows/ci.yml`
+
+**Documentación:** [`docs/phase-16-github-actions-ci.md`](phase-16-github-actions-ci.md)
+
+### Relación
+
+- Los PRs requieren que **GitHub Actions** pase — **NO** Jenkins local
+- Poll SCM de Jenkins **NO** afecta branch protection
+- Jenkins local puede usarse para validación antes de push, pero es **opcional**
+- GitHub Actions es la **única** fuente de verdad para CI/CD oficial

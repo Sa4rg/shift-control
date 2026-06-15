@@ -1,7 +1,6 @@
 package com.shiftcontrol.backend.reviews.repository;
 
 import com.shiftcontrol.backend.reviews.model.WeeklyAdminReview;
-import com.shiftcontrol.backend.reviews.model.WeeklyAdminReviewStatus;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.User;
 import org.springframework.data.jpa.repository.EntityGraph;

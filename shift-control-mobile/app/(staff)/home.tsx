@@ -171,7 +171,7 @@ export default function StaffHomeScreen() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>No active shift</Text>
             <Text style={styles.bodyText}>
-              You don't have an active shift right now. Choose a shift type to
+              You don&apos;t have an active shift right now. Choose a shift type to
               get started.
             </Text>
 

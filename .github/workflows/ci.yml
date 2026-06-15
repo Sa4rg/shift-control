@@ -1,0 +1,82 @@
+name: Shift Control CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-ci:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Run backend tests
+        working-directory: backend
+        run: |
+          chmod +x mvnw
+          ./mvnw clean test
+
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-results
+          path: backend/target/surefire-reports/
+          retention-days: 7
+
+  mobile-ci:
+    name: Mobile CI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: shift-control-mobile/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: shift-control-mobile
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript type check
+        working-directory: shift-control-mobile
+        run: pnpm exec tsc --noEmit
+
+      - name: Run tests
+        working-directory: shift-control-mobile
+        run: pnpm test -- --runInBand --ci
+
+      - name: Lint
+        working-directory: shift-control-mobile
+        run: pnpm lint

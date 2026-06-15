@@ -8,7 +8,6 @@ import com.shiftcontrol.backend.sales.dto.CancelSaleRequest;
 import com.shiftcontrol.backend.sales.model.DiscountReason;
 import com.shiftcontrol.backend.sales.model.DiscountType;
 import com.shiftcontrol.backend.sales.model.InvoiceStatus;
-import com.shiftcontrol.backend.sales.model.PaymentMethod;
 import com.shiftcontrol.backend.sales.model.Sale;
 import com.shiftcontrol.backend.sales.model.SaleDiscount;
 import com.shiftcontrol.backend.sales.model.SaleItem;
