@@ -44,7 +44,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Claims claims = jwtService.parseClaims(token);
 
             String userId = claims.getSubject();
-            String username = claims.get("username", String.class);
             String role = claims.get("role", String.class);
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
