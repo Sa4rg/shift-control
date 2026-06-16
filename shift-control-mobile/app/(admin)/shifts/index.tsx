@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -334,11 +334,17 @@ export default function AdminShiftsScreen() {
     toDate,
   ]);
 
+  const loadShiftsRef = useRef(loadShifts);
+
+  useEffect(() => {
+    loadShiftsRef.current = loadShifts;
+  }, [loadShifts]);
+
   useFocusEffect(
     useCallback(() => {
       void loadReferenceData();
-      void loadShifts();
-    }, [loadReferenceData, loadShifts])
+      void loadShiftsRef.current();
+    }, [loadReferenceData])
   );
 
   function handleSelectStore(storeId: string | null) {
