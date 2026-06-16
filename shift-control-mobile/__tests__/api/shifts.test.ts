@@ -215,11 +215,9 @@ describe("closeShift", () => {
         success: true,
         message: "Shift closed successfully",
         data: {
+          id: "closure-1",
           shiftId: "shift-1",
-          staffId: "staff-1",
-          staffName: "Sara Staff",
-          storeId: "store-1",
-          storeName: "Main Store",
+          closedById: "staff-1",
           totalCash: 150,
           totalMb: 80,
           totalGlovoOnline: 30,
@@ -232,8 +230,10 @@ describe("closeShift", () => {
           confirmedMbAmount: 80,
           cashDifference: 0,
           mbDifference: 0,
-          closedById: "staff-1",
           status: "CLOSED_OK",
+          note: "Everything matched",
+          createdAt: "2026-05-16T16:00:00Z",
+          updatedAt: "2026-05-16T16:00:00Z",
         },
       },
     });
@@ -250,9 +250,14 @@ describe("closeShift", () => {
       "/api/shifts/shift-1/close",
       request
     );
+
     expect(result.status).toBe("CLOSED_OK");
     expect(result.cashDifference).toBe(0);
     expect(result.mbDifference).toBe(0);
+    expect(result.id).toBe("closure-1");
+    expect(result.shiftId).toBe("shift-1");
+    expect(result.note).toBe("Everything matched");
+    expect(result.createdAt).toBe("2026-05-16T16:00:00Z");
   });
 });
 

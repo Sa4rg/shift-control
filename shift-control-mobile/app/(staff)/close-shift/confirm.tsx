@@ -13,12 +13,14 @@ import {
 } from "react-native";
 
 import { getApiErrorMessage } from "@/src/api/errors";
-import { closeShift } from "@/src/api/shifts";
+import { closeShift, getShiftById } from "@/src/api/shifts";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import type { ShiftCloseResult } from "@/src/types/api";
+import type { Shift, ShiftCloseResult } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+
+import { shareShiftClosureSummary } from "@/src/features/closures/shareShiftClosureSummary";
 
 function parseNonNegativeNumber(value: string): number | null {
   const normalized = value.replace(",", ".").trim();
@@ -85,6 +87,10 @@ export default function CloseShiftConfirmScreen() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<ShiftCloseResult | null>(null);
 
+  const [closedShift, setClosedShift] = useState<Shift | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareErrorMessage, setShareErrorMessage] = useState<string | null>(null);
+
   const confirmedCashNumber = useMemo(
     () => parseNonNegativeNumber(confirmedCashAmount),
     [confirmedCashAmount]
@@ -131,6 +137,7 @@ export default function CloseShiftConfirmScreen() {
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setShareErrorMessage(null);
 
     try {
       const closeResult = await closeShift(shiftId, {
@@ -140,10 +147,39 @@ export default function CloseShiftConfirmScreen() {
       });
 
       setResult(closeResult);
+
+      try {
+        const shift = await getShiftById(shiftId);
+        setClosedShift(shift);
+      } catch {
+        setShareErrorMessage(
+          "Shift closed successfully, but share data could not be loaded. You can share it later from shift history."
+        );
+      }
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleShareClosure() {
+    if (result === null || closedShift === null || isSharing) {
+      return;
+    }
+
+    setIsSharing(true);
+    setShareErrorMessage(null);
+
+    try {
+      await shareShiftClosureSummary({
+        shift: closedShift,
+        closure: result,
+      });
+    } catch {
+      setShareErrorMessage("Could not open share options.");
+    } finally {
+      setIsSharing(false);
     }
   }
 
@@ -282,7 +318,29 @@ export default function CloseShiftConfirmScreen() {
             </Text>
           </View>
 
+          {shareErrorMessage ? (
+            <View style={styles.shareErrorCard}>
+              <ErrorMessage message={shareErrorMessage} />
+            </View>
+          ) : null}
+
           <View style={styles.actions}>
+            {closedShift ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnShare,
+                  isSharing && styles.btnDisabled,
+                  pressed && !isSharing && styles.btnPressed,
+                ]}
+                onPress={handleShareClosure}
+                disabled={isSharing}
+              >
+                <Text style={styles.btnShareText}>
+                  {isSharing ? "Opening share options…" : "Share close summary"}
+                </Text>
+              </Pressable>
+            ) : null}
+
             <Pressable
               style={({ pressed }) => [
                 styles.btnPrimary,
@@ -754,5 +812,26 @@ const styles = StyleSheet.create({
   },
   btnPressed: {
     opacity: 0.8,
+  },
+  btnShare: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnShareText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  shareErrorCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.dangerSoft,
+    backgroundColor: "#fff8f7",
+    padding: 14,
   },
 });

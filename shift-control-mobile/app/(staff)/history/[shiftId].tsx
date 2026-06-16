@@ -30,6 +30,8 @@ import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
+import { shareShiftClosureSummary } from "@/src/features/closures/shareShiftClosureSummary";
+
 function SaleStatusBadge({ status }: { status: SaleStatus }) {
   const bg = status === "ACTIVE" ? "#d2f5f0" : "#e8ecf0";
   const color = status === "ACTIVE" ? "#004f49" : "#4d5b5a";
@@ -107,6 +109,9 @@ export default function ShiftHistoryDetailScreen() {
     errorMessage: null,
   });
 
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareErrorMessage, setShareErrorMessage] = useState<string | null>(null);
+
   const loadShiftHistory = useCallback(async () => {
     if (!shiftId) {
       setState({
@@ -162,6 +167,26 @@ export default function ShiftHistoryDetailScreen() {
   useEffect(() => {
     void loadShiftHistory();
   }, [loadShiftHistory]);
+
+  async function handleShareClosure() {
+    if (state.status !== "ready" || state.closure === null || isSharing) {
+      return;
+    }
+
+    setIsSharing(true);
+    setShareErrorMessage(null);
+
+    try {
+      await shareShiftClosureSummary({
+        shift: state.shift,
+        closure: state.closure,
+      });
+    } catch {
+      setShareErrorMessage("Could not open share options.");
+    } finally {
+      setIsSharing(false);
+    }
+  }
 
   if (state.status === "loading") {
     return <LoadingState message="Loading shift history..." />;
@@ -395,8 +420,30 @@ export default function ShiftHistoryDetailScreen() {
           )}
         </View>
 
+        {shareErrorMessage ? (
+          <View style={styles.shareErrorCard}>
+            <ErrorMessage message={shareErrorMessage} />
+          </View>
+        ) : null}
+
         {/* Bottom actions */}
         <View style={styles.actions}>
+          {closure ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  isSharing && styles.btnDisabled,
+                  pressed && !isSharing && styles.btnPressed,
+                ]}
+                onPress={handleShareClosure}
+                disabled={isSharing}
+              >
+                <Text style={styles.btnOutlineText}>
+                  {isSharing ? "Opening share options…" : "Share close summary"}
+                </Text>
+              </Pressable>
+            ) : null}
+
           <Pressable
             style={({ pressed }) => [styles.btnIncidents, pressed && styles.btnPressed]}
             onPress={() =>
@@ -687,5 +734,16 @@ const styles = StyleSheet.create({
   },
   btnPressed: {
     opacity: 0.8,
+  },
+
+  shareErrorCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.dangerSoft,
+    backgroundColor: "#fff8f7",
+    padding: 14,
+  },
+  btnDisabled: {
+    opacity: 0.5,
   },
 });

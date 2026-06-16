@@ -152,14 +152,29 @@ export type CloseShiftRequest = {
   note?: string;
 };
 
-export type ShiftCloseResult = ShiftClosePreview & {
+export type ShiftClosure = {
+  id: string;
+  shiftId: string;
+  closedById: string;
+  totalCash: number;
+  totalMb: number;
+  totalGlovoOnline: number;
+  totalGlovoCash: number;
+  totalSales: number;
+  pendingInvoiceTotal: number;
+  cashToWithdraw: number;
+  expectedPhysicalCash: number;
   confirmedCashAmount: number;
   confirmedMbAmount: number;
   cashDifference: number;
   mbDifference: number;
-  closedById: string;
   status: ShiftClosureStatus;
+  note: string | null;
+  createdAt: string;
+  updatedAt: string;
 };
+
+export type ShiftCloseResult = ShiftClosure;
 
 export type IncidentType =
   | "CASH_DIFFERENCE"
@@ -201,28 +216,6 @@ export type CreateIncidentRequest = {
   shiftId?: string;
   closureId?: string;
   saleId?: string;
-};
-
-export type ShiftClosure = {
-  id: string;
-  shiftId: string;
-  closedById: string;
-  totalCash: number;
-  totalMb: number;
-  totalGlovoOnline: number;
-  totalGlovoCash: number;
-  totalSales: number;
-  pendingInvoiceTotal: number;
-  cashToWithdraw: number;
-  expectedPhysicalCash: number;
-  confirmedCashAmount: number;
-  confirmedMbAmount: number;
-  cashDifference: number;
-  mbDifference: number;
-  status: ShiftClosureStatus;
-  note: string | null;
-  createdAt: string;
-  updatedAt: string;
 };
 
 export type Store = {
