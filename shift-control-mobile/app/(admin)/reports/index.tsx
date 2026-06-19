@@ -1,5 +1,11 @@
 import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -21,16 +27,22 @@ import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import { DailyReportView } from "@/src/features/admin/reports/DailyReportView";
 import { MonthlyReportView } from "@/src/features/admin/reports/MonthlyReportView";
+import { loadWeeklyReviewsByStaffId } from "@/src/features/admin/reports/loadWeeklyReviewsByStaffId";
 import {
   isValidIsoDate,
   isValidYearMonth,
 } from "@/src/features/admin/reports/reportDateUtils";
 import { WeeklyReportView } from "@/src/features/admin/reports/WeeklyReportView";
+import {
+  getCreateWeeklyReviewRoute,
+  getWeeklyReviewDetailRoute,
+} from "@/src/features/admin/reports/weeklyReviewNavigation";
 import type {
   DailyReport,
   MonthlyReport,
   Store,
   WeeklyReport,
+  WeeklyAdminReview,
 } from "@/src/types/api";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { AppTopBar } from "@/src/components/AppTopBar";
@@ -82,6 +94,33 @@ type ReportState =
       weeklyReport: null;
       monthlyReport: null;
       errorMessage: string;
+    };
+
+type WeeklyReviewsState =
+  | {
+      status: "idle";
+      reviewsByStaffId: Map<string, WeeklyAdminReview>;
+      errorMessage: null;
+    }
+  | {
+      status: "loading";
+      reviewsByStaffId: Map<string, WeeklyAdminReview>;
+      errorMessage: null;
+    }
+  | {
+      status: "ready";
+      reviewsByStaffId: Map<string, WeeklyAdminReview>;
+      errorMessage: null;
+    }
+  | {
+      status: "error";
+      reviewsByStaffId: Map<string, WeeklyAdminReview>;
+      errorMessage: string;
+    };
+
+    type LoadedWeeklyReportContext = {
+      storeId: string;
+      weekStart: string;
     };
 
 function StoreChip({
@@ -163,6 +202,15 @@ export default function AdminReportsScreen() {
     monthlyReport: null,
     errorMessage: null,
   });
+  const [weeklyReviewsState, setWeeklyReviewsState] =
+  useState<WeeklyReviewsState>({
+    status: "idle",
+    reviewsByStaffId: new Map(),
+    errorMessage: null,
+  });
+
+  const loadedWeeklyReportContextRef =
+  useRef<LoadedWeeklyReportContext | null>(null);
 
   const selectedStore = useMemo(
     () =>
@@ -215,19 +263,68 @@ export default function AdminReportsScreen() {
     }
   }, [selectedStoreId]);
 
+  const refreshLoadedWeeklyReviews = useCallback(
+    async ({
+      storeId,
+      weekStart: loadedWeekStart,
+    }: LoadedWeeklyReportContext) => {
+      setWeeklyReviewsState((currentState) => ({
+        status: "loading",
+        reviewsByStaffId: currentState.reviewsByStaffId,
+        errorMessage: null,
+      }));
+
+      try {
+        const reviewsByStaffId = await loadWeeklyReviewsByStaffId({
+          storeId,
+          weekStart: loadedWeekStart,
+        });
+
+        setWeeklyReviewsState({
+          status: "ready",
+          reviewsByStaffId,
+          errorMessage: null,
+        });
+      } catch (error) {
+        setWeeklyReviewsState((currentState) => ({
+          status: "error",
+          reviewsByStaffId: currentState.reviewsByStaffId,
+          errorMessage: getApiErrorMessage(error),
+        }));
+      }
+    },
+    []
+  );
+
   useFocusEffect(
     useCallback(() => {
       void loadStores();
-    }, [loadStores])
+
+      const loadedWeeklyReportContext =
+        loadedWeeklyReportContextRef.current;
+
+      if (loadedWeeklyReportContext) {
+        void refreshLoadedWeeklyReviews(
+          loadedWeeklyReportContext
+        );
+      }
+    }, [loadStores, refreshLoadedWeeklyReviews])
   );
 
   function handleChangeReportMode(nextMode: ReportMode) {
     setReportMode(nextMode);
+
     setReportState({
       status: "idle",
       dailyReport: null,
       weeklyReport: null,
       monthlyReport: null,
+      errorMessage: null,
+    });
+
+    setWeeklyReviewsState({
+      status: "idle",
+      reviewsByStaffId: new Map(),
       errorMessage: null,
     });
   }
@@ -242,6 +339,12 @@ export default function AdminReportsScreen() {
       dailyReport: null,
       weeklyReport: null,
       monthlyReport: null,
+      errorMessage: null,
+    });
+
+    setWeeklyReviewsState({
+      status: reportMode === "WEEKLY" ? "loading" : "idle",
+      reviewsByStaffId: new Map(),
       errorMessage: null,
     });
 
@@ -276,6 +379,25 @@ export default function AdminReportsScreen() {
           monthlyReport: null,
           errorMessage: null,
         });
+
+        try {
+          const reviewsByStaffId = await loadWeeklyReviewsByStaffId({
+            storeId: selectedStoreId,
+            weekStart,
+          });
+
+          setWeeklyReviewsState({
+            status: "ready",
+            reviewsByStaffId,
+            errorMessage: null,
+          });
+        } catch (error) {
+          setWeeklyReviewsState({
+            status: "error",
+            reviewsByStaffId: new Map(),
+            errorMessage: getApiErrorMessage(error),
+          });
+        }
 
         return;
       }
@@ -372,6 +494,21 @@ export default function AdminReportsScreen() {
 
     return null;
   }
+
+  const weeklyReport =
+    reportState.status === "ready" ? reportState.weeklyReport : null;
+
+  useEffect(() => {
+    if (!weeklyReport) {
+      loadedWeeklyReportContextRef.current = null;
+      return;
+    }
+
+    loadedWeeklyReportContextRef.current = {
+      storeId: weeklyReport.storeId,
+      weekStart: weeklyReport.weekStart,
+    };
+  }, [weeklyReport]);
 
   if (storesState.status === "loading") {
     return <LoadingState message="Loading stores..." />;
@@ -552,14 +689,46 @@ export default function AdminReportsScreen() {
                 </View>
               ) : null}
 
-              {reportState.status === "ready" && reportState.weeklyReport ? (
+              {weeklyReport ? (
                 <View style={styles.reportResultWrapper}>
-                  <WeeklyReportView
-                    report={reportState.weeklyReport}
-                    storeName={selectedStore?.name ?? "Selected store"}
-                  />
+                <WeeklyReportView
+                  report={weeklyReport}
+                  storeName={selectedStore?.name ?? "Selected store"}
+                  reviewsByStaffId={weeklyReviewsState.reviewsByStaffId}
+                  reviewActionsEnabled={weeklyReviewsState.status === "ready"}
+                  onCreateReview={(staff) => {
+                    router.push(
+                      getCreateWeeklyReviewRoute({
+                        storeId: weeklyReport.storeId,
+                        staffId: staff.staffId,
+                        weekStart: weeklyReport.weekStart,
+                      })
+                    );
+                  }}
+                  onViewReview={(reviewId) => {
+                    router.push(getWeeklyReviewDetailRoute(reviewId) as never);
+                  }}
+                />
                 </View>
               ) : null}
+
+              {reportState.status === "ready" &&
+                weeklyReviewsState.status === "loading" ? (
+                  <View style={styles.reviewStatusCard}>
+                    <Text style={styles.reviewStatusText}>
+                      Loading existing weekly reviews…
+                    </Text>
+                  </View>
+                ) : null}
+
+                {reportState.status === "ready" &&
+                weeklyReviewsState.status === "error" ? (
+                  <View style={styles.reviewStatusCard}>
+                    <ErrorMessage
+                      message={`The report loaded correctly, but existing weekly reviews could not be checked. ${weeklyReviewsState.errorMessage}`}
+                    />
+                  </View>
+                ) : null}
 
               {reportState.status === "ready" && reportState.monthlyReport ? (
                 <View style={styles.reportResultWrapper}>
@@ -851,5 +1020,17 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.72,
+  },
+
+  reviewStatusCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    padding: 14,
+  },
+  reviewStatusText: {
+    fontSize: fontSize.md,
+    color: colors.textMuted,
   },
 });

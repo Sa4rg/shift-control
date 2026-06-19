@@ -1,5 +1,14 @@
-import { router, useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import {
+  router,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Pressable,
   SafeAreaView,
@@ -9,6 +18,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+
+import { getNewWeeklyReviewInitialParams } from "@/src/features/admin/weeklyReviews/getNewWeeklyReviewInitialParams";
+import { getWeeklyReviewDetailRoute } from "@/src/features/admin/reports/weeklyReviewNavigation";
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { listStores } from "@/src/api/stores";
@@ -195,6 +207,17 @@ function StatusOption({
 }
 
 export default function NewWeeklyReviewScreen() {
+  const routeParams = useLocalSearchParams();
+
+  const initialParams = useMemo(
+    () =>
+      getNewWeeklyReviewInitialParams({
+        storeId: routeParams.storeId,
+        staffId: routeParams.staffId,
+        weekStart: routeParams.weekStart,
+      }),
+    [routeParams.storeId, routeParams.staffId, routeParams.weekStart]
+  );
 
   const [referenceDataState, setReferenceDataState] =
     useState<ReferenceDataState>({
@@ -204,9 +227,17 @@ export default function NewWeeklyReviewScreen() {
       errorMessage: null,
     });
 
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
-  const [weekStart, setWeekStart] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(
+    initialParams.storeId
+  );
+
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(
+    initialParams.staffId
+  );
+
+  const [weekStart, setWeekStart] = useState(
+    initialParams.weekStart ?? ""
+  );
   const [status, setStatus] =
     useState<WeeklyAdminReviewStatus>("REVIEWED_OK");
   const [note, setNote] = useState("");
@@ -307,7 +338,7 @@ export default function NewWeeklyReviewScreen() {
     }, [loadReferenceData])
   );
 
-  useMemo(() => {
+  useEffect(() => {
     if (referenceDataState.status !== "ready" || !selectedStoreId) {
       return;
     }
@@ -326,7 +357,10 @@ export default function NewWeeklyReviewScreen() {
       }
 
       const firstStaffForStore = referenceDataState.staffUsers.find(
-        (staffUser) => staffUser.active && staffUser.storeId === selectedStoreId
+        (staffUser) =>
+          staffUser.active &&
+          staffUser.role === "STAFF" &&
+          staffUser.storeId === selectedStoreId
       );
 
       return firstStaffForStore?.id ?? null;
@@ -357,7 +391,7 @@ export default function NewWeeklyReviewScreen() {
     setErrorMessage(null);
 
     try {
-      await createWeeklyReview({
+      const createdReview = await createWeeklyReview({
         storeId: selectedStoreId,
         staffId: selectedStaffId,
         weekStart,
@@ -365,7 +399,9 @@ export default function NewWeeklyReviewScreen() {
         note: note.trim().length > 0 ? note.trim() : undefined,
       });
 
-      router.replace("/(admin)/weekly-reviews");
+      router.replace(
+        getWeeklyReviewDetailRoute(createdReview.id) as never
+      );
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error));
     } finally {
