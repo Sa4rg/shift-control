@@ -9,7 +9,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://shift-control-staging-production.up.railway.app"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -18,13 +19,15 @@
       },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://shift-control-staging-production.up.railway.app"
-      }
+      },
+      "channel": "preview"
     },
     "production": {
       "distribution": "store",
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://api.your-production-domain.com"
-      }
+      },
+      "channel": "production"
     }
   },
   "submit": {

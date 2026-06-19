@@ -2,7 +2,7 @@
   "expo": {
     "name": "shift-control-mobile",
     "slug": "shift-control-mobile",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "shiftcontrolmobile",
@@ -53,6 +53,12 @@
       "eas": {
         "projectId": "599c42e4-902e-4413-9b84-6126e091d6e2"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/599c42e4-902e-4413-9b84-6126e091d6e2"
     }
   }
 }
