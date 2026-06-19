@@ -25,6 +25,7 @@ import {
 import { listStores } from "@/src/api/stores";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
+import { DatePickerField } from "@/src/components/DatePickerField";
 import { DailyReportView } from "@/src/features/admin/reports/DailyReportView";
 import { MonthlyReportView } from "@/src/features/admin/reports/MonthlyReportView";
 import { loadWeeklyReviewsByStaffId } from "@/src/features/admin/reports/loadWeeklyReviewsByStaffId";
@@ -425,32 +426,6 @@ export default function AdminReportsScreen() {
     }
   }
 
-  function getCurrentDateValue(): string {
-    if (reportMode === "DAILY") {
-      return date;
-    }
-
-    if (reportMode === "WEEKLY") {
-      return weekStart;
-    }
-
-    return month;
-  }
-
-  function handleChangeCurrentDateValue(value: string) {
-    if (reportMode === "DAILY") {
-      setDate(value);
-      return;
-    }
-
-    if (reportMode === "WEEKLY") {
-      setWeekStart(value);
-      return;
-    }
-
-    setMonth(value);
-  }
-
   function getDateLabel(): string {
     if (reportMode === "DAILY") {
       return "Select Date";
@@ -462,15 +437,7 @@ export default function AdminReportsScreen() {
 
     return "Select Month";
   }
-
-  function getDatePlaceholder(): string {
-    if (reportMode === "MONTHLY") {
-      return "YYYY-MM";
-    }
-
-    return "YYYY-MM-DD";
-  }
-
+  
   function getDateValidationMessage(): string | null {
     if (reportMode === "DAILY" && date.length > 0 && !isValidIsoDate(date)) {
       return "Date must use YYYY-MM-DD format.";
@@ -608,26 +575,42 @@ export default function AdminReportsScreen() {
                 </View>
 
                 <View style={styles.filterGroup}>
-                  <Text style={styles.filterLabel}>{getDateLabel()}</Text>
+                  {reportMode === "MONTHLY" ? (
+                    <>
+                      <Text style={styles.filterLabel}>{getDateLabel()}</Text>
 
-                  <View
-                    style={[
-                      styles.dateInputRow,
-                      validationMessage && styles.dateInputRowError,
-                    ]}
-                  >
-                    <TextInput
-                      style={styles.dateInput}
-                      value={getCurrentDateValue()}
-                      onChangeText={handleChangeCurrentDateValue}
-                      placeholder={getDatePlaceholder()}
-                      placeholderTextColor="#6d7a77"
-                      keyboardType="numbers-and-punctuation"
-                      autoCapitalize="none"
-                      autoCorrect={false}
+                      <View
+                        style={[
+                          styles.dateInputRow,
+                          validationMessage && styles.dateInputRowError,
+                        ]}
+                      >
+                        <TextInput
+                          style={styles.dateInput}
+                          value={month}
+                          onChangeText={setMonth}
+                          placeholder="YYYY-MM"
+                          placeholderTextColor="#6d7a77"
+                          keyboardType="numbers-and-punctuation"
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                        />
+
+                        <Text style={styles.calendarIcon}>□</Text>
+                      </View>
+                    </>
+                  ) : (
+                    <DatePickerField
+                      label={reportMode === "DAILY" ? "Select Date" : "Week start"}
+                      value={reportMode === "DAILY" ? date : weekStart}
+                      onChange={reportMode === "DAILY" ? setDate : setWeekStart}
+                      placeholder={
+                        reportMode === "DAILY"
+                          ? "Select report date"
+                          : "Select week start"
+                      }
                     />
-                    <Text style={styles.calendarIcon}>□</Text>
-                  </View>
+                  )}
 
                   {reportMode === "WEEKLY" ? (
                     <Text style={styles.helperText}>

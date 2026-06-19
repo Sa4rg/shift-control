@@ -29,6 +29,7 @@ import { createWeeklyReview } from "@/src/api/weeklyReviews";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
+import { DatePickerField } from "@/src/components/DatePickerField";
 import type {
   AdminUser,
   Store,
@@ -518,25 +519,15 @@ export default function NewWeeklyReviewScreen() {
                 <View style={styles.cardBody}>
                   <Text style={styles.sectionTitle}>Week start date</Text>
 
-                  <TextInput
-                    style={[
-                      styles.input,
-                      weekStart.length > 0 &&
-                        !isValidIsoDate(weekStart) &&
-                        styles.inputError,
-                    ]}
+                  <DatePickerField
                     value={weekStart}
-                    onChangeText={setWeekStart}
-                    placeholder="YYYY-MM-DD"
-                    placeholderTextColor="#6d7a77"
-                    keyboardType="numbers-and-punctuation"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    editable={!isSubmitting}
+                    onChange={setWeekStart}
+                    placeholder="Select week start"
+                    disabled={isSubmitting}
                   />
 
                   <Text style={styles.helperText}>
-                    Use YYYY-MM-DD format. Monday preferred.
+                    Select the first day of the reporting week. Monday preferred.
                   </Text>
 
                   {weekStart.length > 0 && !isValidIsoDate(weekStart) ? (
@@ -741,19 +732,6 @@ const styles = StyleSheet.create({
   },
   staffChipTextSelected: {
     color: colors.primary,
-  },
-  input: {
-    height: 48,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 14,
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
-  inputError: {
-    borderColor: colors.danger,
   },
   helperText: {
     fontSize: fontSize.sm,

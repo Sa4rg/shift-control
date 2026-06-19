@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
@@ -19,6 +18,7 @@ import { listUsers } from "@/src/api/users";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
+import { DatePickerField } from "@/src/components/DatePickerField";
 import type { AdminUser, Shift, ShiftStatus, Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
@@ -496,40 +496,22 @@ export default function AdminShiftsScreen() {
 
             <View style={styles.dateRow}>
               <View style={styles.dateInputGroup}>
-                <Text style={styles.filterLabel}>From</Text>
-                <TextInput
-                  style={[
-                    styles.dateInput,
-                    fromDate.length > 0 &&
-                      !isValidOptionalIsoDate(fromDate) &&
-                      styles.dateInputError,
-                  ]}
+                <DatePickerField
+                  label="From"
                   value={fromDate}
-                  onChangeText={setFromDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#6d7a77"
-                  keyboardType="numbers-and-punctuation"
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  onChange={setFromDate}
+                  placeholder="Select start date"
+                  maximumDate={toDate.length > 0 ? toDate : undefined}
                 />
               </View>
 
               <View style={styles.dateInputGroup}>
-                <Text style={styles.filterLabel}>To</Text>
-                <TextInput
-                  style={[
-                    styles.dateInput,
-                    toDate.length > 0 &&
-                      !isValidOptionalIsoDate(toDate) &&
-                      styles.dateInputError,
-                  ]}
+                <DatePickerField
+                  label="To"
                   value={toDate}
-                  onChangeText={setToDate}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#6d7a77"
-                  keyboardType="numbers-and-punctuation"
-                  autoCapitalize="none"
-                  autoCorrect={false}
+                  onChange={setToDate}
+                  placeholder="Select end date"
+                  minimumDate={fromDate.length > 0 ? fromDate : undefined}
                 />
               </View>
             </View>
@@ -759,19 +741,6 @@ const styles = StyleSheet.create({
   dateInputGroup: {
     flex: 1,
     gap: 8,
-  },
-  dateInput: {
-    height: 48,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 12,
-    fontSize: fontSize.md,
-    color: colors.text,
-  },
-  dateInputError: {
-    borderColor: colors.danger,
   },
   validationText: {
     fontSize: fontSize.sm,
