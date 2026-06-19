@@ -16,6 +16,7 @@ import {
 import { getApiErrorMessage } from "@/src/api/errors";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { SecureTextInput } from "@/src/components/SecureTextInput";
 
 export default function AdminLoginScreen() {
   const { loginAdmin } = useAuth();
@@ -84,14 +85,11 @@ export default function AdminLoginScreen() {
 
             <View style={styles.field}>
               <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
+              <SecureTextInput
                 value={password}
                 onChangeText={setPassword}
                 placeholder="Enter your password"
-                placeholderTextColor="#9EACAA"
-                secureTextEntry
-                editable={!isSubmitting}
+                disabled={isSubmitting}
               />
             </View>
 
