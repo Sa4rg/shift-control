@@ -16,17 +16,6 @@
       "android": {
         "buildType": "apk"
       },
-      "ios": {
-        "simulator": false
-      },
-      "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://shift-control-staging-production.up.railway.app"
-      }
-    },
-    "ios-simulator": {
-      "ios": {
-        "simulator": true
-      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://shift-control-staging-production.up.railway.app"
       }

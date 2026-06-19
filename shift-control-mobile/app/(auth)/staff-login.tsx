@@ -16,6 +16,7 @@ import {
 import { getApiErrorMessage } from "@/src/api/errors";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
+import { SecureTextInput } from "@/src/components/SecureTextInput";
 
 export default function StaffLoginScreen() {
   const { loginStaff } = useAuth();
@@ -78,16 +79,13 @@ export default function StaffLoginScreen() {
 
             <View style={styles.field}>
               <Text style={styles.label}>PIN</Text>
-              <TextInput
-                style={styles.input}
+              <SecureTextInput
                 value={pin}
                 onChangeText={setPin}
                 placeholder="••••••"
-                placeholderTextColor="#9EACAA"
-                secureTextEntry
                 keyboardType="number-pad"
                 maxLength={6}
-                editable={!isSubmitting}
+                disabled={isSubmitting}
               />
             </View>
 

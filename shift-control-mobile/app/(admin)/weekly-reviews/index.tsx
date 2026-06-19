@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 
@@ -22,6 +21,7 @@ import {
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
+import { DatePickerField } from "@/src/components/DatePickerField";
 import type {
   AdminUser,
   Store,
@@ -545,28 +545,12 @@ export default function AdminWeeklyReviewsScreen() {
             ) : null}
 
             <View style={styles.filterGroup}>
-              <Text style={styles.filterLabel}>WEEK START DATE</Text>
-
-              <View
-                style={[
-                  styles.dateInputRow,
-                  weekStart.length > 0 &&
-                    !isValidOptionalIsoDate(weekStart) &&
-                    styles.dateInputRowError,
-                ]}
-              >
-                <Text style={styles.calendarIcon}>□</Text>
-                <TextInput
-                  style={styles.dateInput}
-                  value={weekStart}
-                  onChangeText={setWeekStart}
-                  placeholder="YYYY-MM-DD"
-                  placeholderTextColor="#6d7a77"
-                  keyboardType="numbers-and-punctuation"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+              <DatePickerField
+                label="WEEK START DATE"
+                value={weekStart}
+                onChange={setWeekStart}
+                placeholder="Select week start"
+              />
 
               {weekStart.length > 0 && !isValidOptionalIsoDate(weekStart) ? (
                 <Text style={styles.validationText}>
@@ -791,30 +775,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSubtle,
     lineHeight: 18,
-  },
-  dateInputRow: {
-    height: 46,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  dateInputRowError: {
-    borderColor: colors.danger,
-  },
-  calendarIcon: {
-    fontSize: fontSize.lg,
-    color: colors.textSubtle,
-  },
-  dateInput: {
-    flex: 1,
-    fontSize: fontSize.base,
-    color: colors.text,
-    paddingVertical: 0,
   },
   validationText: {
     fontSize: fontSize.sm,

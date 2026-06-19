@@ -1,17 +1,35 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { WeeklyReport } from "@/src/types/api";
+import type {
+  WeeklyAdminReview,
+  WeeklyReport,
+} from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
 
 import { getWeeklyStaffTotalGlovo, getWeeklyTotals } from "./reportTotals";
 import { SummaryRow } from "./SummaryRow";
 
+import { getWeeklyStaffReviewAction } from "./getWeeklyStaffReviewAction";
+
+type WeeklyStaffSummary = WeeklyReport["staffSummaries"][number];
+
 type WeeklyReportViewProps = {
   report: WeeklyReport;
   storeName: string;
+  reviewsByStaffId: Map<string, WeeklyAdminReview>;
+  reviewActionsEnabled: boolean;
+  onCreateReview: (staff: WeeklyStaffSummary) => void;
+  onViewReview: (reviewId: string) => void;
 };
 
-export function WeeklyReportView({ report, storeName }: WeeklyReportViewProps) {
+export function WeeklyReportView({
+  report,
+  storeName,
+  reviewsByStaffId,
+  reviewActionsEnabled,
+  onCreateReview,
+  onViewReview,
+}: WeeklyReportViewProps) {
   const totals = getWeeklyTotals(report);
 
   return (
@@ -78,26 +96,70 @@ export function WeeklyReportView({ report, storeName }: WeeklyReportViewProps) {
           <Text style={styles.body}>No staff summaries for this week.</Text>
         ) : (
           <View style={styles.staffList}>
-            {report.staffSummaries.map((staff) => (
+          {report.staffSummaries.map((staff) => {
+            const reviewAction = getWeeklyStaffReviewAction({
+              staffId: staff.staffId,
+              reviewsByStaffId,
+            });
+
+            return (
               <View key={staff.staffId} style={styles.staffRow}>
                 <Text style={styles.staffTitle}>{staff.staffName}</Text>
+
                 <Text style={styles.staffMeta}>Store: {staff.storeName}</Text>
+
                 <Text style={styles.staffMeta}>
                   Sales: {formatMoney(staff.totalSales)}
                 </Text>
+
                 <Text style={styles.staffMeta}>
                   Cash: {formatMoney(staff.totalCash)} · MB:{" "}
                   {formatMoney(staff.totalMb)}
                 </Text>
+
                 <Text style={styles.staffMeta}>
                   Glovo: {formatMoney(getWeeklyStaffTotalGlovo(staff))}
                 </Text>
+
                 <Text style={styles.staffMeta}>
                   Closures: {staff.closuresCount} · Incidents:{" "}
                   {staff.incidentCount}
                 </Text>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.reviewButton,
+                    reviewAction.type === "VIEW" && styles.reviewButtonExisting,
+                    !reviewActionsEnabled && styles.reviewButtonDisabled,
+                    pressed && reviewActionsEnabled && styles.buttonPressed,
+                  ]}
+                  disabled={!reviewActionsEnabled}
+                  onPress={() => {
+                    if (reviewAction.type === "VIEW") {
+                      onViewReview(reviewAction.reviewId);
+                      return;
+                    }
+
+                    onCreateReview(staff);
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.reviewButtonText,
+                      reviewAction.type === "VIEW" &&
+                        styles.reviewButtonExistingText,
+                    ]}
+                  >
+                    {!reviewActionsEnabled
+                      ? "Checking review status…"
+                      : reviewAction.type === "VIEW"
+                        ? "View review"
+                        : "Create review"}
+                  </Text>
+                </Pressable>
               </View>
-            ))}
+            );
+          })}
           </View>
         )}
       </View>
@@ -137,5 +199,34 @@ const styles = StyleSheet.create({
   staffMeta: {
     fontSize: 14,
     color: "#666666",
+  },
+  reviewButton: {
+    minHeight: 42,
+    marginTop: 10,
+    borderRadius: 12,
+    backgroundColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  reviewButtonExisting: {
+    backgroundColor: "#ffffff",
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+  },
+  reviewButtonDisabled: {
+    opacity: 0.5,
+  },
+  reviewButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#ffffff",
+  },
+  reviewButtonExistingText: {
+    color: "#00685f",
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });
