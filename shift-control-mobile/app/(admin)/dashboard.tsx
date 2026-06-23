@@ -320,15 +320,22 @@ export default function AdminDashboardScreen() {
           ) : null}
         </View>
 
-        <View style={styles.logoutContainer}>
+        <View style={styles.logoutCard}>
           <Pressable
             style={({ pressed }) => [
-              styles.logoutButton,
-              pressed && styles.buttonPressed,
+              styles.logoutRow,
+              pressed && styles.logoutRowPressed,
             ]}
-            onPress={handleLogout}
+            onPress={() => void handleLogout()}
+            accessibilityRole="button"
+            accessibilityLabel="Logout"
           >
-            <Text style={styles.logoutText}>⇱ Logout</Text>
+            <View style={styles.logoutLeft}>
+              <Text style={styles.logoutIcon}>⎋</Text>
+              <Text style={styles.logoutText}>Logout</Text>
+            </View>
+
+            <Text style={styles.logoutChevron}>›</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -571,20 +578,45 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.primary,
   },
-  logoutContainer: {
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  logoutButton: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-  },
-  logoutText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
   buttonPressed: {
     opacity: 0.72,
+  },
+  logoutCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  logoutRow: {
+    minHeight: 58,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  logoutRowPressed: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  logoutLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  logoutIcon: {
+    width: 24,
+    fontSize: fontSize.lg,
+    color: colors.danger,
+    textAlign: "center",
+  },
+  logoutText: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.medium,
+    color: colors.danger,
+  },
+  logoutChevron: {
+    fontSize: 28,
+    color: colors.danger,
   },
 });
