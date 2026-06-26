@@ -523,7 +523,7 @@ export default function AdminShiftDetailScreen() {
                     styles.viewAllButton,
                     pressed && styles.buttonPressed,
                   ]}
-                  onPress={() => router.push("/(admin)/sales" as never)}
+                  onPress={() => router.push(`/(admin)/sales?shiftId=${shift.id}` as never)}
                 >
                   <Text style={styles.viewAllText}>VIEW ALL TRANSACTIONS</Text>
                 </Pressable>
