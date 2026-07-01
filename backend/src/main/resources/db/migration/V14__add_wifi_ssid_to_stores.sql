@@ -1,0 +1,2 @@
+ALTER TABLE stores
+ADD COLUMN wifi_ssid VARCHAR(32);

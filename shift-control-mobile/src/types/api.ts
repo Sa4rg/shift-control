@@ -223,6 +223,7 @@ export type Store = {
   name: string;
   address: string;
   baseCashAmount: number;
+  wifiSsid: string;
   active: boolean;
   deactivatedById: string | null;
   deactivatedByName: string | null;

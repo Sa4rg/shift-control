@@ -19,5 +19,9 @@ public record UpdateStoreRequest(
 
         @NotNull
         @Positive
-        BigDecimal baseCashAmount
+        BigDecimal baseCashAmount,
+
+        @NotBlank
+        @Size(max = 32)
+        String wifiSsid
 ) {}

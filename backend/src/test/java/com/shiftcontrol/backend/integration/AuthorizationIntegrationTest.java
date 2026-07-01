@@ -65,7 +65,8 @@ class AuthorizationIntegrationTest extends IntegrationTestBase {
                                 {
                                   "name": "%s",
                                   "address": "Admin Address",
-                                  "baseCashAmount": 103.00
+                                  "baseCashAmount": 103.00,
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """.formatted(uniqueName)))
                 .andExpect(status().isCreated())

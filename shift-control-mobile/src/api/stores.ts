@@ -10,6 +10,14 @@ export type CreateStoreRequest = {
   name: string;
   address: string;
   baseCashAmount: number;
+  wifiSsid: string;
+};
+
+export type UpdateStoreRequest = {
+  name: string;
+  address: string;
+  baseCashAmount: number;
+  wifiSsid: string;
 };
 
 export async function listStores(
@@ -31,6 +39,18 @@ export async function getStoreById(id: string): Promise<Store> {
 export async function createStore(request: CreateStoreRequest): Promise<Store> {
   const response = await apiClient.post<ApiEnvelope<Store>>(
     "/api/stores",
+    request
+  );
+
+  return response.data.data;
+}
+
+export async function updateStore(
+  id: string,
+  request: UpdateStoreRequest
+): Promise<Store> {
+  const response = await apiClient.patch<ApiEnvelope<Store>>(
+    `/api/stores/${id}`,
     request
   );
 
