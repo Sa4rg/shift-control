@@ -65,6 +65,7 @@ class ShiftServiceTest {
     private Store activeStore() {
         Store store = new Store();
         store.setName("São Bento");
+        store.setWifiSsid("MEO-TEST");
         store.setActive(true);
         return store;
     }
@@ -72,6 +73,7 @@ class ShiftServiceTest {
     private Store activeStoreWithBaseCash(String amount) {
         Store store = new Store();
         store.setName("São Bento");
+        store.setWifiSsid("MEO-TEST");
         store.setActive(true);
         store.setBaseCashAmount(new BigDecimal(amount));
         return store;
@@ -157,11 +159,16 @@ class ShiftServiceTest {
         return sale;
     }
 
-    private CloseShiftRequest closeShiftRequest(String confirmedCash, String confirmedMb, String note) {
+    private CloseShiftRequest closeShiftRequest(
+            String confirmedCash,
+            String confirmedMb,
+            String note
+    ) {
         return new CloseShiftRequest(
                 new BigDecimal(confirmedCash),
                 new BigDecimal(confirmedMb),
-                note
+                note,
+                "MEO-TEST"
         );
     }
 
@@ -181,7 +188,10 @@ class ShiftServiceTest {
         when(shiftRepository.save(any(Shift.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        Shift result = shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY));
+        Shift result = shiftService.openShift(staffId, new OpenShiftRequest(
+        ShiftType.DAY,
+        "MEO-TEST"
+        ));
 
         // Assert
         assertThat(result.getStaff()).isSameAs(staff);
@@ -203,7 +213,7 @@ class ShiftServiceTest {
         when(userRepository.findById(staffId)).thenReturn(Optional.empty());
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY)))
+        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY, "MEO-TEST")))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("User not found");
 
@@ -218,7 +228,7 @@ class ShiftServiceTest {
         when(userRepository.findById(staffId)).thenReturn(Optional.of(admin));
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY)))
+        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY, "MEO-TEST")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Only staff users can open shifts");
 
@@ -234,7 +244,7 @@ class ShiftServiceTest {
         when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY)))
+        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY, "MEO-TEST")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("User is inactive");
 
@@ -254,7 +264,7 @@ class ShiftServiceTest {
         when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY)))
+        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY, "MEO-TEST")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Staff user has no store assigned");
 
@@ -270,7 +280,7 @@ class ShiftServiceTest {
         when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY)))
+        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY, "MEO-TEST")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Store is inactive");
 
@@ -287,9 +297,36 @@ class ShiftServiceTest {
         when(shiftRepository.existsByStaffAndStatus(staff, ShiftStatus.OPEN)).thenReturn(true);
 
         // Act + Assert
-        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY)))
+        assertThatThrownBy(() -> shiftService.openShift(staffId, new OpenShiftRequest(ShiftType.DAY, "MEO-TEST")))
                 .isInstanceOf(BusinessException.class)
                 .hasMessage("Staff already has an open shift");
+
+        verify(shiftRepository, never()).save(any(Shift.class));
+    }
+
+    @Test
+    void should_reject_opening_shift_when_wifi_ssid_does_not_match_store() {
+        // Arrange
+        Store store = activeStore();
+        store.setWifiSsid("MEO-4A6DA0");
+
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+
+        OpenShiftRequest request = new OpenShiftRequest(
+                ShiftType.DAY,
+                "MEO-OTHER-NETWORK"
+        );
+
+        // Act + Assert
+        assertThatThrownBy(() -> shiftService.openShift(staffId, request))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(
+                        "You are not connected to the store Wi-Fi network"
+                );
 
         verify(shiftRepository, never()).save(any(Shift.class));
     }
@@ -676,6 +713,52 @@ class ShiftServiceTest {
                 .hasMessage("User is inactive");
 
         verify(shiftClosureRepository, never()).save(any(ShiftClosure.class));
+    }
+
+    @Test
+    void should_reject_closing_shift_when_staff_wifi_ssid_does_not_match_store() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        store.setWifiSsid("MEO-TEST");
+
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+
+        Shift shift = openShift(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        when(shiftRepository.findByIdWithDetails(shiftId))
+                .thenReturn(Optional.of(shift));
+
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+
+        when(shiftClosureRepository.existsByShift(shift))
+                .thenReturn(false);
+
+        CloseShiftRequest request = new CloseShiftRequest(
+                new BigDecimal("103.00"),
+                new BigDecimal("0.00"),
+                null,
+                "MEO-OTHER-NETWORK"
+        );
+
+        // Act + Assert
+        assertThatThrownBy(
+                () -> shiftService.closeShift(shiftId, staffId, request)
+        )
+                .isInstanceOf(BusinessException.class)
+                .hasMessage(
+                        "You are not connected to the store Wi-Fi network"
+                );
+
+        verify(saleRepository, never())
+                .findByShiftAndStatus(any(), any());
+
+        verify(shiftClosureRepository, never())
+                .save(any(ShiftClosure.class));
+
+        assertThat(shift.getStatus()).isEqualTo(ShiftStatus.OPEN);
     }
 
     // -------------------------------------------------------------------------

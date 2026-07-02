@@ -81,6 +81,23 @@ public class ShiftService {
             throw new BusinessException("Store is inactive");
         }
 
+        Store store = staff.getStore();
+
+        String configuredWifiSsid = store.getWifiSsid();
+        String reportedWifiSsid = request.wifiSsid().trim();
+
+        if (configuredWifiSsid == null || configuredWifiSsid.isBlank()) {
+            throw new BusinessException(
+                    "Store Wi-Fi network is not configured"
+            );
+        }
+
+        if (!configuredWifiSsid.equals(reportedWifiSsid)) {
+            throw new BusinessException(
+                    "You are not connected to the store Wi-Fi network"
+            );
+        }
+
         if (shiftRepository.existsByStaffAndStatus(staff, ShiftStatus.OPEN)) {
             throw new BusinessException("Staff already has an open shift");
         }
@@ -89,7 +106,7 @@ public class ShiftService {
 
         Shift shift = new Shift();
         shift.setStaff(staff);
-        shift.setStore(staff.getStore());
+        shift.setStore(store);
         shift.setType(request.type());
         shift.setStatus(ShiftStatus.OPEN);
         shift.setOpenedAt(now);
@@ -181,6 +198,27 @@ public class ShiftService {
 
         if (!closedBy.isActive()) {
             throw new BusinessException("User is inactive");
+        }
+
+        if (!isAdmin) {
+            Store store = shift.getStore();
+
+            String configuredWifiSsid = store.getWifiSsid();
+            String reportedWifiSsid = request.wifiSsid();
+
+            if (configuredWifiSsid == null || configuredWifiSsid.isBlank()) {
+                throw new BusinessException(
+                        "Store Wi-Fi network is not configured"
+                );
+            }
+
+            if (reportedWifiSsid == null
+                    || reportedWifiSsid.isBlank()
+                    || !configuredWifiSsid.equals(reportedWifiSsid.trim())) {
+                throw new BusinessException(
+                        "You are not connected to the store Wi-Fi network"
+                );
+            }
         }
 
         List<Sale> activeSales = saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE);

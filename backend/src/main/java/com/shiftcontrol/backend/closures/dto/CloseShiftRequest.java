@@ -17,6 +17,9 @@ public record CloseShiftRequest(
         BigDecimal confirmedMbAmount,
 
         @Size(max = 500)
-        String note
+        String note,
+
+        @Size(max = 32)
+        String wifiSsid
 ) {
 }

@@ -2,7 +2,7 @@
   "expo": {
     "name": "shift-control-mobile",
     "slug": "shift-control-mobile",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "shiftcontrolmobile",
@@ -14,6 +14,7 @@
     },
     "android": {
       "package": "com.shiftcontrol.mobile",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,8 +42,15 @@
           }
         }
       ],
-      "expo-secure-store",
-      "@react-native-community/datetimepicker"
+    "expo-secure-store",
+    "@react-native-community/datetimepicker",
+    "expo-font",
+    [
+      "expo-location",
+      {
+        "locationWhenInUsePermission": "Shift Control necesita acceso a la ubicación mientras usas la aplicación para verificar que estás conectado a la red Wi-Fi de la tienda."
+      }
+    ]
     ],
     "experiments": {
       "typedRoutes": true,

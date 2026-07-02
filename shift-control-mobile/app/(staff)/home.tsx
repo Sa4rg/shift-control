@@ -26,6 +26,11 @@ import type { Sale, ShiftType } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
 
+import {
+  getCurrentWifiSsid,
+  type WifiConnectionResult,
+} from "@/src/device/wifi";
+
 type ShiftLoadState =
   | { status: "loading"; result: null; errorMessage: null }
   | { status: "ready"; result: CurrentShiftResult; errorMessage: null }
@@ -46,6 +51,20 @@ function getPaymentLabel(sale: Sale): string {
 function getSaleLabel(sale: Sale): string {
   return sale.items[0]?.productName ?? `Sale ${sale.id.slice(0, 8)}`;
 }
+
+type WifiFailureStatus = Exclude<
+  WifiConnectionResult["status"],
+  "connected"
+>;
+
+const WIFI_ERROR_MESSAGES: Record<WifiFailureStatus, string> = {
+  not_connected:
+    "You are not connected to Wi-Fi. Connect to the store Wi-Fi network and try again.",
+  permission_denied:
+    "Location permission is required to verify the store Wi-Fi network. Allow it in your device settings and try again.",
+  ssid_unavailable:
+    "The Wi-Fi network could not be verified. Make sure Wi-Fi and location services are enabled, then try again.",
+};
 
 export default function StaffHomeScreen() {
   const { user, logout } = useAuth();
@@ -113,10 +132,25 @@ export default function StaffHomeScreen() {
 
   async function handleOpenShift(type: ShiftType) {
     if (openingShiftType) return;
+
     setOpeningShiftType(type);
     setOpenShiftErrorMessage(null);
+
     try {
-      await openShift({ type });
+      const wifiResult = await getCurrentWifiSsid();
+
+      if (wifiResult.status !== "connected") {
+        setOpenShiftErrorMessage(
+          WIFI_ERROR_MESSAGES[wifiResult.status]
+        );
+        return;
+      }
+
+      await openShift({
+        type,
+        wifiSsid: wifiResult.ssid,
+      });
+
       await loadCurrentShift();
     } catch (error) {
       setOpenShiftErrorMessage(getApiErrorMessage(error));
@@ -177,7 +211,25 @@ export default function StaffHomeScreen() {
               get started.
             </Text>
 
-            <ErrorMessage message={openShiftErrorMessage} />
+            {openShiftErrorMessage ? (
+            <View style={styles.openShiftErrorContainer}>
+              <ErrorMessage message={openShiftErrorMessage} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.dismissWifiErrorButton,
+                  pressed && styles.dismissWifiErrorButtonPressed,
+                ]}
+                onPress={() => setOpenShiftErrorMessage(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss Wi-Fi message"
+              >
+                <Text style={styles.dismissWifiErrorButtonText}>
+                  Got it
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
 
             <View style={styles.shiftTypeRow}>
               <Pressable
@@ -661,6 +713,28 @@ const styles = StyleSheet.create({
   },
   shiftTypeBtnText: {
     fontSize: fontSize.md,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  openShiftErrorContainer: {
+    gap: 8,
+  },
+  dismissWifiErrorButton: {
+    alignSelf: "flex-start",
+    minHeight: 40,
+    paddingHorizontal: 16,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dismissWifiErrorButtonPressed: {
+    opacity: 0.7,
+  },
+  dismissWifiErrorButtonText: {
+    fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
