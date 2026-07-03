@@ -135,4 +135,33 @@ describe("EditStoreScreen", () => {
       "/(admin)/stores/store-1"
     );
   });
+
+  it("loads a legacy store with no Wi-Fi SSID without crashing", async () => {
+    mockedGetStoreById.mockResolvedValueOnce({
+      id: "store-1",
+      name: "Legacy Store",
+      address: "123 Business St",
+      baseCashAmount: 103,
+      wifiSsid: null,
+      active: true,
+      deactivatedById: null,
+      deactivatedByName: null,
+      deactivatedAt: null,
+    });
+
+    render(<EditStoreScreen />);
+
+    const wifiInput = await screen.findByPlaceholderText(
+      "e.g. MEO-4A6DA0"
+    );
+
+    expect(wifiInput.props.value).toBe("");
+
+    expect(
+      screen.getByTestId("save-store-button").props.accessibilityState
+        ?.disabled
+    ).toBe(true);
+
+    expect(mockedUpdateStore).not.toHaveBeenCalled();
+  });
 });
