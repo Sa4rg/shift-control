@@ -70,12 +70,8 @@ describe("EditStoreScreen", () => {
   it("loads and displays the current store values", async () => {
     render(<EditStoreScreen />);
 
-    await waitFor(() => {
-      expect(mockedGetStoreById).toHaveBeenCalledWith("store-1");
-    });
-
     expect(
-      screen.getByDisplayValue("Kings Yard Baixa")
+      await screen.findByDisplayValue("Kings Yard Baixa")
     ).toBeTruthy();
 
     expect(
@@ -89,6 +85,10 @@ describe("EditStoreScreen", () => {
     expect(
       screen.getByDisplayValue("MEO-4A6DA0")
     ).toBeTruthy();
+
+    expect(mockedGetStoreById).toHaveBeenCalledWith(
+      "store-1"
+    );
   });
 
   it("updates the store with trimmed values and returns to the detail screen", async () => {
