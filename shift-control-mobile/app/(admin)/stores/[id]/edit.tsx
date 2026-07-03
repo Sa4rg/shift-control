@@ -88,7 +88,7 @@ export default function EditStoreScreen() {
         setName(store.name);
         setAddress(store.address);
         setBaseCashAmount(String(store.baseCashAmount));
-        setWifiSsid(store.wifiSsid);
+        setWifiSsid(store.wifiSsid ?? "");
 
         setLoadState({
           status: "ready",
