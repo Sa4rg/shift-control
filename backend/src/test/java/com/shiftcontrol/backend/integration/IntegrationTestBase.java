@@ -44,6 +44,7 @@ import java.util.UUID;
 @Testcontainers
 @ActiveProfiles("test")
 public abstract class IntegrationTestBase {
+    protected static final String TEST_WIFI_SSID = "MEO-TEST";
 
     protected static final PostgreSQLContainer POSTGRES =
             new PostgreSQLContainer("postgres:16-alpine")
@@ -86,6 +87,7 @@ public abstract class IntegrationTestBase {
         store.setName("Test Store " + UUID.randomUUID());
         store.setAddress("Test Address");
         store.setBaseCashAmount(new BigDecimal("103.00"));
+        store.setWifiSsid(TEST_WIFI_SSID);
         store.setActive(true);
         store.setCreatedAt(now);
         store.setUpdatedAt(now);

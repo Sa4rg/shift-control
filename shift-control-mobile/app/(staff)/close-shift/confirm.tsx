@@ -19,6 +19,10 @@ import { ErrorMessage } from "@/src/components/ErrorMessage";
 import type { Shift, ShiftCloseResult } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import {
+  getCurrentWifiSsid,
+  type WifiConnectionResult,
+} from "@/src/device/wifi";
 
 import { shareShiftClosureSummary } from "@/src/features/closures/shareShiftClosureSummary";
 
@@ -66,6 +70,20 @@ function diffTextColor(diff: number | null): string {
 
   return diff < 0 ? "#ba1a1a" : "#825100";
 }
+
+type WifiFailureStatus = Exclude<
+  WifiConnectionResult["status"],
+  "connected"
+>;
+
+const WIFI_ERROR_MESSAGES: Record<WifiFailureStatus, string> = {
+  not_connected:
+    "You are not connected to Wi-Fi. Connect to the store Wi-Fi network and try again.",
+  permission_denied:
+    "Location permission is required to verify the store Wi-Fi network. Allow it in your device settings and try again.",
+  ssid_unavailable:
+    "The Wi-Fi network could not be verified. Make sure Wi-Fi and location services are enabled, then try again.",
+};
 
 export default function CloseShiftConfirmScreen() {
   const params = useLocalSearchParams<{
@@ -137,25 +155,25 @@ export default function CloseShiftConfirmScreen() {
 
     setIsSubmitting(true);
     setErrorMessage(null);
-    setShareErrorMessage(null);
 
     try {
+      const wifiResult = await getCurrentWifiSsid();
+
+      if (wifiResult.status !== "connected") {
+        setErrorMessage(
+          WIFI_ERROR_MESSAGES[wifiResult.status]
+        );
+        return;
+      }
+
       const closeResult = await closeShift(shiftId, {
         confirmedCashAmount: confirmedCashNumber,
         confirmedMbAmount: confirmedMbNumber,
-        note: note.trim().length > 0 ? note.trim() : undefined,
+        note: note.trim().length > 0 ? note.trim() : null,
+        wifiSsid: wifiResult.ssid,
       });
 
       setResult(closeResult);
-
-      try {
-        const shift = await getShiftById(shiftId);
-        setClosedShift(shift);
-      } catch {
-        setShareErrorMessage(
-          "Shift closed successfully, but share data could not be loaded. You can share it later from shift history."
-        );
-      }
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error));
     } finally {
@@ -506,8 +524,22 @@ export default function CloseShiftConfirmScreen() {
           </View>
 
           {errorMessage ? (
-            <View style={styles.errorCard}>
+            <View style={styles.closeShiftErrorContainer}>
               <ErrorMessage message={errorMessage} />
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.dismissWifiErrorButton,
+                  pressed && styles.dismissWifiErrorButtonPressed,
+                ]}
+                onPress={() => setErrorMessage(null)}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss Wi-Fi message"
+              >
+                <Text style={styles.dismissWifiErrorButtonText}>
+                  Got it
+                </Text>
+              </Pressable>
             </View>
           ) : null}
 
@@ -833,5 +865,27 @@ const styles = StyleSheet.create({
     borderColor: colors.dangerSoft,
     backgroundColor: "#fff8f7",
     padding: 14,
+  },
+  closeShiftErrorContainer: {
+    gap: 8,
+  },
+  dismissWifiErrorButton: {
+    alignSelf: "flex-start",
+    minHeight: 40,
+    paddingHorizontal: 16,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surfaceMuted,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dismissWifiErrorButtonPressed: {
+    opacity: 0.7,
+  },
+  dismissWifiErrorButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 });

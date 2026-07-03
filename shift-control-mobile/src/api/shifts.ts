@@ -15,6 +15,7 @@ export type CurrentShiftResult =
 
 export type OpenShiftRequest = {
   type: ShiftType;
+  wifiSsid: string;
 };
 
 export async function getCurrentShift(): Promise<CurrentShiftResult> {

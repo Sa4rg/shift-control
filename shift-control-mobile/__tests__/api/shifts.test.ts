@@ -10,6 +10,10 @@ import {
   openShift,
 } from "@/src/api/shifts";
 
+import {
+  type CloseShiftRequest,
+} from "@/src/types/api";
+
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -125,7 +129,7 @@ describe("openShift", () => {
     jest.clearAllMocks();
   });
 
-  it("opens a shift with the selected type", async () => {
+  it("opens a shift with the selected type and current Wi-Fi SSID", async () => {
     mockedApiClient.post.mockResolvedValueOnce({
       data: {
         success: true,
@@ -145,11 +149,18 @@ describe("openShift", () => {
       },
     });
 
-    const result = await openShift({ type: "DAY" });
-
-    expect(mockedApiClient.post).toHaveBeenCalledWith("/api/shifts/open", {
+    const result = await openShift({
       type: "DAY",
+      wifiSsid: "MEO-4A6DA0",
     });
+
+    expect(mockedApiClient.post).toHaveBeenCalledWith(
+      "/api/shifts/open",
+      {
+        type: "DAY",
+        wifiSsid: "MEO-4A6DA0",
+      }
+    );
     expect(result).toEqual({
       id: "shift-1",
       staffId: "staff-1",
@@ -209,7 +220,7 @@ describe("closeShift", () => {
     jest.clearAllMocks();
   });
 
-  it("closes a shift with confirmed totals", async () => {
+  it("closes a shift with confirmed totals and the current Wi-Fi SSID", async () => {
     mockedApiClient.post.mockResolvedValueOnce({
       data: {
         success: true,
@@ -238,17 +249,23 @@ describe("closeShift", () => {
       },
     });
 
-    const request = {
+    const request: CloseShiftRequest = {
       confirmedCashAmount: 273,
       confirmedMbAmount: 80,
       note: "Everything matched",
+      wifiSsid: "MEO-4A6DA0",
     };
 
     const result = await closeShift("shift-1", request);
 
     expect(mockedApiClient.post).toHaveBeenCalledWith(
       "/api/shifts/shift-1/close",
-      request
+      {
+        confirmedCashAmount: 273,
+        confirmedMbAmount: 80,
+        note: "Everything matched",
+        wifiSsid: "MEO-4A6DA0",
+      }
     );
 
     expect(result.status).toBe("CLOSED_OK");

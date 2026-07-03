@@ -34,6 +34,9 @@ public class Store {
     @Column(name = "base_cash_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal baseCashAmount;
 
+    @Column(name = "wifi_ssid", length = 32)
+    private String wifiSsid;
+
     @Column(name = "active", nullable = false)
     private boolean active;
 
@@ -61,6 +64,15 @@ public class Store {
     public void setAddress(String address) { this.address = address; }
     public BigDecimal getBaseCashAmount() { return baseCashAmount; }
     public void setBaseCashAmount(BigDecimal baseCashAmount) { this.baseCashAmount = baseCashAmount; }
+
+    public String getWifiSsid() {
+        return wifiSsid;
+    }
+
+    public void setWifiSsid(String wifiSsid) {
+        this.wifiSsid = wifiSsid;
+    }
+
     public boolean isActive() { return active; }
     public void setActive(boolean active) { this.active = active; }
     public Instant getCreatedAt() { return createdAt; }

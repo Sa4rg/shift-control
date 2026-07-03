@@ -34,7 +34,8 @@ class StoreIntegrationTest extends IntegrationTestBase {
                                 {
                                   "name": "%s",
                                   "address": "123 Test Street",
-                                  "baseCashAmount": 103.00
+                                  "baseCashAmount": 103.00,
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """.formatted(uniqueName)))
                 .andExpect(status().isCreated())
@@ -47,6 +48,67 @@ class StoreIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.active").value(true))
                 .andExpect(jsonPath("$.data.deactivatedById").doesNotExist())
                 .andExpect(jsonPath("$.data.deactivatedAt").doesNotExist());
+    }
+
+    @Test
+    void should_create_store_with_wifi_ssid_as_admin() throws Exception {
+        // Arrange
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
+        String uniqueName = "WiFi Store " + UUID.randomUUID();
+
+        // Act + Assert
+        mockMvc.perform(post("/api/stores")
+                        .header(
+                                "Authorization",
+                                "Bearer " + adminToken
+                        )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "name": "%s",
+                                "address": "456 WiFi Street",
+                                "baseCashAmount": 99.00,
+                                "wifiSsid": "  MEO-7EBD50  "
+                                }
+                                """.formatted(uniqueName)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath(
+                        "$.message"
+                ).value("Store created successfully"))
+                .andExpect(jsonPath(
+                        "$.data.name"
+                ).value(uniqueName))
+                .andExpect(jsonPath(
+                        "$.data.wifiSsid"
+                ).value("MEO-7EBD50"))
+                .andExpect(jsonPath(
+                        "$.data.active"
+                ).value(true));
+    }
+
+    @Test
+    void should_reject_creating_store_with_blank_wifi_ssid() throws Exception {
+        // Arrange
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
+        String uniqueName = "Store Without WiFi " + UUID.randomUUID();
+
+        // Act + Assert
+        mockMvc.perform(post("/api/stores")
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "name": "%s",
+                                "address": "123 Test Street",
+                                "baseCashAmount": 99.00,
+                                "wifiSsid": "   "
+                                }
+                                """.formatted(uniqueName)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
     }
 
     // -------------------------------------------------------------------------
@@ -112,7 +174,8 @@ class StoreIntegrationTest extends IntegrationTestBase {
                                 {
                                   "name": "  Updated Store Name  ",
                                   "address": "Updated Address",
-                                  "baseCashAmount": 150.00
+                                  "baseCashAmount": 150.00,
+                                  "wifiSsid": "MEO-UPDATED"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -122,6 +185,70 @@ class StoreIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.name").value("Updated Store Name"))
                 .andExpect(jsonPath("$.data.address").value("Updated Address"))
                 .andExpect(jsonPath("$.data.baseCashAmount").value(150.00));
+    }
+
+    @Test
+    void should_update_store_wifi_ssid_as_admin() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
+
+        // Act + Assert
+        mockMvc.perform(patch("/api/stores/{id}", store.getId())
+                        .header(
+                                "Authorization",
+                                "Bearer " + adminToken
+                        )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "name": "%s",
+                                "address": "%s",
+                                "baseCashAmount": 103.00,
+                                "wifiSsid": "  MEO-4A6DA0  "
+                                }
+                                """.formatted(
+                                        store.getName(),
+                                        store.getAddress()
+                                )))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath(
+                        "$.message"
+                ).value("Store updated successfully"))
+                .andExpect(jsonPath(
+                        "$.data.id"
+                ).value(store.getId().toString()))
+                .andExpect(jsonPath(
+                        "$.data.wifiSsid"
+                ).value("MEO-4A6DA0"));
+    }
+
+    @Test
+    void should_reject_updating_store_with_blank_wifi_ssid() throws Exception {
+        // Arrange
+        Store store = createStore();
+        User admin = createAdmin();
+        String adminToken = jwtService.generateAccessToken(admin);
+
+        // Act + Assert
+        mockMvc.perform(patch("/api/stores/{id}", store.getId())
+                        .header("Authorization", "Bearer " + adminToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "name": "%s",
+                                "address": "%s",
+                                "baseCashAmount": 103.00,
+                                "wifiSsid": "   "
+                                }
+                                """.formatted(
+                                        store.getName(),
+                                        store.getAddress()
+                                )))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
     }
 
     // -------------------------------------------------------------------------

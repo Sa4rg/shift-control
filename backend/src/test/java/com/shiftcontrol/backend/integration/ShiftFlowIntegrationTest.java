@@ -1,6 +1,7 @@
 package com.shiftcontrol.backend.integration;
 
 import com.shiftcontrol.backend.shifts.model.Shift;
+import com.shiftcontrol.backend.shifts.model.ShiftStatus;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.User;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ShiftFlowIntegrationTest extends IntegrationTestBase {
 
@@ -31,7 +33,8 @@ class ShiftFlowIntegrationTest extends IntegrationTestBase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "type": "DAY"
+                                  "type": "DAY",
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """))
                 .andExpect(status().isCreated())
@@ -44,6 +47,42 @@ class ShiftFlowIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.status").value("OPEN"))
                 .andExpect(jsonPath("$.data.openedAt").isNotEmpty())
                 .andExpect(jsonPath("$.data.closedAt", nullValue()));
+    }
+
+    @Test
+    void should_reject_opening_shift_when_wifi_ssid_does_not_match_store()
+            throws Exception {
+        // Arrange
+        Store store = createStore();
+        User staff = createStaff(store);
+        String staffToken = jwtService.generateAccessToken(staff);
+
+        // Act + Assert
+        mockMvc.perform(post("/api/shifts/open")
+                        .header(
+                                "Authorization",
+                                "Bearer " + staffToken
+                        )
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                "type": "DAY",
+                                "wifiSsid": "MEO-OTHER-NETWORK"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.message").value(
+                        "You are not connected to the store Wi-Fi network"
+                ))
+                .andExpect(jsonPath("$.data").doesNotExist());
+
+        assertThat(
+            shiftRepository.existsByStaffAndStatus(
+                    staff,
+                    ShiftStatus.OPEN
+            )
+    ).isFalse();
     }
 
     // -------------------------------------------------------------------------
@@ -64,7 +103,8 @@ class ShiftFlowIntegrationTest extends IntegrationTestBase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "type": "DAY"
+                                  "type": "DAY",
+                                    "wifiSsid": "MEO-TEST"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())

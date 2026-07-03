@@ -50,6 +50,7 @@ public class StoreService {
 
     public Store createStore(CreateStoreRequest request) {
         String name = request.name().trim();
+        String wifiSsid = request.wifiSsid().trim();
 
         if (storeRepository.existsByNameIgnoreCase(name)) {
             throw new BusinessException("Store name already exists");
@@ -57,8 +58,9 @@ public class StoreService {
 
         Store store = new Store();
         store.setName(name);
-        store.setAddress(request.address());
+        store.setAddress(request.address().trim());
         store.setBaseCashAmount(request.baseCashAmount());
+        store.setWifiSsid(wifiSsid);
         store.setActive(true);
         store.setCreatedAt(Instant.now());
         store.setUpdatedAt(Instant.now());
@@ -71,6 +73,7 @@ public class StoreService {
 
         String name = request.name().trim();
         String address = request.address().trim();
+        String wifiSsid = request.wifiSsid().trim();
 
         storeRepository.findByNameIgnoreCase(name).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
@@ -81,6 +84,7 @@ public class StoreService {
         store.setName(name);
         store.setAddress(address);
         store.setBaseCashAmount(request.baseCashAmount());
+        store.setWifiSsid(wifiSsid);
         store.setUpdatedAt(Instant.now());
         return storeRepository.save(store);
     }

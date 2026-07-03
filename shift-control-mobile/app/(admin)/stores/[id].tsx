@@ -286,6 +286,12 @@ export default function AdminStoreDetailScreen() {
             <DetailRow label="ADDRESS" value={store.address} />
 
             <DetailRow
+              label="WI-FI NETWORK"
+              value={store.wifiSsid}
+              valueStyle={styles.primaryValue}
+            />
+
+            <DetailRow
               label="BASE CASH AMOUNT"
               value={formatMoney(store.baseCashAmount)}
               valueStyle={styles.primaryValue}
@@ -343,6 +349,18 @@ export default function AdminStoreDetailScreen() {
         ) : null}
 
         <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.btnEdit,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={() =>
+              router.push(`/(admin)/stores/${store.id}/edit`)
+            }
+            disabled={isDeactivating}
+          >
+            <Text style={styles.btnEditText}>Edit store</Text>
+          </Pressable>
           <Pressable
             style={({ pressed }) => [
               styles.btnRefresh,
@@ -570,12 +588,22 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   actions: {
-    flexDirection: "row",
     gap: 10,
     paddingTop: 4,
   },
+  btnEdit: {
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnEditText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.surface,
+  },
   btnRefresh: {
-    flex: 1,
     height: 48,
     borderRadius: radius.lg,
     backgroundColor: "#89f5e7",
@@ -588,7 +616,6 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
   btnBack: {
-    flex: 1,
     height: 48,
     borderRadius: radius.lg,
     borderWidth: 1.5,

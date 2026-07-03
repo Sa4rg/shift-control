@@ -35,6 +35,7 @@ export default function NewStoreScreen() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [baseCashAmount, setBaseCashAmount] = useState("");
+  const [wifiSsid, setWifiSsid] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,6 +48,7 @@ export default function NewStoreScreen() {
     name.trim().length > 0 &&
     address.trim().length > 0 &&
     baseCashAmountNumber !== null &&
+    wifiSsid.trim().length > 0 &&
     !isSubmitting;
 
   async function handleSubmit() {
@@ -62,6 +64,7 @@ export default function NewStoreScreen() {
         name: name.trim(),
         address: address.trim(),
         baseCashAmount: baseCashAmountNumber,
+        wifiSsid: wifiSsid.trim(),
       });
 
       router.replace("/(admin)/dashboard");
@@ -129,6 +132,37 @@ export default function NewStoreScreen() {
               </View>
 
               <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Wi-Fi network name</Text>
+
+                <TextInput
+                  style={[
+                    styles.input,
+                    wifiSsid.length > 0 &&
+                      wifiSsid.trim().length === 0 &&
+                      styles.inputError,
+                  ]}
+                  value={wifiSsid}
+                  onChangeText={setWifiSsid}
+                  placeholder="e.g. MEO-4A6DA0"
+                  placeholderTextColor="#6d7a77"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  editable={!isSubmitting}
+                  maxLength={32}
+                />
+              </View>
+
+              {wifiSsid.length > 0 && wifiSsid.trim().length === 0 ? (
+                <Text style={styles.errorHelpText}>
+                  Wi-Fi network name cannot be empty.
+                </Text>
+              ) : null}
+
+              <Text style={styles.helpText}>
+                Enter the exact Wi-Fi network name shown on the device.
+              </Text>
+
+              <View style={styles.inputGroup}>
                 <Text style={styles.inputLabel}>Base cash amount</Text>
 
                 <View
@@ -171,6 +205,7 @@ export default function NewStoreScreen() {
 
           <View style={styles.actions}>
             <Pressable
+              testID="create-store-button"
               style={({ pressed }) => [
                 styles.btnPrimary,
                 !canSubmit && styles.btnDisabled,

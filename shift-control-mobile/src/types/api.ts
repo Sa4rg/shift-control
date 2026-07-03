@@ -149,7 +149,8 @@ export type ShiftClosureStatus = "CLOSED_OK" | "CLOSED_WITH_INCIDENT";
 export type CloseShiftRequest = {
   confirmedCashAmount: number;
   confirmedMbAmount: number;
-  note?: string;
+  note: string | null;
+  wifiSsid: string;
 };
 
 export type ShiftClosure = {
@@ -223,6 +224,7 @@ export type Store = {
   name: string;
   address: string;
   baseCashAmount: number;
+  wifiSsid: string;
   active: boolean;
   deactivatedById: string | null;
   deactivatedByName: string | null;

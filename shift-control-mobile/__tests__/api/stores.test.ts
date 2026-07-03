@@ -1,4 +1,10 @@
-import { listStores, getStoreById, createStore, deactivateStore } from "@/src/api/stores";
+import {
+  listStores,
+  getStoreById,
+  createStore,
+  updateStore,
+  deactivateStore,
+} from "@/src/api/stores";
 import { apiClient } from "@/src/api/client";
 
 jest.mock("@/src/api/client", () => ({
@@ -27,6 +33,7 @@ describe("listStores", () => {
             name: "Main Store",
             address: "Main Street 123",
             baseCashAmount: 103,
+            wifiSsid: "MEO-TEST",
             active: true,
             deactivatedById: null,
             deactivatedByName: null,
@@ -84,6 +91,7 @@ describe("getStoreById", () => {
           name: "Main Store",
           address: "Main Street 123",
           baseCashAmount: 103,
+          wifiSsid: "MEO-TEST",
           active: true,
           deactivatedById: null,
           deactivatedByName: null,
@@ -110,6 +118,7 @@ describe("createStore", () => {
       name: "New Store",
       address: "New Street 123",
       baseCashAmount: 103,
+      wifiSsid: "MEO-4A6DA0",
     };
 
     mockedApiClient.post.mockResolvedValueOnce({
@@ -121,6 +130,7 @@ describe("createStore", () => {
           name: "New Store",
           address: "New Street 123",
           baseCashAmount: 103,
+          wifiSsid: "MEO-4A6DA0",
           active: true,
           deactivatedById: null,
           deactivatedByName: null,
@@ -133,7 +143,51 @@ describe("createStore", () => {
 
     expect(mockedApiClient.post).toHaveBeenCalledWith("/api/stores", request);
     expect(result.id).toBe("store-2");
+    expect(result.wifiSsid).toBe("MEO-4A6DA0");
     expect(result.active).toBe(true);
+  });
+});
+
+describe("updateStore", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it("updates a store", async () => {
+    const request = {
+      name: "Kings Yard Baixa",
+      address: "Largo São Luís, 27 Porto",
+      baseCashAmount: 99,
+      wifiSsid: "MEO-4A6DA0",
+    };
+
+    mockedApiClient.patch.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Store updated successfully",
+        data: {
+          id: "store-1",
+          name: "Kings Yard Baixa",
+          address: "Largo São Luís, 27 Porto",
+          baseCashAmount: 99,
+          wifiSsid: "MEO-4A6DA0",
+          active: true,
+          deactivatedById: null,
+          deactivatedByName: null,
+          deactivatedAt: null,
+        },
+      },
+    });
+
+    const result = await updateStore("store-1", request);
+
+    expect(mockedApiClient.patch).toHaveBeenCalledWith(
+      "/api/stores/store-1",
+      request
+    );
+
+    expect(result.id).toBe("store-1");
+    expect(result.wifiSsid).toBe("MEO-4A6DA0");
   });
 });
 
@@ -152,6 +206,7 @@ describe("deactivateStore", () => {
           name: "Main Store",
           address: "Main Street 123",
           baseCashAmount: 103,
+          wifiSsid: "MEO-TEST",
           active: false,
           deactivatedById: "admin-1",
           deactivatedByName: "Admin User",

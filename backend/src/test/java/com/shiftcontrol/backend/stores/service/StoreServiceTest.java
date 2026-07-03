@@ -49,7 +49,8 @@ class StoreServiceTest {
         CreateStoreRequest request = new CreateStoreRequest(
                 "São Bento",
                 "Rua Example 123",
-                new BigDecimal("103.00")
+                new BigDecimal("103.00"),
+                "MEO-TEST"
         );
 
         // Act + Assert
@@ -66,7 +67,8 @@ class StoreServiceTest {
         CreateStoreRequest request = new CreateStoreRequest(
                 "São Bento",
                 "Rua Example 123",
-                new BigDecimal("103.00")
+                new BigDecimal("103.00"), 
+                "MEO-TEST" 
         );
 
         Store savedStore = new Store();
@@ -186,7 +188,8 @@ class StoreServiceTest {
         UpdateStoreRequest request = new UpdateStoreRequest(
                 "New Name",
                 "New Address",
-                new BigDecimal("150.00")
+                new BigDecimal("150.00"),
+                "MEO-UPDATED"
         );
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(existing));
@@ -217,7 +220,8 @@ class StoreServiceTest {
         UpdateStoreRequest request = new UpdateStoreRequest(
                 "São Bento",
                 "Rua Nova 456",
-                new BigDecimal("103.00")
+                new BigDecimal("103.00"),
+                "MEO-TEST"
         );
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(existing));
@@ -238,7 +242,8 @@ class StoreServiceTest {
         UpdateStoreRequest request = new UpdateStoreRequest(
                 "Any Name",
                 "Any Address",
-                new BigDecimal("103.00")
+                new BigDecimal("103.00"),
+                "MEO-UPDATED"
         );
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.empty());
@@ -268,7 +273,8 @@ class StoreServiceTest {
         UpdateStoreRequest request = new UpdateStoreRequest(
                 "Taken Name",
                 "Any Address",
-                new BigDecimal("103.00")
+                new BigDecimal("103.00"),
+                "MEO-TEST"
         );
 
         when(storeRepository.findById(storeId)).thenReturn(Optional.of(existing));

@@ -1,6 +1,7 @@
 package com.shiftcontrol.backend.integration;
 
 import com.shiftcontrol.backend.shifts.model.Shift;
+import com.shiftcontrol.backend.shifts.model.ShiftStatus;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.User;
 import org.junit.jupiter.api.Test;
@@ -12,8 +13,54 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ShiftClosureFlowIntegrationTest extends IntegrationTestBase {
+
+  @Test
+  void should_reject_staff_closing_shift_when_wifi_ssid_does_not_match_store()
+          throws Exception {
+      // Arrange
+      Store store = createStore();
+      User staff = createStaff(store);
+      Shift shift = createOpenShift(staff, store);
+
+      String staffToken = jwtService.generateAccessToken(staff);
+
+      // Act + Assert
+      mockMvc.perform(post("/api/shifts/{id}/close", shift.getId())
+                      .header(
+                              "Authorization",
+                              "Bearer " + staffToken
+                      )
+                      .contentType(MediaType.APPLICATION_JSON)
+                      .content("""
+                              {
+                                "confirmedCashAmount": 103.00,
+                                "confirmedMbAmount": 0.00,
+                                "note": "Attempt from wrong network",
+                                "wifiSsid": "MEO-OTHER-NETWORK"
+                              }
+                              """))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.success").value(false))
+              .andExpect(jsonPath("$.message").value(
+                      "You are not connected to the store Wi-Fi network"
+              ))
+              .andExpect(jsonPath("$.data").doesNotExist());
+
+      // Confirm that no closure was persisted
+      assertThat(
+              shiftClosureRepository.existsByShift(shift)
+      ).isFalse();
+
+      // Reload the shift to confirm it remains open
+      Shift persistedShift = shiftRepository.findById(shift.getId())
+              .orElseThrow();
+
+      assertThat(persistedShift.getStatus())
+              .isEqualTo(ShiftStatus.OPEN);
+  }
 
     @Test
     void should_close_shift_with_closed_ok_and_reject_sale_creation_after_closure() throws Exception {
@@ -33,7 +80,8 @@ class ShiftClosureFlowIntegrationTest extends IntegrationTestBase {
                                 {
                                   "confirmedCashAmount": 148.00,
                                   "confirmedMbAmount": 0.00,
-                                  "note": "End of day ok"
+                                  "note": "End of day ok",
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -48,6 +96,7 @@ class ShiftClosureFlowIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.expectedPhysicalCash").value(148.00))
                 .andExpect(jsonPath("$.data.cashDifference").value(0.00))
                 .andExpect(jsonPath("$.data.mbDifference").value(0.00));
+
 
         // Act + Assert: after closing the shift, staff cannot create another sale
         mockMvc.perform(post("/api/sales")
@@ -100,7 +149,8 @@ class ShiftClosureFlowIntegrationTest extends IntegrationTestBase {
                                 {
                                   "confirmedCashAmount": 150.00,
                                   "confirmedMbAmount": 10.00,
-                                  "note": "Amounts do not match"
+                                  "note": "Amounts do not match",
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -136,7 +186,8 @@ class ShiftClosureFlowIntegrationTest extends IntegrationTestBase {
                                 {
                                   "confirmedCashAmount": 148.00,
                                   "confirmedMbAmount": 0.00,
-                                  "note": "First close"
+                                  "note": "First close",
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """))
                 .andExpect(status().isOk())
@@ -256,7 +307,8 @@ class ShiftClosureFlowIntegrationTest extends IntegrationTestBase {
                                 {
                                   "confirmedCashAmount": 153.00,
                                   "confirmedMbAmount": 0.00,
-                                  "note": "End of day - Phase 17.1B test"
+                                  "note": "End of day - Phase 17.1B test",
+                                  "wifiSsid": "MEO-TEST"
                                 }
                                 """))
                 // Assert: totalSales must be 50.00 (only sale A)
