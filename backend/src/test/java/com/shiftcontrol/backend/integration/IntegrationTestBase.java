@@ -7,6 +7,7 @@ import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
 import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
 import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
 import com.shiftcontrol.backend.sales.model.InvoiceStatus;
 import com.shiftcontrol.backend.sales.model.PaymentMethod;
@@ -351,6 +352,7 @@ public abstract class IntegrationTestBase {
         incident.setType(IncidentType.OPERATIONAL_NOTE);
         incident.setStatus(status);
         incident.setSeverity(IncidentSeverity.LOW);
+        incident.setSource(IncidentSource.MANUAL);
         incident.setTitle("Test incident");
         incident.setDescription("Test incident description.");
         incident.setResolutionNote(null);

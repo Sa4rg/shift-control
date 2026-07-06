@@ -207,4 +207,36 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
             @Param("closureId") UUID closureId,
             @Param("saleId") UUID saleId
     );
+
+    @Query("""
+        SELECT COUNT(DISTINCT i) FROM Incident i
+        LEFT JOIN i.shift directShift
+        LEFT JOIN i.closure closure
+        LEFT JOIN closure.shift closureShift
+        LEFT JOIN i.sale sale
+        LEFT JOIN sale.shift saleShift
+        WHERE directShift.id = :shiftId
+        OR closureShift.id = :shiftId
+        OR saleShift.id = :shiftId
+        """)
+        long countByShiftContext(@Param("shiftId") UUID shiftId);
+
+    @Query("""
+        SELECT COUNT(DISTINCT i) FROM Incident i
+        LEFT JOIN i.shift directShift
+        LEFT JOIN i.closure closure
+        LEFT JOIN closure.shift closureShift
+        LEFT JOIN i.sale sale
+        LEFT JOIN sale.shift saleShift
+        WHERE i.status = :status
+        AND (
+                directShift.id = :shiftId
+                OR closureShift.id = :shiftId
+                OR saleShift.id = :shiftId
+        )
+        """)
+        long countByShiftContextAndStatus(
+                @Param("shiftId") UUID shiftId,
+                @Param("status") IncidentStatus status
+        );
 }

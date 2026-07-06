@@ -4,6 +4,7 @@ import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
 import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
 import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.User;
@@ -53,6 +54,7 @@ class IncidentFlowIntegrationTest extends IntegrationTestBase {
                 .andExpect(jsonPath("$.data.status").value("OPEN"))
                 .andExpect(jsonPath("$.data.type").value("OPERATIONAL_NOTE"))
                 .andExpect(jsonPath("$.data.severity").value("LOW"))
+                .andExpect(jsonPath("$.data.source").value("MANUAL"))
                 .andExpect(jsonPath("$.data.title").value("Note from shift"))
                 .andExpect(jsonPath("$.data.description").value("Customer asked for receipt copy."))
                 .andExpect(jsonPath("$.data.shiftId").value(shift.getId().toString()))
@@ -353,6 +355,7 @@ class IncidentFlowIntegrationTest extends IntegrationTestBase {
         incident.setType(IncidentType.OPERATIONAL_NOTE);
         incident.setStatus(IncidentStatus.OPEN);
         incident.setSeverity(IncidentSeverity.LOW);
+        incident.setSource(IncidentSource.MANUAL);
         incident.setTitle("Open incident");
         incident.setDescription("Test open incident");
         incident.setResolutionNote(null);
@@ -375,6 +378,7 @@ class IncidentFlowIntegrationTest extends IntegrationTestBase {
         incident.setType(IncidentType.OTHER);
         incident.setStatus(IncidentStatus.RESOLVED);
         incident.setSeverity(IncidentSeverity.LOW);
+        incident.setSource(IncidentSource.MANUAL);
         incident.setTitle("Already resolved incident");
         incident.setDescription("This was already resolved.");
         incident.setResolutionNote("Previously resolved.");

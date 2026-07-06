@@ -5,6 +5,7 @@ import com.shiftcontrol.backend.sales.repository.SaleRepository;
 import com.shiftcontrol.backend.shared.exception.BusinessException;
 import com.shiftcontrol.backend.shared.exception.NotFoundException;
 import com.shiftcontrol.backend.shifts.dto.OpenShiftRequest;
+import com.shiftcontrol.backend.shifts.dto.ShiftResponse;
 import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.shifts.model.ShiftStatus;
 import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.math.RoundingMode;
 
 import com.shiftcontrol.backend.closures.dto.CloseShiftRequest;
 import com.shiftcontrol.backend.closures.model.ClosureStatus;
@@ -29,12 +31,18 @@ import com.shiftcontrol.backend.sales.model.PaymentMethod;
 import com.shiftcontrol.backend.sales.model.Sale;
 import com.shiftcontrol.backend.sales.model.SalePayment;
 import com.shiftcontrol.backend.sales.model.SaleStatus;
-import org.hibernate.Hibernate;
 
-import java.math.RoundingMode;
+import org.hibernate.Hibernate;
 
 import com.shiftcontrol.backend.shifts.dto.ShiftClosePreviewResponse;
 import com.shiftcontrol.backend.stores.model.Store;
+
+import com.shiftcontrol.backend.incidents.model.Incident;
+import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
+import com.shiftcontrol.backend.incidents.model.IncidentStatus;
+import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
 
 
 @Service
@@ -48,16 +56,20 @@ public class ShiftService {
     private final ShiftClosureRepository shiftClosureRepository;
     private final SaleRepository saleRepository;
 
+    private final IncidentRepository incidentRepository;
+
     public ShiftService(
             ShiftRepository shiftRepository,
             UserRepository userRepository,
             ShiftClosureRepository shiftClosureRepository,
-            SaleRepository saleRepository
+            SaleRepository saleRepository,
+            IncidentRepository incidentRepository
     ) {
         this.shiftRepository = shiftRepository;
         this.userRepository = userRepository;
         this.shiftClosureRepository = shiftClosureRepository;
         this.saleRepository = saleRepository;
+        this.incidentRepository = incidentRepository;   
     }
 
     @Transactional
@@ -143,6 +155,17 @@ public class ShiftService {
     }
 
     @Transactional(readOnly = true)
+    public ShiftResponse getShiftResponse(
+            UUID id,
+            UUID authenticatedUserId,
+            Role authenticatedRole
+    ) {
+        Shift shift = getById(id, authenticatedUserId, authenticatedRole);
+
+        return toShiftResponse(shift);
+    }
+
+    @Transactional(readOnly = true)
     public List<Shift> listShifts(
             UUID authenticatedUserId,
             Role authenticatedRole,
@@ -171,6 +194,58 @@ public class ShiftService {
         }
 
         return shiftRepository.findAllWithDetailsByIds(ids);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ShiftResponse> listShiftResponses(
+            UUID authenticatedUserId,
+            Role authenticatedRole,
+            UUID storeId,
+            UUID filterStaffId,
+            ShiftStatus status,
+            LocalDate from,
+            LocalDate to
+    ) {
+        return listShifts(
+                authenticatedUserId,
+                authenticatedRole,
+                storeId,
+                filterStaffId,
+                status,
+                from,
+                to
+        )
+                .stream()
+                .map(this::toShiftResponse)
+                .toList();
+    }
+
+    private ShiftResponse toShiftResponse(Shift shift) {
+        ShiftClosure closure = null;
+        long openIncidentCount = 0;
+        long totalIncidentCount = 0;
+
+        if (shift.getStatus() == ShiftStatus.CLOSED) {
+            closure = shiftClosureRepository
+                    .findByShift(shift)
+                    .orElse(null);
+
+            openIncidentCount = incidentRepository.countByShiftContextAndStatus(
+                    shift.getId(),
+                    IncidentStatus.OPEN
+            );
+
+            totalIncidentCount = incidentRepository.countByShiftContext(
+                    shift.getId()
+            );
+        }
+
+        return ShiftResponse.fromEntity(
+                shift,
+                closure,
+                openIncidentCount,
+                totalIncidentCount
+        );
     }
 
     @Transactional
@@ -272,7 +347,107 @@ public class ShiftService {
         shift.setClosedBy(closedBy);
         shift.setUpdatedAt(now);
 
-        return shiftClosureRepository.save(closure);
+        ShiftClosure savedClosure = shiftClosureRepository.save(closure);
+
+        if (cashDifference.compareTo(ZERO) != 0) {
+            createAutomaticDifferenceIncident(
+                    shift,
+                    savedClosure,
+                    closedBy,
+                    IncidentType.CASH_DIFFERENCE,
+                    cashDifference,
+                    now
+            );
+        }
+
+        if (mbDifference.compareTo(ZERO) != 0) {
+            createAutomaticDifferenceIncident(
+                    shift,
+                    savedClosure,
+                    closedBy,
+                    IncidentType.MB_DIFFERENCE,
+                    mbDifference,
+                    now
+            );
+        }
+
+        return savedClosure;
+    }
+
+    private void createAutomaticDifferenceIncident(
+            Shift shift,
+            ShiftClosure closure,
+            User reportedBy,
+            IncidentType type,
+            BigDecimal difference,
+            Instant createdAt
+    ) {
+        Incident incident = new Incident();
+
+        incident.setShift(shift);
+        incident.setClosure(closure);
+        incident.setSale(null);
+
+        incident.setReportedBy(reportedBy);
+        incident.setResolvedBy(null);
+
+        incident.setType(type);
+        incident.setStatus(IncidentStatus.OPEN);
+        incident.setSeverity(IncidentSeverity.MEDIUM);
+        incident.setSource(IncidentSource.AUTOMATIC_CLOSURE);
+
+        incident.setTitle(getAutomaticIncidentTitle(type));
+        incident.setDescription(getAutomaticIncidentDescription(type, difference));
+
+        incident.setResolutionNote(null);
+        incident.setCreatedAt(createdAt);
+        incident.setUpdatedAt(createdAt);
+        incident.setResolvedAt(null);
+
+        incidentRepository.save(incident);
+    }
+
+    private String getAutomaticIncidentTitle(IncidentType type) {
+        return switch (type) {
+            case CASH_DIFFERENCE -> "Cash difference detected";
+            case MB_DIFFERENCE -> "MB difference detected";
+            default -> throw new IllegalArgumentException(
+                    "Unsupported automatic incident type: " + type
+            );
+        };
+    }
+
+    private String getAutomaticIncidentDescription(
+            IncidentType type,
+            BigDecimal difference
+    ) {
+        String differenceLabel = switch (type) {
+            case CASH_DIFFERENCE -> "a cash difference";
+            case MB_DIFFERENCE -> "an MB difference";
+            default -> throw new IllegalArgumentException(
+                    "Unsupported automatic incident type: " + type
+            );
+        };
+
+        return "Shift closure recorded " 
+                + differenceLabel
+                + " of "
+                + formatSignedAmount(difference)
+                + ".";
+    }
+
+    private String formatSignedAmount(BigDecimal amount) {
+        BigDecimal normalizedAmount = amount.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal absoluteAmount = normalizedAmount.abs();
+
+        String sign = "";
+        if (normalizedAmount.compareTo(ZERO) > 0) {
+            sign = "+";
+        } else if (normalizedAmount.compareTo(ZERO) < 0) {
+            sign = "-";
+        }
+
+        return sign + "€" + absoluteAmount.toPlainString();
     }
 
     private BigDecimal totalByPaymentMethod(List<Sale> sales, PaymentMethod method) {

@@ -8,6 +8,7 @@ import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
 import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
 import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
 import com.shiftcontrol.backend.sales.model.Sale;
 import com.shiftcontrol.backend.sales.repository.SaleRepository;
@@ -149,6 +150,7 @@ class IncidentServiceTest {
         assertThat(result.getShift()).isSameAs(shift);
         assertThat(result.getType()).isEqualTo(IncidentType.CASH_DIFFERENCE);
         assertThat(result.getSeverity()).isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(result.getSource()).isEqualTo(IncidentSource.MANUAL);
         assertThat(result.getTitle()).isEqualTo("Test title");
         assertThat(result.getDescription()).isEqualTo("Test description");
         assertThat(result.getCreatedAt()).isNotNull();
