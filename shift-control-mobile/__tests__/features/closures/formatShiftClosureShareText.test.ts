@@ -25,6 +25,11 @@ describe("formatShiftClosureShareText", () => {
       openedAt: "2026-06-15T08:00:00Z",
       closedAt: "2026-06-15T17:00:00Z",
       closedById: "staff-1",
+      closureStatus: "CLOSED_WITH_INCIDENT",
+      cashDifference: -3,
+      mbDifference: 2,
+      openIncidentCount: 2,
+      totalIncidentCount: 2,
     };
 
     const closure: ShiftClosure = {
@@ -100,6 +105,11 @@ describe("formatShiftClosureShareText", () => {
       openedAt: "2026-06-15T08:00:00Z",
       closedAt: null,
       closedById: "staff-2",
+      closureStatus: "CLOSED_OK",
+      cashDifference: 0,
+      mbDifference: 0,
+      openIncidentCount: 0,
+      totalIncidentCount: 0,
     };
 
     const closure: ShiftClosure = {
