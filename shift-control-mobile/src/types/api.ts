@@ -36,6 +36,11 @@ export type Shift = {
   openedAt: string;
   closedAt: string | null;
   closedById: string | null;
+  closureStatus: ShiftClosureStatus | null;
+  cashDifference: number | null;
+  mbDifference: number | null;
+  openIncidentCount: number;
+  totalIncidentCount: number;
 };
 
 export type SaleStatus = "ACTIVE" | "CANCELLED";

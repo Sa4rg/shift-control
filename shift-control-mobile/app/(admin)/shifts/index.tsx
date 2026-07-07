@@ -23,6 +23,13 @@ import type { AdminUser, Shift, ShiftStatus, Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
+import {
+  getShiftDifferenceRows,
+  getShiftDisplayStatus,
+  getShiftIncidentSummary,
+  type ShiftDisplayStatusVariant,
+} from "@/src/features/shifts/shiftDisplay";
+
 type ShiftsState =
   | {
       status: "loading";
@@ -78,23 +85,34 @@ function isValidOptionalIsoDate(value: string): boolean {
   return !Number.isNaN(date.getTime());
 }
 
-function StatusBadge({ status }: { status: ShiftStatus }) {
-  const isOpen = status === "OPEN";
+function StatusBadge({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: ShiftDisplayStatusVariant;
+}) {
+  const isOpen = variant === "open";
+  const isWithIncident = variant === "withIncident";
 
   return (
     <View
       style={[
         styles.statusBadge,
-        isOpen ? styles.statusBadgeOpen : styles.statusBadgeClosed,
+        isOpen && styles.statusBadgeOpen,
+        !isOpen && !isWithIncident && styles.statusBadgeClosed,
+        isWithIncident && styles.statusBadgeWithIncident,
       ]}
     >
       <Text
         style={[
           styles.statusBadgeText,
-          isOpen ? styles.statusBadgeTextOpen : styles.statusBadgeTextClosed,
+          isOpen && styles.statusBadgeTextOpen,
+          !isOpen && !isWithIncident && styles.statusBadgeTextClosed,
+          isWithIncident && styles.statusBadgeTextWithIncident,
         ]}
       >
-        {status}
+        {label}
       </Text>
     </View>
   );
@@ -161,6 +179,9 @@ function StatusSegment({
 }
 
 function ShiftRow({ shift, isLast }: { shift: Shift; isLast: boolean }) {
+  const displayStatus = getShiftDisplayStatus(shift);
+  const differenceRows = getShiftDifferenceRows(shift);
+  const incidentSummary = getShiftIncidentSummary(shift);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -172,7 +193,10 @@ function ShiftRow({ shift, isLast }: { shift: Shift; isLast: boolean }) {
     >
       <View style={styles.shiftMain}>
         <View style={styles.shiftTitleRow}>
-          <StatusBadge status={shift.status} />
+          <StatusBadge
+            label={displayStatus.label}
+            variant={displayStatus.variant}
+          />
           <Text style={styles.shiftStaff}>{shift.staffName}</Text>
         </View>
 
@@ -189,6 +213,20 @@ function ShiftRow({ shift, isLast }: { shift: Shift; isLast: boolean }) {
             </Text>
           ) : null}
         </View>
+
+        {differenceRows.length > 0 ? (
+        <View style={styles.shiftDifferenceBlock}>
+          {differenceRows.map((row) => (
+            <Text key={row.label} style={styles.shiftDifferenceText}>
+              {row.label}: {row.value}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      {incidentSummary ? (
+        <Text style={styles.shiftIncidentSummary}>{incidentSummary}</Text>
+      ) : null}
       </View>
 
       <View style={styles.viewGroup}>
@@ -734,6 +772,13 @@ const styles = StyleSheet.create({
   statusSegmentTextActive: {
     color: colors.primary,
   },
+  statusBadgeWithIncident: {
+    backgroundColor: colors.warningSoft,
+    borderColor: colors.warning,
+  },
+  statusBadgeTextWithIncident: {
+    color: colors.warning,
+  },
   dateRow: {
     flexDirection: "row",
     gap: 12,
@@ -833,6 +878,21 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSubtle,
     lineHeight: 17,
+  },
+  shiftDifferenceBlock: {
+    gap: 4,
+    marginTop: 8,
+  },
+  shiftDifferenceText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.warning,
+  },
+  shiftIncidentSummary: {
+    marginTop: 6,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
   statusBadge: {
     borderRadius: radius.pill,

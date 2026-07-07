@@ -77,8 +77,10 @@ public class ShiftController {
                 .getAuthority();
         Role authenticatedRole = Role.valueOf(authority.replace("ROLE_", ""));
 
-        ShiftResponse response = ShiftResponse.fromEntity(
-                shiftService.getById(id, authenticatedUserId, authenticatedRole)
+        ShiftResponse response = shiftService.getShiftResponse(
+                id,
+                authenticatedUserId,
+                authenticatedRole
         );
 
         return ApiResponse.ok("Shift retrieved successfully", response);
@@ -103,11 +105,15 @@ public class ShiftController {
 
         Role authenticatedRole = Role.valueOf(authority.replace("ROLE_", ""));
 
-        List<ShiftResponse> response = shiftService
-                .listShifts(authenticatedUserId, authenticatedRole, storeId, staffId, status, from, to)
-                .stream()
-                .map(ShiftResponse::fromEntity)
-                .toList();
+        List<ShiftResponse> response = shiftService.listShiftResponses(
+                authenticatedUserId,
+                authenticatedRole,
+                storeId,
+                staffId,
+                status,
+                from,
+                to
+        );
 
         return ApiResponse.ok("Shifts retrieved successfully", response);
     }

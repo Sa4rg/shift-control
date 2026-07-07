@@ -27,6 +27,13 @@ import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
 import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
+import {
+  getShiftDifferenceRows,
+  getShiftDisplayStatus,
+  getShiftIncidentSummary,
+  type ShiftDisplayStatusVariant,
+} from "@/src/features/shifts/shiftDisplay";
+
 type AdminShiftDetailState =
   | {
       status: "loading";
@@ -83,25 +90,34 @@ function DetailRow({
   );
 }
 
-function ShiftStatusPill({ status }: { status: ShiftStatus }) {
-  const isClosed = status === "CLOSED";
+function ShiftStatusPill({
+  label,
+  variant,
+}: {
+  label: string;
+  variant: ShiftDisplayStatusVariant;
+}) {
+  const isOpen = variant === "open";
+  const isWithIncident = variant === "withIncident";
 
   return (
     <View
       style={[
         styles.shiftStatusPill,
-        isClosed ? styles.shiftStatusPillClosed : styles.shiftStatusPillOpen,
+        isOpen && styles.shiftStatusPillOpen,
+        !isOpen && !isWithIncident && styles.shiftStatusPillClosed,
+        isWithIncident && styles.shiftStatusPillWithIncident,
       ]}
     >
       <Text
         style={[
           styles.shiftStatusPillText,
-          isClosed
-            ? styles.shiftStatusPillTextClosed
-            : styles.shiftStatusPillTextOpen,
+          isOpen && styles.shiftStatusPillTextOpen,
+          !isOpen && !isWithIncident && styles.shiftStatusPillTextClosed,
+          isWithIncident && styles.shiftStatusPillTextWithIncident,
         ]}
       >
-        {isClosed ? "Shift Closed" : "Shift Open"}
+        {label}
       </Text>
     </View>
   );
@@ -307,6 +323,10 @@ export default function AdminShiftDetailScreen() {
   const visibleSales = sales.slice(0, 3);
   const hasHiddenSales = sales.length > visibleSales.length;
 
+  const displayStatus = getShiftDisplayStatus(shift);
+  const differenceRows = getShiftDifferenceRows(shift);
+  const incidentSummary = getShiftIncidentSummary(shift);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       {appBar}
@@ -317,8 +337,26 @@ export default function AdminShiftDetailScreen() {
       >
         <View style={styles.shiftHeader}>
           <Text style={styles.shiftId}>Shift ID: {formatShortId(shift.id)}</Text>
-          <ShiftStatusPill status={shift.status} />
+
+          <ShiftStatusPill
+            label={displayStatus.label}
+            variant={displayStatus.variant}
+          />
         </View>
+
+        {differenceRows.length > 0 || incidentSummary ? (
+          <View style={styles.incidentSummaryCard}>
+            {differenceRows.map((row) => (
+              <Text key={row.label} style={styles.incidentSummaryText}>
+                {row.label}: {row.value}
+              </Text>
+            ))}
+
+            {incidentSummary ? (
+              <Text style={styles.incidentSummaryCount}>{incidentSummary}</Text>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.card}>
           <View style={styles.cardHeader}>
@@ -601,6 +639,13 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   shiftStatusPillTextOpen: {
+    color: colors.warning,
+  },
+  shiftStatusPillWithIncident: {
+    backgroundColor: colors.warningSoft,
+    borderColor: colors.warning,
+  },
+  shiftStatusPillTextWithIncident: {
     color: colors.warning,
   },
   card: {
@@ -907,5 +952,23 @@ const styles = StyleSheet.create({
   },
   buttonPressed: {
     opacity: 0.72,
+  },
+  incidentSummaryCard: {
+    backgroundColor: colors.warningSoft,
+    borderColor: colors.warning,
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: 12,
+    gap: 6,
+  },
+  incidentSummaryText: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.warning,
+  },
+  incidentSummaryCount: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
   },
 });

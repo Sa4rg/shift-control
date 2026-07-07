@@ -18,6 +18,8 @@ public interface ShiftClosureRepository extends JpaRepository<ShiftClosure, UUID
 
     Optional<ShiftClosure> findByShift(Shift shift);
 
+    List<ShiftClosure> findByShift_IdIn(List<UUID> shiftIds);
+
     @EntityGraph(attributePaths = {
             "shift",
             "shift.staff",

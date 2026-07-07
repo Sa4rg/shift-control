@@ -4,6 +4,7 @@ import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
 import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
 import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.User;
@@ -244,6 +245,7 @@ class IncidentListFiltersIntegrationTest extends IntegrationTestBase {
         incident.setType(IncidentType.OPERATIONAL_NOTE);
         incident.setStatus(IncidentStatus.OPEN);
         incident.setSeverity(IncidentSeverity.LOW);
+        incident.setSource(IncidentSource.MANUAL);
         incident.setTitle("Filter test incident");
         incident.setDescription("Incident for filter tests.");
         incident.setResolutionNote(null);

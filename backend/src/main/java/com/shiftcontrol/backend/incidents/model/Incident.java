@@ -60,6 +60,10 @@ public class Incident {
     @Column(name = "severity", nullable = false, length = 30)
     private IncidentSeverity severity;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 30)
+    private IncidentSource source;
+
     @Column(name = "title", nullable = false, length = 160)
     private String title;
 
@@ -147,6 +151,14 @@ public class Incident {
 
     public void setSeverity(IncidentSeverity severity) {
         this.severity = severity;
+    }
+
+    public IncidentSource getSource() {
+        return source;
+    }
+
+    public void setSource(IncidentSource source) {
+        this.source = source;
     }
 
     public String getTitle() {

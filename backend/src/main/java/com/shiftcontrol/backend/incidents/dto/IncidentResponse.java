@@ -4,6 +4,7 @@ import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
 import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -24,6 +25,7 @@ public record IncidentResponse(
         IncidentType type,
         IncidentStatus status,
         IncidentSeverity severity,
+        IncidentSource source,
 
         String title,
         String description,
@@ -50,6 +52,7 @@ public record IncidentResponse(
                 incident.getType(),
                 incident.getStatus(),
                 incident.getSeverity(),
+                incident.getSource(),
 
                 incident.getTitle(),
                 incident.getDescription(),

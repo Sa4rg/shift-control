@@ -15,6 +15,11 @@ import java.util.UUID;
 
 public interface IncidentRepository extends JpaRepository<Incident, UUID> {
 
+    interface ShiftIncidentCount {
+        UUID getShiftId();
+        long getIncidentCount();
+    }
+
     @EntityGraph(attributePaths = {
             "shift",
             "closure",
@@ -206,5 +211,75 @@ public interface IncidentRepository extends JpaRepository<Incident, UUID> {
             @Param("shiftId") UUID shiftId,
             @Param("closureId") UUID closureId,
             @Param("saleId") UUID saleId
+    );
+
+    @Query("""
+        SELECT COUNT(DISTINCT i) FROM Incident i
+        LEFT JOIN i.shift directShift
+        LEFT JOIN i.closure closure
+        LEFT JOIN closure.shift closureShift
+        LEFT JOIN i.sale sale
+        LEFT JOIN sale.shift saleShift
+        WHERE directShift.id = :shiftId
+        OR closureShift.id = :shiftId
+        OR saleShift.id = :shiftId
+        """)
+        long countByShiftContext(@Param("shiftId") UUID shiftId);
+
+    @Query("""
+        SELECT COUNT(DISTINCT i) FROM Incident i
+        LEFT JOIN i.shift directShift
+        LEFT JOIN i.closure closure
+        LEFT JOIN closure.shift closureShift
+        LEFT JOIN i.sale sale
+        LEFT JOIN sale.shift saleShift
+        WHERE i.status = :status
+        AND (
+                directShift.id = :shiftId
+                OR closureShift.id = :shiftId
+                OR saleShift.id = :shiftId
+        )
+        """)
+        long countByShiftContextAndStatus(
+                @Param("shiftId") UUID shiftId,
+                @Param("status") IncidentStatus status
+        );
+
+    @Query("""
+        SELECT COALESCE(directShift.id, closureShift.id, saleShift.id) AS shiftId,
+               COUNT(DISTINCT i) AS incidentCount
+        FROM Incident i
+        LEFT JOIN i.shift directShift
+        LEFT JOIN i.closure closure
+        LEFT JOIN closure.shift closureShift
+        LEFT JOIN i.sale sale
+        LEFT JOIN sale.shift saleShift
+        WHERE directShift.id IN :shiftIds
+        OR closureShift.id IN :shiftIds
+        OR saleShift.id IN :shiftIds
+        GROUP BY COALESCE(directShift.id, closureShift.id, saleShift.id)
+        """)
+    List<ShiftIncidentCount> countByShiftContextIn(@Param("shiftIds") List<UUID> shiftIds);
+
+    @Query("""
+        SELECT COALESCE(directShift.id, closureShift.id, saleShift.id) AS shiftId,
+               COUNT(DISTINCT i) AS incidentCount
+        FROM Incident i
+        LEFT JOIN i.shift directShift
+        LEFT JOIN i.closure closure
+        LEFT JOIN closure.shift closureShift
+        LEFT JOIN i.sale sale
+        LEFT JOIN sale.shift saleShift
+        WHERE i.status = :status
+        AND (
+                directShift.id IN :shiftIds
+                OR closureShift.id IN :shiftIds
+                OR saleShift.id IN :shiftIds
+        )
+        GROUP BY COALESCE(directShift.id, closureShift.id, saleShift.id)
+        """)
+    List<ShiftIncidentCount> countByShiftContextAndStatusIn(
+            @Param("shiftIds") List<UUID> shiftIds,
+            @Param("status") IncidentStatus status
     );
 }

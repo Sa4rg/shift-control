@@ -14,6 +14,7 @@ import com.shiftcontrol.backend.shared.exception.BusinessException;
 import com.shiftcontrol.backend.shared.exception.NotFoundException;
 import com.shiftcontrol.backend.shifts.dto.ShiftClosePreviewResponse;
 import com.shiftcontrol.backend.shifts.dto.OpenShiftRequest;
+import com.shiftcontrol.backend.shifts.dto.ShiftResponse;
 import com.shiftcontrol.backend.shifts.model.Shift;
 import com.shiftcontrol.backend.shifts.model.ShiftStatus;
 import com.shiftcontrol.backend.shifts.model.ShiftType;
@@ -22,11 +23,21 @@ import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
 import com.shiftcontrol.backend.users.repository.UserRepository;
+
+import com.shiftcontrol.backend.incidents.model.Incident;
+import com.shiftcontrol.backend.incidents.model.IncidentSeverity;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
+import com.shiftcontrol.backend.incidents.model.IncidentStatus;
+import com.shiftcontrol.backend.incidents.model.IncidentType;
+import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
+
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -39,6 +50,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class ShiftServiceTest {
@@ -54,6 +66,9 @@ class ShiftServiceTest {
 
     @Mock
     private SaleRepository saleRepository;
+
+    @Mock
+    private IncidentRepository incidentRepository;
 
     @InjectMocks
     private ShiftService shiftService;
@@ -170,6 +185,20 @@ class ShiftServiceTest {
                 note,
                 "MEO-TEST"
         );
+    }
+
+    private IncidentRepository.ShiftIncidentCount shiftIncidentCount(UUID shiftId, long incidentCount) {
+        return new IncidentRepository.ShiftIncidentCount() {
+            @Override
+            public UUID getShiftId() {
+                return shiftId;
+            }
+
+            @Override
+            public long getIncidentCount() {
+                return incidentCount;
+            }
+        };
     }
 
     // -------------------------------------------------------------------------
@@ -431,6 +460,209 @@ class ShiftServiceTest {
         verify(shiftRepository).findAll(any(org.springframework.data.jpa.domain.Specification.class));
     }
 
+    @Test
+        void should_return_response_for_open_shift_without_closure_information() {
+        // Arrange
+        UUID adminId = UUID.randomUUID();
+        UUID shiftId = UUID.randomUUID();
+
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+
+        Shift shift = openShift(staff, store);
+        ReflectionTestUtils.setField(shift, "id", shiftId);
+
+        List<Shift> shifts = List.of(shift);
+
+        when(shiftRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class)
+        )).thenReturn(shifts);
+
+        when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
+                .thenReturn(shifts);
+
+        // Act
+        List<ShiftResponse> responses = shiftService.listShiftResponses(
+                adminId,
+                Role.ADMIN,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Assert
+        assertThat(responses)
+                .hasSize(1);
+
+        ShiftResponse response = responses.getFirst();
+
+        assertThat(response.id())
+                .isEqualTo(shiftId);
+        assertThat(response.staffId())
+                .isEqualTo(staff.getId());
+        assertThat(response.staffName())
+                .isEqualTo(staff.getFullName());
+        assertThat(response.storeName())
+                .isEqualTo(store.getName());
+        assertThat(response.status())
+                .isEqualTo(ShiftStatus.OPEN);
+
+        assertThat(response.closureStatus())
+                .isNull();
+        assertThat(response.cashDifference())
+                .isNull();
+        assertThat(response.mbDifference())
+                .isNull();
+        assertThat(response.openIncidentCount())
+                .isZero();
+        assertThat(response.totalIncidentCount())
+                .isZero();
+        }
+
+
+    @Test
+        void should_return_response_for_closed_ok_shift_with_closure_information() {
+        // Arrange
+        UUID adminId = UUID.randomUUID();
+        UUID shiftId = UUID.randomUUID();
+
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+
+        Shift shift = closedShift(staff, store);
+        ReflectionTestUtils.setField(shift, "id", shiftId);
+
+        ShiftClosure closure = new ShiftClosure();
+        closure.setShift(shift);
+        closure.setStatus(ClosureStatus.CLOSED_OK);
+        closure.setCashDifference(new BigDecimal("0.00"));
+        closure.setMbDifference(new BigDecimal("0.00"));
+
+        List<Shift> shifts = List.of(shift);
+
+        when(shiftRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class)
+        )).thenReturn(shifts);
+
+        when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
+                .thenReturn(shifts);
+
+        when(shiftClosureRepository.findByShift_IdIn(List.of(shiftId)))
+                .thenReturn(List.of(closure));
+
+        when(incidentRepository.countByShiftContextAndStatusIn(List.of(shiftId), IncidentStatus.OPEN))
+                .thenReturn(List.of());
+
+        when(incidentRepository.countByShiftContextIn(List.of(shiftId)))
+                .thenReturn(List.of());
+
+        // Act
+        List<ShiftResponse> responses = shiftService.listShiftResponses(
+                adminId,
+                Role.ADMIN,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Assert
+        assertThat(responses)
+                .hasSize(1);
+
+        ShiftResponse response = responses.getFirst();
+
+        assertThat(response.id())
+                .isEqualTo(shiftId);
+        assertThat(response.status())
+                .isEqualTo(ShiftStatus.CLOSED);
+
+        assertThat(response.closureStatus())
+                .isEqualTo(ClosureStatus.CLOSED_OK);
+        assertThat(response.cashDifference())
+                .isEqualByComparingTo("0.00");
+        assertThat(response.mbDifference())
+                .isEqualByComparingTo("0.00");
+        assertThat(response.openIncidentCount())
+                .isZero();
+        assertThat(response.totalIncidentCount())
+                .isZero();
+        }
+
+
+        @Test
+        void should_return_response_for_closed_shift_with_resolved_incident_information() {
+        // Arrange
+        UUID adminId = UUID.randomUUID();
+        UUID shiftId = UUID.randomUUID();
+
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+
+        Shift shift = closedShift(staff, store);
+        ReflectionTestUtils.setField(shift, "id", shiftId);
+
+        ShiftClosure closure = new ShiftClosure();
+        closure.setShift(shift);
+        closure.setStatus(ClosureStatus.CLOSED_WITH_INCIDENT);
+        closure.setCashDifference(new BigDecimal("4.00"));
+        closure.setMbDifference(new BigDecimal("0.00"));
+
+        List<Shift> shifts = List.of(shift);
+
+        when(shiftRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class)
+        )).thenReturn(shifts);
+
+        when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
+                .thenReturn(shifts);
+
+        when(shiftClosureRepository.findByShift_IdIn(List.of(shiftId)))
+                .thenReturn(List.of(closure));
+
+        when(incidentRepository.countByShiftContextAndStatusIn(List.of(shiftId), IncidentStatus.OPEN))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 0L)));
+
+        when(incidentRepository.countByShiftContextIn(List.of(shiftId)))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 1L)));
+
+        // Act
+        List<ShiftResponse> responses = shiftService.listShiftResponses(
+                adminId,
+                Role.ADMIN,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Assert
+        assertThat(responses)
+                .hasSize(1);
+
+        ShiftResponse response = responses.getFirst();
+
+        assertThat(response.id())
+                .isEqualTo(shiftId);
+        assertThat(response.status())
+                .isEqualTo(ShiftStatus.CLOSED);
+
+        assertThat(response.closureStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(response.cashDifference())
+                .isEqualByComparingTo("4.00");
+        assertThat(response.mbDifference())
+                .isEqualByComparingTo("0.00");
+        assertThat(response.openIncidentCount())
+                .isZero();
+        assertThat(response.totalIncidentCount())
+                .isEqualTo(1);
+        }
+
     // -------------------------------------------------------------------------
     // closeShift tests
     // -------------------------------------------------------------------------
@@ -475,6 +707,9 @@ class ShiftServiceTest {
         assertThat(closure.getConfirmedMbAmount()).isEqualByComparingTo("25.00");
         assertThat(closure.getCashDifference()).isEqualByComparingTo("0.00");
         assertThat(closure.getMbDifference()).isEqualByComparingTo("0.00");
+
+        verify(incidentRepository, never()).save(any(Incident.class));
+
         assertThat(closure.getStatus()).isEqualTo(ClosureStatus.CLOSED_OK);
         assertThat(closure.getNote()).isEqualTo("End of day ok");
         assertThat(closure.getCreatedAt()).isNotNull();
@@ -485,6 +720,76 @@ class ShiftServiceTest {
         assertThat(shift.getUpdatedAt()).isNotNull();
         verify(shiftClosureRepository).save(any(ShiftClosure.class));
     }
+
+    @Test
+        void should_return_response_for_closed_shift_with_incident_information() {
+        // Arrange
+        UUID adminId = UUID.randomUUID();
+        UUID shiftId = UUID.randomUUID();
+
+        Store store = activeStore();
+        User staff = activeStaffWithStore(store);
+
+        Shift shift = closedShift(staff, store);
+        ReflectionTestUtils.setField(shift, "id", shiftId);
+
+        ShiftClosure closure = new ShiftClosure();
+        closure.setShift(shift);
+        closure.setStatus(ClosureStatus.CLOSED_WITH_INCIDENT);
+        closure.setCashDifference(new BigDecimal("4.00"));
+        closure.setMbDifference(new BigDecimal("-3.50"));
+
+        List<Shift> shifts = List.of(shift);
+
+        when(shiftRepository.findAll(
+                any(org.springframework.data.jpa.domain.Specification.class)
+        )).thenReturn(shifts);
+
+        when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
+                .thenReturn(shifts);
+
+        when(shiftClosureRepository.findByShift_IdIn(List.of(shiftId)))
+                .thenReturn(List.of(closure));
+
+        when(incidentRepository.countByShiftContextAndStatusIn(List.of(shiftId), IncidentStatus.OPEN))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 2L)));
+
+        when(incidentRepository.countByShiftContextIn(List.of(shiftId)))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 2L)));
+
+        // Act
+        List<ShiftResponse> responses = shiftService.listShiftResponses(
+                adminId,
+                Role.ADMIN,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        // Assert
+        assertThat(responses)
+                .hasSize(1);
+
+        ShiftResponse response = responses.getFirst();
+
+        assertThat(response.id())
+                .isEqualTo(shiftId);
+        assertThat(response.status())
+                .isEqualTo(ShiftStatus.CLOSED);
+
+        assertThat(response.closureStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(response.cashDifference())
+                .isEqualByComparingTo("4.00");
+        assertThat(response.mbDifference())
+                .isEqualByComparingTo("-3.50");
+        assertThat(response.openIncidentCount())
+                .isEqualTo(2);
+        assertThat(response.totalIncidentCount())
+                .isEqualTo(2);
+        }
 
     @Test
     void should_close_shift_with_status_closed_with_incident_when_cash_or_mb_difference_exists() {
@@ -643,6 +948,7 @@ class ShiftServiceTest {
                 .hasMessage("Shift is already closed");
 
         verify(shiftClosureRepository, never()).save(any(ShiftClosure.class));
+        verify(incidentRepository, never()).save(any(Incident.class));
     }
 
     @Test
@@ -666,6 +972,7 @@ class ShiftServiceTest {
                 .hasMessage("Shift closure already exists");
 
         verify(shiftClosureRepository, never()).save(any(ShiftClosure.class));
+        verify(incidentRepository, never()).save(any(Incident.class));
     }
 
     @Test
@@ -759,6 +1066,454 @@ class ShiftServiceTest {
                 .save(any(ShiftClosure.class));
 
         assertThat(shift.getStatus()).isEqualTo(ShiftStatus.OPEN);
+    }
+
+    @Test
+    void should_create_automatic_cash_difference_incident_when_cash_difference_exists() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShift(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        List<Sale> activeSales = List.of(
+                saleWithPayment(
+                        new BigDecimal("40.00"),
+                        InvoiceStatus.INVOICED,
+                        PaymentMethod.CASH,
+                        new BigDecimal("40.00")
+                )
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId))
+                .thenReturn(Optional.of(shift));
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+        when(shiftClosureRepository.existsByShift(shift))
+                .thenReturn(false);
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE))
+                .thenReturn(activeSales);
+        when(shiftClosureRepository.save(any(ShiftClosure.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // expectedPhysicalCash = 103.00 base + 40.00 cash sales = 143.00
+        // confirmedCash = 147.00
+        // cashDifference = +4.00
+        CloseShiftRequest request = closeShiftRequest("147.00", "0.00", null);
+
+        // Act
+        ShiftClosure closure = shiftService.closeShift(shiftId, staffId, request);
+
+        // Assert
+        assertThat(closure.getStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(closure.getCashDifference())
+                .isEqualByComparingTo("4.00");
+        assertThat(closure.getMbDifference())
+                .isEqualByComparingTo("0.00");
+
+        ArgumentCaptor<Incident> incidentCaptor =
+                ArgumentCaptor.forClass(Incident.class);
+
+        verify(incidentRepository).save(incidentCaptor.capture());
+
+        Incident incident = incidentCaptor.getValue();
+
+        assertThat(incident.getType())
+                .isEqualTo(IncidentType.CASH_DIFFERENCE);
+        assertThat(incident.getStatus())
+                .isEqualTo(IncidentStatus.OPEN);
+        assertThat(incident.getSeverity())
+                .isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(incident.getSource())
+                .isEqualTo(IncidentSource.AUTOMATIC_CLOSURE);
+        assertThat(incident.getShift())
+                .isSameAs(shift);
+        assertThat(incident.getClosure())
+                .isSameAs(closure);
+        assertThat(incident.getSale())
+                .isNull();
+        assertThat(incident.getReportedBy())
+                .isSameAs(staff);
+        assertThat(incident.getResolvedBy())
+                .isNull();
+        assertThat(incident.getResolvedAt())
+                .isNull();
+        assertThat(incident.getResolutionNote())
+                .isNull();
+        assertThat(incident.getTitle())
+                .isEqualTo("Cash difference detected");
+        assertThat(incident.getDescription())
+                .isEqualTo("Shift closure recorded a cash difference of +€4.00.");
+        assertThat(incident.getCreatedAt())
+                .isNotNull();
+        assertThat(incident.getUpdatedAt())
+                .isNotNull();
+    }
+
+    @Test
+    void should_create_automatic_mb_difference_incident_when_mb_difference_exists() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShift(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        List<Sale> activeSales = List.of(
+                saleWithPayment(
+                        new BigDecimal("25.00"),
+                        InvoiceStatus.INVOICED,
+                        PaymentMethod.MB,
+                        new BigDecimal("25.00")
+                )
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId))
+                .thenReturn(Optional.of(shift));
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+        when(shiftClosureRepository.existsByShift(shift))
+                .thenReturn(false);
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE))
+                .thenReturn(activeSales);
+        when(shiftClosureRepository.save(any(ShiftClosure.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // expectedPhysicalCash = 103.00 base + 0.00 cash sales = 103.00
+        // confirmedCash = 103.00
+        // cashDifference = 0.00
+        //
+        // expected MB = 25.00
+        // confirmed MB = 21.50
+        // mbDifference = -3.50
+        CloseShiftRequest request = closeShiftRequest("103.00", "21.50", null);
+
+        // Act
+        ShiftClosure closure = shiftService.closeShift(shiftId, staffId, request);
+
+        // Assert
+        assertThat(closure.getStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(closure.getCashDifference())
+                .isEqualByComparingTo("0.00");
+        assertThat(closure.getMbDifference())
+                .isEqualByComparingTo("-3.50");
+
+        ArgumentCaptor<Incident> incidentCaptor =
+                ArgumentCaptor.forClass(Incident.class);
+
+        verify(incidentRepository).save(incidentCaptor.capture());
+
+        Incident incident = incidentCaptor.getValue();
+
+        assertThat(incident.getType())
+                .isEqualTo(IncidentType.MB_DIFFERENCE);
+        assertThat(incident.getStatus())
+                .isEqualTo(IncidentStatus.OPEN);
+        assertThat(incident.getSeverity())
+                .isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(incident.getSource())
+                .isEqualTo(IncidentSource.AUTOMATIC_CLOSURE);
+        assertThat(incident.getShift())
+                .isSameAs(shift);
+        assertThat(incident.getClosure())
+                .isSameAs(closure);
+        assertThat(incident.getSale())
+                .isNull();
+        assertThat(incident.getReportedBy())
+                .isSameAs(staff);
+        assertThat(incident.getResolvedBy())
+                .isNull();
+        assertThat(incident.getResolvedAt())
+                .isNull();
+        assertThat(incident.getResolutionNote())
+                .isNull();
+        assertThat(incident.getTitle())
+                .isEqualTo("MB difference detected");
+        assertThat(incident.getDescription())
+                .isEqualTo("Shift closure recorded an MB difference of -€3.50.");
+        assertThat(incident.getCreatedAt())
+                .isNotNull();
+        assertThat(incident.getUpdatedAt())
+                .isNotNull();
+    }
+
+    @Test
+    void should_create_two_automatic_incidents_when_cash_and_mb_differences_exist() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShift(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        List<Sale> activeSales = List.of(
+                saleWithPayment(
+                        new BigDecimal("40.00"),
+                        InvoiceStatus.INVOICED,
+                        PaymentMethod.CASH,
+                        new BigDecimal("40.00")
+                ),
+                saleWithPayment(
+                        new BigDecimal("25.00"),
+                        InvoiceStatus.INVOICED,
+                        PaymentMethod.MB,
+                        new BigDecimal("25.00")
+                )
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId))
+                .thenReturn(Optional.of(shift));
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+        when(shiftClosureRepository.existsByShift(shift))
+                .thenReturn(false);
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE))
+                .thenReturn(activeSales);
+        when(shiftClosureRepository.save(any(ShiftClosure.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // expectedPhysicalCash = 103.00 base + 40.00 cash sales = 143.00
+        // confirmedCash = 147.00
+        // cashDifference = +4.00
+        //
+        // expected MB = 25.00
+        // confirmed MB = 21.50
+        // mbDifference = -3.50
+        CloseShiftRequest request = closeShiftRequest("147.00", "21.50", null);
+
+        // Act
+        ShiftClosure closure = shiftService.closeShift(shiftId, staffId, request);
+
+        // Assert
+        assertThat(closure.getStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(closure.getCashDifference())
+                .isEqualByComparingTo("4.00");
+        assertThat(closure.getMbDifference())
+                .isEqualByComparingTo("-3.50");
+
+        ArgumentCaptor<Incident> incidentCaptor =
+                ArgumentCaptor.forClass(Incident.class);
+
+        verify(incidentRepository, times(2))
+                .save(incidentCaptor.capture());
+
+        List<Incident> incidents = incidentCaptor.getAllValues();
+
+        assertThat(incidents)
+                .hasSize(2);
+
+        assertThat(incidents)
+                .extracting(Incident::getType)
+                .containsExactly(
+                        IncidentType.CASH_DIFFERENCE,
+                        IncidentType.MB_DIFFERENCE
+                );
+
+        Incident cashIncident = incidents.get(0);
+        assertThat(cashIncident.getSource())
+                .isEqualTo(IncidentSource.AUTOMATIC_CLOSURE);
+        assertThat(cashIncident.getStatus())
+                .isEqualTo(IncidentStatus.OPEN);
+        assertThat(cashIncident.getSeverity())
+                .isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(cashIncident.getShift())
+                .isSameAs(shift);
+        assertThat(cashIncident.getClosure())
+                .isSameAs(closure);
+        assertThat(cashIncident.getSale())
+                .isNull();
+        assertThat(cashIncident.getReportedBy())
+                .isSameAs(staff);
+        assertThat(cashIncident.getDescription())
+                .isEqualTo("Shift closure recorded a cash difference of +€4.00.");
+
+        Incident mbIncident = incidents.get(1);
+        assertThat(mbIncident.getSource())
+                .isEqualTo(IncidentSource.AUTOMATIC_CLOSURE);
+        assertThat(mbIncident.getStatus())
+                .isEqualTo(IncidentStatus.OPEN);
+        assertThat(mbIncident.getSeverity())
+                .isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(mbIncident.getShift())
+                .isSameAs(shift);
+        assertThat(mbIncident.getClosure())
+                .isSameAs(closure);
+        assertThat(mbIncident.getSale())
+                .isNull();
+        assertThat(mbIncident.getReportedBy())
+                .isSameAs(staff);
+        assertThat(mbIncident.getDescription())
+                .isEqualTo("Shift closure recorded an MB difference of -€3.50.");
+    }
+
+    @Test
+    void should_create_automatic_cash_difference_incident_when_cash_difference_is_negative() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShift(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        List<Sale> activeSales = List.of(
+                saleWithPayment(
+                        new BigDecimal("40.00"),
+                        InvoiceStatus.INVOICED,
+                        PaymentMethod.CASH,
+                        new BigDecimal("40.00")
+                )
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId))
+                .thenReturn(Optional.of(shift));
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+        when(shiftClosureRepository.existsByShift(shift))
+                .thenReturn(false);
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE))
+                .thenReturn(activeSales);
+        when(shiftClosureRepository.save(any(ShiftClosure.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // expectedPhysicalCash = 103.00 base + 40.00 cash sales = 143.00
+        // confirmedCash = 139.00
+        // cashDifference = -4.00
+        CloseShiftRequest request = closeShiftRequest("139.00", "0.00", null);
+
+        // Act
+        ShiftClosure closure = shiftService.closeShift(shiftId, staffId, request);
+
+        // Assert
+        assertThat(closure.getStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(closure.getCashDifference())
+                .isEqualByComparingTo("-4.00");
+        assertThat(closure.getMbDifference())
+                .isEqualByComparingTo("0.00");
+
+        ArgumentCaptor<Incident> incidentCaptor =
+                ArgumentCaptor.forClass(Incident.class);
+
+        verify(incidentRepository).save(incidentCaptor.capture());
+
+        Incident incident = incidentCaptor.getValue();
+
+        assertThat(incident.getType())
+                .isEqualTo(IncidentType.CASH_DIFFERENCE);
+        assertThat(incident.getStatus())
+                .isEqualTo(IncidentStatus.OPEN);
+        assertThat(incident.getSeverity())
+                .isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(incident.getSource())
+                .isEqualTo(IncidentSource.AUTOMATIC_CLOSURE);
+        assertThat(incident.getShift())
+                .isSameAs(shift);
+        assertThat(incident.getClosure())
+                .isSameAs(closure);
+        assertThat(incident.getSale())
+                .isNull();
+        assertThat(incident.getReportedBy())
+                .isSameAs(staff);
+        assertThat(incident.getTitle())
+                .isEqualTo("Cash difference detected");
+        assertThat(incident.getDescription())
+                .isEqualTo("Shift closure recorded a cash difference of -€4.00.");
+        assertThat(incident.getCreatedAt())
+                .isNotNull();
+        assertThat(incident.getUpdatedAt())
+                .isNotNull();
+    }
+
+    @Test
+    void should_create_automatic_cash_difference_incident_when_cash_difference_is_one_cent() {
+        // Arrange
+        Store store = activeStoreWithBaseCash("103.00");
+        User staff = activeStaffWithStore(store);
+        UUID staffId = staff.getId();
+        Shift shift = openShift(staff, store);
+        UUID shiftId = UUID.randomUUID();
+
+        List<Sale> activeSales = List.of(
+                saleWithPayment(
+                        new BigDecimal("40.00"),
+                        InvoiceStatus.INVOICED,
+                        PaymentMethod.CASH,
+                        new BigDecimal("40.00")
+                )
+        );
+
+        when(shiftRepository.findByIdWithDetails(shiftId))
+                .thenReturn(Optional.of(shift));
+        when(userRepository.findById(staffId))
+                .thenReturn(Optional.of(staff));
+        when(shiftClosureRepository.existsByShift(shift))
+                .thenReturn(false);
+        when(saleRepository.findByShiftAndStatus(shift, SaleStatus.ACTIVE))
+                .thenReturn(activeSales);
+        when(shiftClosureRepository.save(any(ShiftClosure.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(incidentRepository.save(any(Incident.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // expectedPhysicalCash = 103.00 base + 40.00 cash sales = 143.00
+        // confirmedCash = 143.01
+        // cashDifference = +0.01
+        CloseShiftRequest request = closeShiftRequest("143.01", "0.00", null);
+
+        // Act
+        ShiftClosure closure = shiftService.closeShift(shiftId, staffId, request);
+
+        // Assert
+        assertThat(closure.getStatus())
+                .isEqualTo(ClosureStatus.CLOSED_WITH_INCIDENT);
+        assertThat(closure.getCashDifference())
+                .isEqualByComparingTo("0.01");
+        assertThat(closure.getMbDifference())
+                .isEqualByComparingTo("0.00");
+
+        ArgumentCaptor<Incident> incidentCaptor =
+                ArgumentCaptor.forClass(Incident.class);
+
+        verify(incidentRepository).save(incidentCaptor.capture());
+
+        Incident incident = incidentCaptor.getValue();
+
+        assertThat(incident.getType())
+                .isEqualTo(IncidentType.CASH_DIFFERENCE);
+        assertThat(incident.getStatus())
+                .isEqualTo(IncidentStatus.OPEN);
+        assertThat(incident.getSeverity())
+                .isEqualTo(IncidentSeverity.MEDIUM);
+        assertThat(incident.getSource())
+                .isEqualTo(IncidentSource.AUTOMATIC_CLOSURE);
+        assertThat(incident.getShift())
+                .isSameAs(shift);
+        assertThat(incident.getClosure())
+                .isSameAs(closure);
+        assertThat(incident.getSale())
+                .isNull();
+        assertThat(incident.getReportedBy())
+                .isSameAs(staff);
+        assertThat(incident.getTitle())
+                .isEqualTo("Cash difference detected");
+        assertThat(incident.getDescription())
+                .isEqualTo("Shift closure recorded a cash difference of +€0.01.");
+        assertThat(incident.getCreatedAt())
+                .isNotNull();
+        assertThat(incident.getUpdatedAt())
+                .isNotNull();
     }
 
     // -------------------------------------------------------------------------

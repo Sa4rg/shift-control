@@ -6,6 +6,7 @@ import com.shiftcontrol.backend.incidents.dto.CreateIncidentRequest;
 import com.shiftcontrol.backend.incidents.dto.ResolveIncidentRequest;
 import com.shiftcontrol.backend.incidents.model.Incident;
 import com.shiftcontrol.backend.incidents.model.IncidentStatus;
+import com.shiftcontrol.backend.incidents.model.IncidentSource;
 import com.shiftcontrol.backend.incidents.repository.IncidentRepository;
 import com.shiftcontrol.backend.sales.model.Sale;
 import com.shiftcontrol.backend.sales.repository.SaleRepository;
@@ -88,6 +89,7 @@ public class IncidentService {
         incident.setType(request.type());
         incident.setStatus(IncidentStatus.OPEN);
         incident.setSeverity(request.severity());
+        incident.setSource(IncidentSource.MANUAL);
         incident.setTitle(request.title().trim());
         incident.setDescription(request.description().trim());
         incident.setResolutionNote(null);
