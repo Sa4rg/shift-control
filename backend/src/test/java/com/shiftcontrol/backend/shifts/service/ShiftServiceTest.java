@@ -187,6 +187,20 @@ class ShiftServiceTest {
         );
     }
 
+    private IncidentRepository.ShiftIncidentCount shiftIncidentCount(UUID shiftId, long incidentCount) {
+        return new IncidentRepository.ShiftIncidentCount() {
+            @Override
+            public UUID getShiftId() {
+                return shiftId;
+            }
+
+            @Override
+            public long getIncidentCount() {
+                return incidentCount;
+            }
+        };
+    }
+
     // -------------------------------------------------------------------------
     // openShift tests
     // -------------------------------------------------------------------------
@@ -535,8 +549,14 @@ class ShiftServiceTest {
         when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
                 .thenReturn(shifts);
 
-        when(shiftClosureRepository.findByShift(shift))
-                .thenReturn(Optional.of(closure));
+        when(shiftClosureRepository.findByShift_IdIn(List.of(shiftId)))
+                .thenReturn(List.of(closure));
+
+        when(incidentRepository.countByShiftContextAndStatusIn(List.of(shiftId), IncidentStatus.OPEN))
+                .thenReturn(List.of());
+
+        when(incidentRepository.countByShiftContextIn(List.of(shiftId)))
+                .thenReturn(List.of());
 
         // Act
         List<ShiftResponse> responses = shiftService.listShiftResponses(
@@ -600,16 +620,14 @@ class ShiftServiceTest {
         when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
                 .thenReturn(shifts);
 
-        when(shiftClosureRepository.findByShift(shift))
-                .thenReturn(Optional.of(closure));
+        when(shiftClosureRepository.findByShift_IdIn(List.of(shiftId)))
+                .thenReturn(List.of(closure));
 
-        when(incidentRepository.countByShiftContextAndStatus(
-                shiftId,
-                IncidentStatus.OPEN
-        )).thenReturn(0L);
+        when(incidentRepository.countByShiftContextAndStatusIn(List.of(shiftId), IncidentStatus.OPEN))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 0L)));
 
-        when(incidentRepository.countByShiftContext(shiftId))
-                .thenReturn(1L);
+        when(incidentRepository.countByShiftContextIn(List.of(shiftId)))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 1L)));
 
         // Act
         List<ShiftResponse> responses = shiftService.listShiftResponses(
@@ -730,16 +748,14 @@ class ShiftServiceTest {
         when(shiftRepository.findAllWithDetailsByIds(List.of(shiftId)))
                 .thenReturn(shifts);
 
-        when(shiftClosureRepository.findByShift(shift))
-                .thenReturn(Optional.of(closure));
+        when(shiftClosureRepository.findByShift_IdIn(List.of(shiftId)))
+                .thenReturn(List.of(closure));
 
-        when(incidentRepository.countByShiftContextAndStatus(
-                shiftId,
-                IncidentStatus.OPEN
-        )).thenReturn(2L);
+        when(incidentRepository.countByShiftContextAndStatusIn(List.of(shiftId), IncidentStatus.OPEN))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 2L)));
 
-        when(incidentRepository.countByShiftContext(shiftId))
-                .thenReturn(2L);
+        when(incidentRepository.countByShiftContextIn(List.of(shiftId)))
+                .thenReturn(List.of(shiftIncidentCount(shiftId, 2L)));
 
         // Act
         List<ShiftResponse> responses = shiftService.listShiftResponses(

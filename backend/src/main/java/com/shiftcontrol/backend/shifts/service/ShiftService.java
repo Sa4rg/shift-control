@@ -16,10 +16,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import java.math.RoundingMode;
 
@@ -206,7 +209,7 @@ public class ShiftService {
             LocalDate from,
             LocalDate to
     ) {
-        return listShifts(
+        List<Shift> shifts = listShifts(
                 authenticatedUserId,
                 authenticatedRole,
                 storeId,
@@ -214,10 +217,54 @@ public class ShiftService {
                 status,
                 from,
                 to
-        )
-                .stream()
-                .map(this::toShiftResponse)
+        );
+
+        List<UUID> closedShiftIds = shifts.stream()
+                .filter(shift -> shift.getStatus() == ShiftStatus.CLOSED)
+                .map(Shift::getId)
                 .toList();
+
+        Map<UUID, ShiftClosure> closureByShiftId = closedShiftIds.isEmpty()
+                ? Map.of()
+                : shiftClosureRepository.findByShift_IdIn(closedShiftIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                closure -> closure.getShift().getId(),
+                                Function.identity()
+                        ));
+
+        Map<UUID, Long> totalIncidentCountsByShiftId = toIncidentCountMap(
+                closedShiftIds.isEmpty()
+                        ? List.of()
+                        : incidentRepository.countByShiftContextIn(closedShiftIds)
+        );
+
+        Map<UUID, Long> openIncidentCountsByShiftId = toIncidentCountMap(
+                closedShiftIds.isEmpty()
+                        ? List.of()
+                        : incidentRepository.countByShiftContextAndStatusIn(
+                        closedShiftIds,
+                        IncidentStatus.OPEN
+                )
+        );
+
+        return shifts
+                .stream()
+                .map(shift -> toShiftResponse(
+                        shift,
+                        closureByShiftId.get(shift.getId()),
+                        openIncidentCountsByShiftId.getOrDefault(shift.getId(), 0L),
+                        totalIncidentCountsByShiftId.getOrDefault(shift.getId(), 0L)
+                ))
+                .toList();
+    }
+
+    private Map<UUID, Long> toIncidentCountMap(List<IncidentRepository.ShiftIncidentCount> counts) {
+        return counts.stream()
+                .collect(Collectors.toMap(
+                        IncidentRepository.ShiftIncidentCount::getShiftId,
+                        IncidentRepository.ShiftIncidentCount::getIncidentCount
+                ));
     }
 
     private ShiftResponse toShiftResponse(Shift shift) {
@@ -238,6 +285,26 @@ public class ShiftService {
             totalIncidentCount = incidentRepository.countByShiftContext(
                     shift.getId()
             );
+        }
+
+        return ShiftResponse.fromEntity(
+                shift,
+                closure,
+                openIncidentCount,
+                totalIncidentCount
+        );
+    }
+
+    private ShiftResponse toShiftResponse(
+            Shift shift,
+            ShiftClosure closure,
+            long openIncidentCount,
+            long totalIncidentCount
+    ) {
+        if (shift.getStatus() != ShiftStatus.CLOSED) {
+            closure = null;
+            openIncidentCount = 0;
+            totalIncidentCount = 0;
         }
 
         return ShiftResponse.fromEntity(
