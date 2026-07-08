@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from "expo-router";
+﻿import { router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -19,7 +19,7 @@ import {
 import { listCurrentShiftSales } from "@/src/api/sales";
 import { useAuth } from "@/src/auth/AuthContext";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale, ShiftType } from "@/src/types/api";
@@ -43,7 +43,7 @@ type SalesLoadState =
   | { status: "error"; sales: Sale[]; errorMessage: string };
 
 function getPaymentLabel(sale: Sale): string {
-  if (sale.payments.length === 0) return "�";
+  if (sale.payments.length === 0) return "—";
   if (sale.payments.length === 1) return sale.payments[0].method;
   return "SPLIT";
 }
@@ -178,34 +178,34 @@ export default function StaffHomeScreen() {
 
   const displayName = user?.fullName ?? user?.username ?? "Staff";
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="root" />
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Page header */}
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>Staff home</Text>
-          <Text style={commonStyles.pageSubtitle}>Welcome, {displayName}</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Staff home</Text>
+          <Text style={styles.pageSubtitle}>Welcome, {displayName}</Text>
         </View>
 
         {/* Error loading shift */}
         {shiftState.status === "error" ? (
-          <View style={commonStyles.card}>
-            <Text style={commonStyles.cardTitle}>Could not load shift</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Could not load shift</Text>
             <ErrorMessage message={shiftState.errorMessage} />
-            <Pressable style={commonStyles.btnRefresh} onPress={loadCurrentShift}>
-              <Text style={commonStyles.btnRefreshText}>Try again</Text>
+            <Pressable style={styles.refreshBtn} onPress={loadCurrentShift}>
+              <Text style={styles.refreshBtnText}>Try again</Text>
             </Pressable>
           </View>
         ) : null}
 
         {/* No active shift */}
         {hasNoActiveShift ? (
-          <View style={commonStyles.card}>
-            <Text style={commonStyles.cardTitle}>No active shift</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>No active shift</Text>
             <Text style={styles.bodyText}>
               You don&apos;t have an active shift right now. Choose a shift type to
               get started.
@@ -266,10 +266,10 @@ export default function StaffHomeScreen() {
 
         {/* Active shift */}
         {activeShift ? (
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             {/* Card header row */}
             <View style={styles.cardHeaderRow}>
-              <Text style={commonStyles.cardTitle}>Current shift</Text>
+              <Text style={styles.cardTitle}>Current shift</Text>
               <View
                 style={[
                   styles.badge,
@@ -307,7 +307,7 @@ export default function StaffHomeScreen() {
                 <Text style={styles.metricLabel}>Total</Text>
                 <Text style={styles.metricValue}>
                   {salesState.status === "loading"
-                    ? "�"
+                    ? "…"
                     : formatMoney(shiftTotal)}
                 </Text>
               </View>
@@ -386,7 +386,7 @@ export default function StaffHomeScreen() {
             ) : null}
 
             {/* Action buttons */}
-            <View style={commonStyles.actions}>
+            <View style={styles.actions}>
               <Pressable
                 style={styles.btnPrimary}
                 onPress={() => router.push("/(staff)/sales/new-sale")}
@@ -403,7 +403,7 @@ export default function StaffHomeScreen() {
                   })
                 }
               >
-                <Text style={styles.btnSecondaryText}>? Close shift</Text>
+                <Text style={styles.btnSecondaryText}>⊠ Close shift</Text>
               </Pressable>
             </View>
           </View>
@@ -421,10 +421,10 @@ export default function StaffHomeScreen() {
             onPress={() => router.push("/(staff)/history")}
           >
             <View style={styles.quickActionLeft}>
-              <Text style={styles.quickActionIcon}>?</Text>
+              <Text style={styles.quickActionIcon}>□</Text>
               <Text style={styles.quickActionText}>My shifts</Text>
             </View>
-            <Text style={styles.quickActionChevron}>�</Text>
+            <Text style={styles.quickActionChevron}>›</Text>
           </Pressable>
 
           <Pressable
@@ -435,10 +435,10 @@ export default function StaffHomeScreen() {
             onPress={() => router.push("/(staff)/incidents")}
           >
             <View style={styles.quickActionLeft}>
-              <Text style={styles.quickActionIcon}>?</Text>
+              <Text style={styles.quickActionIcon}>△</Text>
               <Text style={styles.quickActionText}>My incidents</Text>
             </View>
-            <Text style={styles.quickActionChevron}>�</Text>
+            <Text style={styles.quickActionChevron}>›</Text>
           </Pressable>
 
           <Pressable
@@ -449,10 +449,10 @@ export default function StaffHomeScreen() {
             onPress={loadCurrentShift}
           >
             <View style={styles.quickActionLeft}>
-              <Text style={styles.quickActionIcon}>?</Text>
+              <Text style={styles.quickActionIcon}>↻</Text>
               <Text style={styles.quickActionText}>Refresh</Text>
             </View>
-            <Text style={styles.quickActionChevron}>�</Text>
+            <Text style={styles.quickActionChevron}>›</Text>
           </Pressable>
 
           <Pressable
@@ -465,14 +465,14 @@ export default function StaffHomeScreen() {
           >
             <View style={styles.quickActionLeft}>
               <Text style={[styles.quickActionIcon, styles.quickActionIconDanger]}>
-                ?
+                ⎋
               </Text>
               <Text style={[styles.quickActionText, styles.quickActionTextDanger]}>
                 Logout
               </Text>
             </View>
             <Text style={[styles.quickActionChevron, styles.quickActionTextDanger]}>
-              �
+              ›
             </Text>
           </Pressable>
         </View>
@@ -482,16 +482,55 @@ export default function StaffHomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  // Scroll
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+    gap: 16,
+  },
+
+  // Page header
+  pageHeader: {
+    gap: 4,
+    marginTop: 8,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+  },
+
+  // Card
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    padding: 16,
+    gap: 16,
+    ...shadows.card,
+  },
   cardHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  bodyText: {
-    fontSize: fontSize.base,
-    color: colors.textMuted,
-    lineHeight: 20,
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
   },
+
   // Badge
   badge: {
     paddingHorizontal: 12,
@@ -515,6 +554,13 @@ const styles = StyleSheet.create({
   badgeTextNight: {
     color: "#001453",
   },
+
+  bodyText: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
+
   // Metrics row
   metricsRow: {
     flexDirection: "row",
@@ -618,12 +664,16 @@ const styles = StyleSheet.create({
   },
 
   // Buttons
+  actions: {
+    gap: 10,
+  },
   btnPrimary: {
     height: 52,
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
+    ...shadows.primaryButton,
   },
   btnPrimaryText: {
     fontSize: fontSize.base,
@@ -688,6 +738,21 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     color: colors.text,
   },
+
+  // Refresh/error button
+  refreshBtn: {
+    alignSelf: "flex-start",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceMuted,
+  },
+  refreshBtnText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+
   // Staff actions card
   quickActionsCard: {
     backgroundColor: colors.surface,
@@ -695,6 +760,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.xl,
     overflow: "hidden",
+    ...shadows.card,
   },
   quickActionsTitle: {
     paddingHorizontal: 16,

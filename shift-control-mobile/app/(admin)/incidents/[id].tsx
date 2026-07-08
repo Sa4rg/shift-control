@@ -23,7 +23,7 @@ import type {
   IncidentStatus,
 } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type IncidentDetailState =
   | {
@@ -111,9 +111,9 @@ function DetailRow({
   }
 
   return (
-    <View style={commonStyles.detailRow}>
-      <Text style={commonStyles.detailLabel}>{label}</Text>
-      <Text style={[commonStyles.detailValue, valueStyle]}>{value}</Text>
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
@@ -235,36 +235,36 @@ export default function AdminIncidentDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         {appBar}
 
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionLabel}>Could not load incident</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Could not load incident</Text>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.outlineButton,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={loadIncident}
               >
-                <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                <Text style={styles.btnOutlineText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.btnBack,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={commonStyles.btnBackText}>← Back</Text>
+                <Text style={styles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -281,7 +281,7 @@ export default function AdminIncidentDetailScreen() {
     !isResolving;
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       {appBar}
 
       <KeyboardAvoidingView
@@ -289,7 +289,7 @@ export default function AdminIncidentDetailScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -310,34 +310,34 @@ export default function AdminIncidentDetailScreen() {
             </Text>
           </View>
 
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Incident detail</Text>
-            <Text style={commonStyles.pageSubtitle}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Incident detail</Text>
+            <Text style={styles.pageSubtitle}>
               INCIDENT ID: {formatShortId(incident.id)}
             </Text>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
               <Text style={styles.incidentTitle}>{incident.title}</Text>
               <Text style={styles.description}>{incident.description}</Text>
             </View>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
               <DetailRow
                 label="Type"
                 value={formatIncidentText(incident.type)}
               />
 
               <View style={styles.detailRowHorizontal}>
-                <Text style={commonStyles.detailLabel}>Severity</Text>
+                <Text style={styles.detailLabel}>Severity</Text>
                 <SeverityBadge severity={incident.severity} />
               </View>
 
               <View style={styles.detailRowHorizontal}>
-                <Text style={commonStyles.detailLabel}>Status</Text>
+                <Text style={styles.detailLabel}>Status</Text>
                 <StatusBadge status={incident.status} />
               </View>
 
@@ -355,9 +355,9 @@ export default function AdminIncidentDetailScreen() {
             </View>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionLabel}>Related context</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Related context</Text>
 
               {incident.shiftId || incident.closureId || incident.saleId ? (
                 <View style={styles.contextList}>
@@ -420,9 +420,9 @@ export default function AdminIncidentDetailScreen() {
             </View>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionLabel}>Resolution note</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Resolution note</Text>
 
               {incident.status === "RESOLVED" ? (
                 <>
@@ -468,14 +468,14 @@ export default function AdminIncidentDetailScreen() {
 
                   <Pressable
                     style={({ pressed }) => [
-                      commonStyles.primaryButton,
-                      !canResolve && commonStyles.buttonDisabled,
-                      pressed && canResolve && commonStyles.buttonPressed,
+                      styles.btnPrimary,
+                      !canResolve && styles.btnDisabled,
+                      pressed && canResolve && styles.buttonPressed,
                     ]}
                     onPress={handleResolveIncident}
                     disabled={!canResolve}
                   >
-                    <Text style={commonStyles.primaryButtonText}>
+                    <Text style={styles.btnPrimaryText}>
                       {isResolving ? "Resolving…" : "✓ Resolve incident"}
                     </Text>
                   </Pressable>
@@ -484,27 +484,27 @@ export default function AdminIncidentDetailScreen() {
             </View>
           </View>
 
-          <View style={commonStyles.actions}>
+          <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [
-                commonStyles.btnRefresh,
-                pressed && commonStyles.buttonPressed,
+                styles.btnRefresh,
+                pressed && styles.buttonPressed,
               ]}
               onPress={loadIncident}
               disabled={isResolving}
             >
-              <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
+              <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
-                commonStyles.btnBack,
-                pressed && commonStyles.buttonPressed,
+                styles.btnBack,
+                pressed && styles.buttonPressed,
               ]}
               onPress={() => router.back()}
               disabled={isResolving}
             >
-              <Text style={commonStyles.btnBackText}>← Back</Text>
+              <Text style={styles.btnBackText}>← Back</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -514,8 +514,17 @@ export default function AdminIncidentDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
   },
   statusBanner: {
     borderWidth: 1,
@@ -538,7 +547,33 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.semibold,
     textTransform: "capitalize",
   },
-
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 14,
+  },
   incidentTitle: {
     fontSize: fontSize.lg,
     fontWeight: fontWeight.semibold,
@@ -549,10 +584,26 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     color: colors.textMuted,
   },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
+    letterSpacing: 0.6,
+  },
   bodyText: {
     fontSize: fontSize.base,
     lineHeight: 20,
     color: colors.textMuted,
+  },
+  detailRow: {
+    minHeight: 34,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   detailRowHorizontal: {
     minHeight: 34,
@@ -563,6 +614,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
+  },
+  detailLabel: {
+    flex: 1,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textMuted,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    textAlign: "right",
   },
   badge: {
     borderRadius: radius.pill,
@@ -625,8 +689,73 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: colors.textMuted,
   },
-
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnDisabled: {
+    backgroundColor: colors.primaryDisabled,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
   rowPressed: {
     backgroundColor: colors.surfaceMuted,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

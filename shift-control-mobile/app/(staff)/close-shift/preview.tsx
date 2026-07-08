@@ -13,7 +13,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { getShiftClosePreview } from "@/src/api/shifts";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { ShiftClosePreview } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
@@ -75,36 +75,36 @@ export default function CloseShiftPreviewScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         <AppTopBar variant="back" />
 
-        <ScrollView contentContainerStyle={commonStyles.scrollContent}>
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Close shift preview</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Close shift preview</Text>
           </View>
 
-          <View style={commonStyles.card}>
-            <Text style={commonStyles.cardTitle}>Could not load preview</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Could not load preview</Text>
             <ErrorMessage message={state.errorMessage} />
 
             <Pressable
               style={({ pressed }) => [
-                commonStyles.primaryButton,
-                pressed && commonStyles.buttonPressed,
+                styles.btnPrimary,
+                pressed && styles.btnPressed,
               ]}
               onPress={loadPreview}
             >
-              <Text style={commonStyles.primaryButtonText}>Try again</Text>
+              <Text style={styles.btnPrimaryText}>Try again</Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
-                commonStyles.btnBack,
-                pressed && commonStyles.buttonPressed,
+                styles.btnBack,
+                pressed && styles.btnPressed,
               ]}
               onPress={() => router.back()}
             >
-              <Text style={commonStyles.btnBackText}>Back</Text>
+              <Text style={styles.btnBackText}>Back</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -115,16 +115,16 @@ export default function CloseShiftPreviewScreen() {
   const preview = state.preview;
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>Close shift preview</Text>
-          <Text style={commonStyles.pageSubtitle}>Review totals before closing.</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Close shift preview</Text>
+          <Text style={styles.pageSubtitle}>Review totals before closing.</Text>
 
           <View style={styles.shiftMeta}>
             <Text style={styles.shiftMetaText}>{preview.staffName}</Text>
@@ -137,12 +137,12 @@ export default function CloseShiftPreviewScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardHeader}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderText}>Sales totals</Text>
           </View>
 
-          <View style={commonStyles.cardBody}>
+          <View style={styles.cardBody}>
             <View style={styles.prominentRow}>
               <Text style={styles.prominentLabel}>Total sales</Text>
               <Text style={styles.prominentValue}>
@@ -198,12 +198,12 @@ export default function CloseShiftPreviewScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardHeader}>
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderText}>Cash calculation</Text>
           </View>
 
-          <View style={commonStyles.cardBody}>
+          <View style={styles.cardBody}>
             <View style={styles.dataRow}>
               <Text style={styles.dataLabel}>Cash payments</Text>
               <Text style={styles.dataValue}>
@@ -256,11 +256,11 @@ export default function CloseShiftPreviewScreen() {
           </Text>
         </View>
 
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [
-              commonStyles.primaryButton,
-              pressed && commonStyles.buttonPressed,
+              styles.btnPrimary,
+              pressed && styles.btnPressed,
             ]}
             onPress={() =>
               router.push({
@@ -274,27 +274,27 @@ export default function CloseShiftPreviewScreen() {
               })
             }
           >
-            <Text style={commonStyles.primaryButtonText}>Proceed to close shift</Text>
+            <Text style={styles.btnPrimaryText}>Proceed to close shift</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              commonStyles.outlineButton,
-              pressed && commonStyles.buttonPressed,
+              styles.btnOutline,
+              pressed && styles.btnPressed,
             ]}
             onPress={loadPreview}
           >
-            <Text style={commonStyles.outlineButtonText}>Refresh preview</Text>
+            <Text style={styles.btnOutlineText}>Refresh preview</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnBack,
-              pressed && commonStyles.buttonPressed,
+              styles.btnBack,
+              pressed && styles.btnPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={commonStyles.btnBackText}>Back</Text>
+            <Text style={styles.btnBackText}>Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -303,6 +303,29 @@ export default function CloseShiftPreviewScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 6,
+    marginBottom: 4,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
   shiftMeta: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -318,12 +341,36 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: "#bcc9c6",
   },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
   cardHeaderText: {
     fontSize: fontSize.sm,
     fontWeight: fontWeight.extrabold,
     color: colors.textMuted,
     letterSpacing: 0.6,
     textTransform: "uppercase",
+  },
+  cardBody: {
+    padding: 16,
+    gap: 14,
+  },
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    padding: 16,
   },
   cardDivider: {
     height: 1,
@@ -429,5 +476,52 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.warning,
     lineHeight: 20,
+  },
+  actions: {
+    gap: 10,
+    marginTop: 4,
+  },
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+    letterSpacing: 0.3,
+  },
+  btnOutline: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  btnBack: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.primary,
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
 });

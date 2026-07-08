@@ -15,11 +15,10 @@ import { deactivateStore, getStoreById } from "@/src/api/stores";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { DetailRow, StatusBadge } from "@/src/components/ui";
 import type { Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type StoreDetailState =
   | {
@@ -37,6 +36,49 @@ type StoreDetailState =
       store: null;
       errorMessage: string;
     };
+
+function DetailRow({
+  label,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  value: string | null;
+  valueStyle?: object;
+}) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    </View>
+  );
+}
+
+function StoreStatusBadge({ active }: { active: boolean }) {
+  return (
+    <View
+      style={[
+        styles.statusBadge,
+        active ? styles.statusBadgeActive : styles.statusBadgeInactive,
+      ]}
+    >
+      <Text
+        style={[
+          styles.statusBadgeText,
+          active
+            ? styles.statusBadgeTextActive
+            : styles.statusBadgeTextInactive,
+        ]}
+      >
+        {active ? "ACTIVE" : "INACTIVE"}
+      </Text>
+    </View>
+  );
+}
 
 export default function AdminStoreDetailScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
@@ -145,43 +187,43 @@ export default function AdminStoreDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         {appBar}
 
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Store detail</Text>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Store detail</Text>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardHeader}>
-              <Text style={commonStyles.cardTitle}>Could not load store</Text>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Could not load store</Text>
             </View>
 
-            <View style={commonStyles.cardBody}>
+            <View style={styles.cardBody}>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.outlineButton,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={loadStore}
               >
-                <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                <Text style={styles.btnOutlineText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.btnBack,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={commonStyles.btnBackText}>← Back</Text>
+                <Text style={styles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -193,16 +235,16 @@ export default function AdminStoreDetailScreen() {
   const store = state.store;
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       {appBar}
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>Store detail</Text>
-          <Text style={commonStyles.pageSubtitle}>ID: {store.id.slice(0, 8)}</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Store detail</Text>
+          <Text style={styles.pageSubtitle}>ID: {store.id.slice(0, 8)}</Text>
         </View>
 
         <View
@@ -234,11 +276,11 @@ export default function AdminStoreDetailScreen() {
           </Text>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardBody}>
+        <View style={styles.card}>
+          <View style={styles.cardBody}>
             <View style={styles.storeTitleRow}>
               <Text style={styles.storeName}>{store.name}</Text>
-              <StatusBadge active={store.active} />
+              <StoreStatusBadge active={store.active} />
             </View>
 
             <DetailRow label="ADDRESS" value={store.address} />
@@ -255,8 +297,8 @@ export default function AdminStoreDetailScreen() {
               valueStyle={styles.primaryValue}
             />
 
-            <View style={commonStyles.detailRow}>
-              <Text style={commonStyles.detailLabel}>STATUS</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>STATUS</Text>
 
               <View style={styles.inlineStatus}>
                 <View
@@ -269,7 +311,7 @@ export default function AdminStoreDetailScreen() {
                 />
                 <Text
                   style={[
-                    commonStyles.detailValue,
+                    styles.detailValue,
                     store.active ? styles.primaryValue : styles.warningValue,
                   ]}
                 >
@@ -281,9 +323,9 @@ export default function AdminStoreDetailScreen() {
         </View>
 
         {!store.active ? (
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionLabel}>Deactivation</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Deactivation</Text>
 
               <DetailRow
                 label="DEACTIVATED BY"
@@ -306,11 +348,11 @@ export default function AdminStoreDetailScreen() {
           </View>
         ) : null}
 
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [
               styles.btnEdit,
-              pressed && commonStyles.buttonPressed,
+              pressed && styles.buttonPressed,
             ]}
             onPress={() =>
               router.push(`/(admin)/stores/${store.id}/edit`)
@@ -321,24 +363,24 @@ export default function AdminStoreDetailScreen() {
           </Pressable>
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnRefresh,
-              pressed && commonStyles.buttonPressed,
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
             ]}
             onPress={loadStore}
             disabled={isDeactivating}
           >
-            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnBack,
-              pressed && commonStyles.buttonPressed,
+              styles.btnBack,
+              pressed && styles.buttonPressed,
             ]}
             onPress={() => router.back()}
             disabled={isDeactivating}
           >
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
 
@@ -347,13 +389,13 @@ export default function AdminStoreDetailScreen() {
             <>
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.dangerButton,
-                  (pressed || isDeactivating) && commonStyles.buttonPressed,
+                  styles.btnDanger,
+                  (pressed || isDeactivating) && styles.buttonPressed,
                 ]}
                 onPress={confirmDeactivateStore}
                 disabled={isDeactivating}
               >
-                <Text style={commonStyles.dangerButtonText}>
+                <Text style={styles.btnDangerText}>
                   {isDeactivating ? "Deactivating…" : "⊘ Deactivate store"}
                 </Text>
               </Pressable>
@@ -374,6 +416,31 @@ export default function AdminStoreDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+  },
   statusBanner: {
     borderRadius: 14,
     borderWidth: 1,
@@ -414,6 +481,29 @@ const styles = StyleSheet.create({
   statusBannerTextInactive: {
     color: colors.warning,
   },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+  },
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 18,
+  },
   storeTitleRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -426,6 +516,31 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.text,
     letterSpacing: -0.2,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  detailRow: {
+    gap: 5,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSoft,
+  },
+  detailLabel: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textSubtle,
+    letterSpacing: 0.8,
+  },
+  detailValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    lineHeight: 21,
   },
   primaryValue: {
     color: colors.primary,
@@ -443,12 +558,38 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 3.5,
   },
+  statusBadge: {
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  statusBadgeActive: {
+    backgroundColor: colors.primaryMuted,
+  },
+  statusBadgeInactive: {
+    backgroundColor: colors.warningSoft,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: fontWeight.semibold,
+    letterSpacing: 0.4,
+  },
+  statusBadgeTextActive: {
+    color: colors.primaryDark,
+  },
+  statusBadgeTextInactive: {
+    color: colors.warning,
+  },
   errorCard: {
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.dangerSoft,
     backgroundColor: "#fff8f7",
     padding: 14,
+  },
+  actions: {
+    gap: 10,
+    paddingTop: 4,
   },
   btnEdit: {
     height: 48,
@@ -462,11 +603,51 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.surface,
   },
+  btnRefresh: {
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
   adminActions: {
     gap: 10,
     paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.borderSoft,
+  },
+  btnDanger: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDangerText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.danger,
   },
   dangerHelpText: {
     fontSize: fontSize.md,
@@ -479,5 +660,22 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
     lineHeight: 20,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

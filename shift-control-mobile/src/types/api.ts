@@ -249,15 +249,6 @@ export type AdminUser = {
   deactivatedAt: string | null;
 };
 
-export type MonthlyWorkHours = {
-  staffId: string;
-  staffName: string;
-  year: number;
-  month: number;
-  totalMinutes: number;
-  closedShiftCount: number;
-};
-
 export type DailyStaffSummary = {
   staffId: string;
   staffName: string;

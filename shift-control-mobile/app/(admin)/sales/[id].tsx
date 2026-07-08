@@ -17,7 +17,7 @@ import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type SaleDetailState =
   | {
@@ -62,9 +62,9 @@ function DetailRow({
   }
 
   return (
-    <View style={commonStyles.detailRow}>
-      <Text style={commonStyles.detailLabel}>{label}</Text>
-      <Text style={[commonStyles.detailValue, valueStyle]}>{value}</Text>
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
@@ -164,38 +164,38 @@ export default function AdminSaleDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Sale detail</Text>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Sale detail</Text>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionTitle}>Could not load sale</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>Could not load sale</Text>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.outlineButton,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={loadSale}
               >
-                <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                <Text style={styles.btnOutlineText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.btnBack,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={commonStyles.btnBackText}>← Back</Text>
+                <Text style={styles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -209,16 +209,16 @@ export default function AdminSaleDetailScreen() {
   const hasDiscount = sale.discountTotalAmount > 0;
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>Sale detail</Text>
-          <Text style={commonStyles.pageSubtitle}>{formatShortId(sale.id)}</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Sale detail</Text>
+          <Text style={styles.pageSubtitle}>{formatShortId(sale.id)}</Text>
         </View>
 
         <View
@@ -258,20 +258,20 @@ export default function AdminSaleDetailScreen() {
           </Text>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardBody}>
-            <Text style={commonStyles.sectionTitle}>Summary</Text>
+        <View style={styles.card}>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Summary</Text>
 
-            <View style={commonStyles.detailRow}>
-              <Text style={commonStyles.detailLabel}>Status</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Status</Text>
               <StatusBadge
                 label={formatLabel(sale.status)}
                 tone={isActive ? "primary" : "danger"}
               />
             </View>
 
-            <View style={commonStyles.detailRow}>
-              <Text style={commonStyles.detailLabel}>Invoice status</Text>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Invoice status</Text>
               <StatusBadge
                 label={formatLabel(sale.invoiceStatus)}
                 tone={sale.invoiceStatus === "INVOICED" ? "primary" : "neutral"}
@@ -304,9 +304,9 @@ export default function AdminSaleDetailScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardBody}>
-            <Text style={commonStyles.sectionTitle}>Totals</Text>
+        <View style={styles.card}>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Totals</Text>
 
             <DetailRow
               label="Subtotal"
@@ -337,9 +337,9 @@ export default function AdminSaleDetailScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardBody}>
-            <Text style={commonStyles.sectionTitle}>Items</Text>
+        <View style={styles.card}>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Items</Text>
 
             {sale.items.length === 0 ? (
               <Text style={styles.bodyText}>No items registered.</Text>
@@ -370,9 +370,9 @@ export default function AdminSaleDetailScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardBody}>
-            <Text style={commonStyles.sectionTitle}>Payments</Text>
+        <View style={styles.card}>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Payments</Text>
 
             {sale.payments.length === 0 ? (
               <Text style={styles.bodyText}>No payments registered.</Text>
@@ -400,9 +400,9 @@ export default function AdminSaleDetailScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.card}>
-          <View style={commonStyles.cardBody}>
-            <Text style={commonStyles.sectionTitle}>Discounts</Text>
+        <View style={styles.card}>
+          <View style={styles.cardBody}>
+            <Text style={styles.sectionTitle}>Discounts</Text>
 
             {sale.discounts.length === 0 ? (
               <Text style={styles.bodyText}>No discounts applied.</Text>
@@ -439,25 +439,25 @@ export default function AdminSaleDetailScreen() {
           </View>
         </View>
 
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnRefresh,
-              pressed && commonStyles.buttonPressed,
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
             ]}
             onPress={loadSale}
           >
-            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnBack,
-              pressed && commonStyles.buttonPressed,
+              styles.btnBack,
+              pressed && styles.buttonPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -466,6 +466,30 @@ export default function AdminSaleDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.base,
+    color: colors.textSubtle,
+    lineHeight: 20,
+  },
   statusBanner: {
     borderRadius: 14,
     borderWidth: 1,
@@ -516,7 +540,47 @@ const styles = StyleSheet.create({
   statusBannerTextCancelled: {
     color: colors.warning,
   },
-
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+  },
+  detailRow: {
+    minHeight: 32,
+    paddingBottom: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  detailLabel: {
+    flex: 1,
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    textAlign: "right",
+  },
   badge: {
     borderRadius: radius.pill,
     paddingHorizontal: 10,
@@ -652,5 +716,55 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     lineHeight: 20,
     color: colors.textMuted,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

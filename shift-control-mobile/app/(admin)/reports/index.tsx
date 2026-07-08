@@ -45,7 +45,7 @@ import type {
   WeeklyReport,
   WeeklyAdminReview,
 } from "@/src/types/api";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { AppTopBar } from "@/src/components/AppTopBar";
 
 type ReportMode = "DAILY" | "WEEKLY" | "MONTHLY";
@@ -138,7 +138,7 @@ function StoreChip({
       style={({ pressed }) => [
         styles.storeChip,
         selected && styles.storeChipActive,
-        pressed && commonStyles.buttonPressed,
+        pressed && styles.buttonPressed,
       ]}
       onPress={onPress}
     >
@@ -168,7 +168,7 @@ function ReportModeSegment({
       style={({ pressed }) => [
         styles.modeSegment,
         selected && styles.modeSegmentActive,
-        pressed && commonStyles.buttonPressed,
+        pressed && styles.buttonPressed,
       ]}
       onPress={onPress}
     >
@@ -484,43 +484,43 @@ export default function AdminReportsScreen() {
   const validationMessage = getDateValidationMessage();
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Reports</Text>
-            <Text style={commonStyles.pageSubtitle}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Reports</Text>
+            <Text style={styles.pageSubtitle}>
               Generate store reports for admin review.
             </Text>
           </View>
 
           {storesState.status === "error" ? (
-            <View style={commonStyles.card}>
-              <View style={commonStyles.cardBody}>
-                <Text style={commonStyles.sectionLabel}>Could not load stores</Text>
+            <View style={styles.card}>
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load stores</Text>
                 <ErrorMessage message={storesState.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.outlineButton,
-                    pressed && commonStyles.buttonPressed,
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
                   ]}
                   onPress={loadStores}
                 >
-                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                  <Text style={styles.btnOutlineText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
           ) : null}
 
           {storesState.status === "ready" && storesState.stores.length === 0 ? (
-            <View style={commonStyles.emptyCard}>
-              <Text style={commonStyles.emptyTitle}>No active stores</Text>
-              <Text style={commonStyles.emptyText}>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyTitle}>No active stores</Text>
+              <Text style={styles.emptyText}>
                 There are no active stores available for reports.
               </Text>
             </View>
@@ -548,7 +548,7 @@ export default function AdminReportsScreen() {
                   </ScrollView>
 
                   {selectedStore ? (
-                    <Text style={commonStyles.helpText}>
+                    <Text style={styles.helperText}>
                       Selected store: {selectedStore.name}
                     </Text>
                   ) : null}
@@ -613,7 +613,7 @@ export default function AdminReportsScreen() {
                   )}
 
                   {reportMode === "WEEKLY" ? (
-                    <Text style={commonStyles.helpText}>
+                    <Text style={styles.helperText}>
                       Use the first day of the reporting week.
                     </Text>
                   ) : null}
@@ -627,14 +627,14 @@ export default function AdminReportsScreen() {
 
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.primaryButton,
-                    !canLoadReport && commonStyles.buttonDisabled,
-                    pressed && canLoadReport && commonStyles.buttonPressed,
+                    styles.btnPrimary,
+                    !canLoadReport && styles.btnDisabled,
+                    pressed && canLoadReport && styles.buttonPressed,
                   ]}
                   onPress={handleLoadReport}
                   disabled={!canLoadReport}
                 >
-                  <Text style={commonStyles.primaryButtonText}>
+                  <Text style={styles.btnPrimaryText}>
                     {reportState.status === "loading"
                       ? "Loading…"
                       : "▣ Load report"}
@@ -643,18 +643,18 @@ export default function AdminReportsScreen() {
               </View>
 
               {reportState.status === "error" ? (
-                <View style={commonStyles.card}>
-                  <View style={commonStyles.cardBody}>
-                    <Text style={commonStyles.sectionLabel}>Could not load report</Text>
+                <View style={styles.card}>
+                  <View style={styles.cardBody}>
+                    <Text style={styles.sectionTitle}>Could not load report</Text>
                     <ErrorMessage message={reportState.errorMessage} />
                   </View>
                 </View>
               ) : null}
 
               {reportState.status === "idle" ? (
-                <View style={commonStyles.emptyCard}>
-                  <Text style={commonStyles.emptyTitle}>No report loaded</Text>
-                  <Text style={commonStyles.emptyText}>
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>No report loaded</Text>
+                  <Text style={styles.emptyText}>
                     Select a store and{" "}
                     {reportMode === "DAILY"
                       ? "date"
@@ -721,22 +721,22 @@ export default function AdminReportsScreen() {
             </>
           ) : null}
 
-          <View style={commonStyles.actions}>
+          <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [
-                commonStyles.btnBack,
-                pressed && commonStyles.buttonPressed,
+                styles.btnBack,
+                pressed && styles.buttonPressed,
               ]}
               onPress={() => router.back()}
             >
-              <Text style={commonStyles.btnBackText}>← Back</Text>
+              <Text style={styles.btnBackText}>← Back</Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
-                commonStyles.btnRefresh,
+                styles.btnRefresh,
                 !canLoadReport && styles.btnRefreshDisabled,
-                pressed && canLoadReport && commonStyles.buttonPressed,
+                pressed && canLoadReport && styles.buttonPressed,
               ]}
               onPress={handleLoadReport}
               disabled={!canLoadReport}
@@ -757,6 +757,32 @@ export default function AdminReportsScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
   filterCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
@@ -764,6 +790,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 16,
     gap: 16,
+    ...shadows.card,
   },
   filterGroup: {
     gap: 8,
@@ -797,6 +824,11 @@ const styles = StyleSheet.create({
   },
   storeChipTextActive: {
     color: colors.primary,
+  },
+  helperText: {
+    fontSize: fontSize.sm,
+    color: colors.textSubtle,
+    lineHeight: 18,
   },
   modeSegments: {
     flexDirection: "row",
@@ -858,11 +890,92 @@ const styles = StyleSheet.create({
     color: colors.danger,
     lineHeight: 18,
   },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnDisabled: {
+    backgroundColor: colors.primaryDisabled,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  emptyCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 18,
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  emptyText: {
+    fontSize: fontSize.base,
+    lineHeight: 20,
+    color: colors.textMuted,
+  },
   reportResultWrapper: {
     gap: 12,
   },
-
-
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   btnRefreshDisabled: {
     opacity: 0.55,
   },
@@ -874,6 +987,24 @@ const styles = StyleSheet.create({
   btnRefreshTextDisabled: {
     color: colors.textSubtle,
   },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
+  },
+
   reviewStatusCard: {
     borderRadius: radius.lg,
     borderWidth: 1,

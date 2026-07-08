@@ -14,7 +14,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { listCurrentShiftSales } from "@/src/api/sales";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -79,25 +79,25 @@ export default function SalesIndexScreen() {
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Page header */}
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>Current shift sales</Text>
-          <Text style={commonStyles.pageSubtitle}>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>Current shift sales</Text>
+          <Text style={styles.pageSubtitle}>
             Sales registered during the current open shift.
           </Text>
         </View>
 
         {/* Error state */}
         {state.status === "error" ? (
-          <View style={commonStyles.card}>
-            <Text style={commonStyles.cardTitle}>Could not load sales</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Could not load sales</Text>
             <ErrorMessage message={state.errorMessage} />
             <Pressable style={styles.retryBtn} onPress={loadSales}>
               <Text style={styles.retryBtnText}>Try again</Text>
@@ -107,16 +107,16 @@ export default function SalesIndexScreen() {
 
         {/* Empty state */}
         {state.status === "ready" && state.sales.length === 0 ? (
-          <View style={commonStyles.card}>
-            <Text style={commonStyles.cardTitle}>No sales yet</Text>
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>No sales yet</Text>
             <Text style={styles.bodyText}>
               Create the first sale for this shift.
             </Text>
             <Pressable
-              style={commonStyles.primaryButton}
+              style={styles.btnPrimary}
               onPress={() => router.push("/(staff)/sales/new-sale")}
             >
-              <Text style={commonStyles.primaryButtonText}>+ New sale</Text>
+              <Text style={styles.btnPrimaryText}>+ New sale</Text>
             </Pressable>
           </View>
         ) : null}
@@ -160,12 +160,12 @@ export default function SalesIndexScreen() {
 
         {/* Bottom actions */}
         {state.status === "ready" ? (
-          <View style={commonStyles.actions}>
+          <View style={styles.actions}>
             <Pressable
-              style={commonStyles.primaryButton}
+              style={styles.btnPrimary}
               onPress={() => router.push("/(staff)/sales/new-sale")}
             >
-              <Text style={commonStyles.primaryButtonText}>+ New sale</Text>
+              <Text style={styles.btnPrimaryText}>+ New sale</Text>
             </Pressable>
             <Pressable style={styles.btnSecondary} onPress={() => router.back()}>
               <Text style={styles.btnSecondaryText}>Back</Text>
@@ -174,7 +174,7 @@ export default function SalesIndexScreen() {
         ) : null}
 
         {state.status === "error" ? (
-          <View style={commonStyles.actions}>
+          <View style={styles.actions}>
             <Pressable style={styles.btnSecondary} onPress={() => router.back()}>
               <Text style={styles.btnSecondaryText}>Back</Text>
             </Pressable>
@@ -212,7 +212,53 @@ function InvoiceStatusBadge({ status }: { status: Sale["invoiceStatus"] }) {
 }
 
 const styles = StyleSheet.create({
-  // Screen-specific text
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  // AppBar
+
+
+  // Scroll
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+    gap: 16,
+  },
+
+  // Page header
+  pageHeader: {
+    gap: 4,
+    marginTop: 8,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+
+  // Card (generic)
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    padding: 16,
+    gap: 12,
+    ...shadows.card,
+  },
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
   bodyText: {
     fontSize: fontSize.base,
     color: colors.textMuted,
@@ -226,6 +272,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: radius.xl,
     overflow: "hidden",
+    ...shadows.card,
   },
 
   // Sale row
@@ -310,7 +357,24 @@ const styles = StyleSheet.create({
     color: colors.secondary,
   },
 
-  // Screen-specific buttons
+  // Buttons
+  actions: {
+    gap: 10,
+  },
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+    letterSpacing: 0.3,
+  },
   btnSecondary: {
     height: 48,
     backgroundColor: "#e2e7ff",
@@ -338,4 +402,3 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 });
-
