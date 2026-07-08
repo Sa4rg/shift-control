@@ -134,73 +134,59 @@ describe("AdminUserDetailScreen - Monthly Hours", () => {
     });
 
     it("should call API with previous month when pressing previous button", async () => {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
+      const { getAllByText } = render(<AdminUserDetailScreen />);
 
-    const expectedMonth = currentMonth === 1 ? 12 : currentMonth - 1;
-    const expectedYear = currentMonth === 1 ? currentYear - 1 : currentYear;
-
-    const { getAllByText } = render(<AdminUserDetailScreen />);
-
-    await waitFor(() => {
-        expect(mockUsersApi.getUserMonthlyWorkHours).toHaveBeenCalledWith(
-        "staff-123",
-        currentYear,
-        currentMonth
-        );
-    });
-
-    await waitFor(() => {
+      await waitFor(() => {
         expect(getAllByText("←").length).toBeGreaterThan(0);
-    });
+      });
 
-    mockUsersApi.getUserMonthlyWorkHours.mockClear();
+      const prevButtons = getAllByText("←");
+      const prevButton = prevButtons[0];
 
-    fireEvent.press(getAllByText("←")[0]);
+      fireEvent.press(prevButton);
 
-    await waitFor(() => {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const expectedMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const expectedYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+      await waitFor(() => {
         expect(mockUsersApi.getUserMonthlyWorkHours).toHaveBeenCalledWith(
-        "staff-123",
-        expectedYear,
-        expectedMonth
+          "staff-123",
+          expectedYear,
+          expectedMonth
         );
-    });
+      });
     });
 
     it("should call API with next month when pressing next button", async () => {
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
+      const { getAllByText } = render(<AdminUserDetailScreen />);
 
-    const expectedMonth = currentMonth === 12 ? 1 : currentMonth + 1;
-    const expectedYear = currentMonth === 12 ? currentYear + 1 : currentYear;
-
-    const { getAllByText } = render(<AdminUserDetailScreen />);
-
-    await waitFor(() => {
-        expect(mockUsersApi.getUserMonthlyWorkHours).toHaveBeenCalledWith(
-        "staff-123",
-        currentYear,
-        currentMonth
-        );
-    });
-
-    await waitFor(() => {
+      await waitFor(() => {
         expect(getAllByText("→").length).toBeGreaterThan(0);
-    });
+      });
 
-    mockUsersApi.getUserMonthlyWorkHours.mockClear();
+      const nextButtons = getAllByText("→");
+      const nextButton = nextButtons[0];
 
-    fireEvent.press(getAllByText("→")[0]);
+      fireEvent.press(nextButton);
 
-    await waitFor(() => {
+      const now = new Date();
+      const currentMonth = now.getMonth() + 1;
+      const currentYear = now.getFullYear();
+
+      const expectedMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+      const expectedYear = currentMonth === 12 ? currentYear + 1 : currentYear;
+
+      await waitFor(() => {
         expect(mockUsersApi.getUserMonthlyWorkHours).toHaveBeenCalledWith(
-        "staff-123",
-        expectedYear,
-        expectedMonth
+          "staff-123",
+          expectedYear,
+          expectedMonth
         );
-    });
+      });
     });
 
     it("should display error message when API fails", async () => {
