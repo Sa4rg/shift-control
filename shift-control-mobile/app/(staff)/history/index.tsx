@@ -13,7 +13,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { listShifts } from "@/src/api/shifts";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Shift, ShiftStatus, ShiftType } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -135,33 +135,33 @@ export default function StaffHistoryScreen() {
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Page header */}
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>My shifts</Text>
-          <Text style={commonStyles.pageSubtitle}>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>My shifts</Text>
+          <Text style={styles.pageSubtitle}>
             Review your open and closed shift history.
           </Text>
         </View>
 
         {/* Error state */}
         {state.status === "error" ? (
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <ErrorMessage message={state.errorMessage} />
-            <Pressable style={commonStyles.outlineButton} onPress={loadShifts}>
-              <Text style={commonStyles.outlineButtonText}>Try again</Text>
+            <Pressable style={styles.btnOutline} onPress={loadShifts}>
+              <Text style={styles.btnOutlineText}>Try again</Text>
             </Pressable>
           </View>
         ) : null}
 
         {/* Open shifts section */}
-        <View style={commonStyles.card}>
+        <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>OPEN SHIFTS</Text>
           </View>
@@ -178,7 +178,7 @@ export default function StaffHistoryScreen() {
         </View>
 
         {/* Closed shifts section */}
-        <View style={commonStyles.card}>
+        <View style={styles.card}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionLabel}>CLOSED SHIFTS</Text>
           </View>
@@ -195,18 +195,18 @@ export default function StaffHistoryScreen() {
         </View>
 
         {/* Actions */}
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           <Pressable
-            style={({ pressed }) => [commonStyles.primaryButton, pressed && styles.btnPressed]}
+            style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPressed]}
             onPress={loadShifts}
           >
-            <Text style={commonStyles.primaryButtonText}>⟳  Refresh History</Text>
+            <Text style={styles.btnPrimaryText}>⟳  Refresh History</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [commonStyles.btnBack, pressed && styles.btnPressed]}
+            style={({ pressed }) => [styles.btnBack, pressed && styles.btnPressed]}
             onPress={() => router.back()}
           >
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -215,6 +215,44 @@ export default function StaffHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
+  // Scroll
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+    gap: 16,
+  },
+
+  // Page header
+  pageHeader: {
+    gap: 4,
+    marginBottom: 4,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+
+  // Card
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+
   // Section header inside card
   sectionHeader: {
     paddingHorizontal: 16,
@@ -319,8 +357,51 @@ const styles = StyleSheet.create({
   },
 
   // Action buttons
+  actions: {
+    gap: 10,
+    marginTop: 4,
+  },
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+    letterSpacing: 0.3,
+  },
+  btnBack: {
+    height: 48,
+    backgroundColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
+  },
+  btnOutline: {
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    margin: 16,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
   btnPressed: {
     opacity: 0.8,
   },
 });
-

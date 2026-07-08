@@ -12,24 +12,13 @@ import {
 
 import { getApiErrorMessage } from "@/src/api/errors";
 import { getStoreById } from "@/src/api/stores";
-import {
-  deactivateUser,
-  getUserById,
-  getUserMonthlyWorkHours,
-} from "@/src/api/users";
+import { deactivateUser, getUserById } from "@/src/api/users";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { AppCard, DetailRow } from "@/src/components/ui";
-import type { AdminUser, MonthlyWorkHours, Store } from "@/src/types/api";
+import type { AdminUser, Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
-import {
-  formatMinutesAsHours,
-  formatMonthLabel,
-  getNextMonth,
-  getPreviousMonth,
-} from "@/src/utils/monthlyWorkHours";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type UserDetailState =
   | {
@@ -77,6 +66,27 @@ function getStoreLabel(user: AdminUser, store: Store | null): string | null {
   return null;
 }
 
+function DetailRow({
+  label,
+  value,
+  valueStyle,
+}: {
+  label: string;
+  value: string | null;
+  valueStyle?: object;
+}) {
+  if (!value) {
+    return null;
+  }
+
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    </View>
+  );
+}
+
 function RoleBadge({ role }: { role: AdminUser["role"] }) {
   return (
     <View style={styles.roleBadge}>
@@ -102,19 +112,6 @@ export default function AdminUserDetailScreen() {
     null
   );
   const [isDeactivating, setIsDeactivating] = useState(false);
-
-  // Monthly work hours state
-  const currentDate = new Date();
-  const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(
-    currentDate.getMonth() + 1
-  );
-  const [monthlyHours, setMonthlyHours] =
-    useState<MonthlyWorkHours | null>(null);
-  const [monthlyHoursLoading, setMonthlyHoursLoading] = useState(false);
-  const [monthlyHoursError, setMonthlyHoursError] = useState<string | null>(
-    null
-  );
 
   const loadUser = useCallback(async () => {
     if (!userId) {
@@ -197,28 +194,6 @@ export default function AdminUserDetailScreen() {
     }
   }
 
-  const loadMonthlyHours = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
-
-    setMonthlyHoursLoading(true);
-    setMonthlyHoursError(null);
-
-    try {
-      const data = await getUserMonthlyWorkHours(
-        userId,
-        selectedYear,
-        selectedMonth
-      );
-      setMonthlyHours(data);
-    } catch (error) {
-      setMonthlyHoursError(getApiErrorMessage(error));
-    } finally {
-      setMonthlyHoursLoading(false);
-    }
-  }, [userId, selectedYear, selectedMonth]);
-
   function confirmDeactivateUser() {
     if (state.status !== "ready") {
       return;
@@ -247,12 +222,6 @@ export default function AdminUserDetailScreen() {
     void loadUser();
   }, [loadUser]);
 
-  useEffect(() => {
-    if (state.status === "ready" && state.user.role === "STAFF") {
-      void loadMonthlyHours();
-    }
-  }, [state, loadMonthlyHours]);
-
   if (state.status === "loading") {
     return <LoadingState message="Loading user..." />;
   }
@@ -261,40 +230,46 @@ export default function AdminUserDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         {appBar}
 
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>User detail</Text>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>User detail</Text>
           </View>
 
-          <AppCard title="Could not load user">
-            <ErrorMessage message={state.errorMessage} />
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Could not load user</Text>
+            </View>
 
-            <Pressable
-              style={({ pressed }) => [
-                commonStyles.outlineButton,
-                pressed && commonStyles.buttonPressed,
-              ]}
-              onPress={loadUser}
-            >
-              <Text style={commonStyles.outlineButtonText}>Try again</Text>
-            </Pressable>
+            <View style={styles.cardBody}>
+              <ErrorMessage message={state.errorMessage} />
 
-            <Pressable
-              style={({ pressed }) => [
-                commonStyles.btnBack,
-                pressed && commonStyles.buttonPressed,
-              ]}
-              onPress={() => router.back()}
-            >
-              <Text style={commonStyles.btnBackText}>← Back</Text>
-            </Pressable>
-          </AppCard>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={loadUser}
+              >
+                <Text style={styles.btnOutlineText}>Try again</Text>
+              </Pressable>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.back()}
+              >
+                <Text style={styles.btnBackText}>← Back</Text>
+              </Pressable>
+            </View>
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -305,16 +280,16 @@ export default function AdminUserDetailScreen() {
   const storeLabel = getStoreLabel(user, store);
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       {appBar}
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={commonStyles.pageHeader}>
-          <Text style={commonStyles.pageTitle}>User detail</Text>
-          <Text style={commonStyles.pageSubtitle}>ID: {user.id.slice(0, 8)}</Text>
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>User detail</Text>
+          <Text style={styles.pageSubtitle}>ID: {user.id.slice(0, 8)}</Text>
         </View>
 
         <View
@@ -341,181 +316,145 @@ export default function AdminUserDetailScreen() {
           </Text>
         </View>
 
-        <AppCard title="Account">
-          <DetailRow label="FULL NAME" value={user.fullName} />
-          <DetailRow label="USERNAME" value={`@${user.username}`} />
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Account</Text>
+            <Text style={styles.cardHeaderIcon}>♙</Text>
+          </View>
 
-          <DetailRow label="ROLE">
-            <RoleBadge role={user.role} />
-          </DetailRow>
+          <View style={styles.cardBody}>
+            <DetailRow label="FULL NAME" value={user.fullName} />
+            <DetailRow label="USERNAME" value={`@${user.username}`} />
 
-          <DetailRow label="STORE NAME" value={storeLabel} />
-
-          <DetailRow
-            label="ACTIVE STATUS"
-            value={user.active ? "Verified Active" : "Inactive"}
-            valueStyle={
-              user.active ? styles.activeValue : styles.inactiveValue
-            }
-          />
-
-          <DetailRow
-            label="EMAIL"
-            value={user.email}
-          />
-
-          <DetailRow
-            label="CREATED AT"
-            value={createdAt ? formatDateTime(createdAt) : null}
-          />
-        </AppCard>
-
-        {user.storeId ? (
-          <AppCard title="Assigned store">
-            <DetailRow
-              label="STORE"
-              value={store ? store.name : user.storeId.slice(0, 8)}
-            />
-
-            {store ? (
-              <DetailRow label="ADDRESS" value={store.address} />
-            ) : null}
-
-            <Pressable
-              style={({ pressed }) => [
-                commonStyles.outlineButton,
-                pressed && commonStyles.buttonPressed,
-              ]}
-              onPress={() => router.push(`/(admin)/stores/${user.storeId}`)}
-            >
-              <Text style={commonStyles.outlineButtonText}>View store</Text>
-            </Pressable>
-          </AppCard>
-        ) : null}
-
-        {user.role === "STAFF" ? (
-          <AppCard title="Monthly hours">
-            <View style={styles.monthNavigation}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.monthNavButton,
-                  pressed && commonStyles.buttonPressed,
-                ]}
-                onPress={() => {
-                  const prev = getPreviousMonth(selectedYear, selectedMonth);
-                  setSelectedYear(prev.year);
-                  setSelectedMonth(prev.month);
-                }}
-                disabled={monthlyHoursLoading}
-              >
-                <Text style={styles.monthNavButtonText}>←</Text>
-              </Pressable>
-
-              <Text style={styles.monthLabel}>
-                {formatMonthLabel(selectedYear, selectedMonth)}
-              </Text>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.monthNavButton,
-                  pressed && commonStyles.buttonPressed,
-                ]}
-                onPress={() => {
-                  const next = getNextMonth(selectedYear, selectedMonth);
-                  setSelectedYear(next.year);
-                  setSelectedMonth(next.month);
-                }}
-                disabled={monthlyHoursLoading}
-              >
-                <Text style={styles.monthNavButtonText}>→</Text>
-              </Pressable>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>ROLE</Text>
+              <RoleBadge role={user.role} />
             </View>
 
-            {monthlyHoursLoading ? (
-              <Text style={styles.loadingText}>Loading...</Text>
-            ) : monthlyHoursError ? (
-              <ErrorMessage message={monthlyHoursError} />
-            ) : monthlyHours ? (
-              <>
-                <View style={styles.hoursMetric}>
-                  <Text style={styles.hoursLabel}>TOTAL HOURS</Text>
-                  <Text style={styles.hoursValue}>
-                    {formatMinutesAsHours(monthlyHours.totalMinutes)}
-                  </Text>
-                </View>
+            <DetailRow label="STORE NAME" value={storeLabel} />
 
-                <View style={styles.hoursMetric}>
-                  <Text style={styles.hoursLabel}>SHIFTS CLOSED</Text>
-                  <Text style={styles.hoursValue}>
-                    {monthlyHours.closedShiftCount}
-                  </Text>
-                </View>
-              </>
-            ) : null}
-          </AppCard>
+            <DetailRow
+              label="ACTIVE STATUS"
+              value={user.active ? "Verified Active" : "Inactive"}
+              valueStyle={
+                user.active ? styles.activeValue : styles.inactiveValue
+              }
+            />
+
+            <DetailRow
+              label="EMAIL"
+              value={user.email}
+            />
+
+            <DetailRow
+              label="CREATED AT"
+              value={createdAt ? formatDateTime(createdAt) : null}
+            />
+          </View>
+        </View>
+
+        {user.storeId ? (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Assigned store</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <DetailRow
+                label="STORE"
+                value={store ? store.name : user.storeId.slice(0, 8)}
+              />
+
+              {store ? (
+                <DetailRow label="ADDRESS" value={store.address} />
+              ) : null}
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
+                ]}
+                onPress={() => router.push(`/(admin)/stores/${user.storeId}`)}
+              >
+                <Text style={styles.btnOutlineText}>View store</Text>
+              </Pressable>
+            </View>
+          </View>
         ) : null}
 
         {!user.active ? (
-          <AppCard title="Deactivation">
-            <DetailRow
-              label="DEACTIVATED BY"
-              value={user.deactivatedByName}
-            />
-            <DetailRow
-              label="DEACTIVATED AT"
-              value={
-                user.deactivatedAt ? formatDateTime(user.deactivatedAt) : null
-              }
-            />
-          </AppCard>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Deactivation</Text>
+            </View>
+
+            <View style={styles.cardBody}>
+              <DetailRow
+                label="DEACTIVATED BY"
+                value={user.deactivatedByName}
+              />
+              <DetailRow
+                label="DEACTIVATED AT"
+                value={
+                  user.deactivatedAt ? formatDateTime(user.deactivatedAt) : null
+                }
+              />
+            </View>
+          </View>
         ) : null}
 
-        <AppCard title="Actions">
-          {actionErrorMessage ? (
-            <ErrorMessage message={actionErrorMessage} />
-          ) : null}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Actions</Text>
+          </View>
 
-          {user.active ? (
-            <Pressable
-              style={({ pressed }) => [
-                commonStyles.dangerButton,
-                (pressed || isDeactivating) && commonStyles.buttonPressed,
-              ]}
-              onPress={confirmDeactivateUser}
-              disabled={isDeactivating}
-            >
-              <Text style={commonStyles.dangerButtonText}>
-                {isDeactivating ? "Deactivating…" : "♙ Deactivate user"}
+          <View style={styles.cardBody}>
+            {actionErrorMessage ? (
+              <ErrorMessage message={actionErrorMessage} />
+            ) : null}
+
+            {user.active ? (
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnDanger,
+                  (pressed || isDeactivating) && styles.buttonPressed,
+                ]}
+                onPress={confirmDeactivateUser}
+                disabled={isDeactivating}
+              >
+                <Text style={styles.btnDangerText}>
+                  {isDeactivating ? "Deactivating…" : "♙ Deactivate user"}
+                </Text>
+              </Pressable>
+            ) : (
+              <Text style={styles.inactiveHelpText}>
+                This user has already been deactivated.
               </Text>
-            </Pressable>
-          ) : (
-            <Text style={styles.inactiveHelpText}>
-              This user has already been deactivated.
-            </Text>
-          )}
-        </AppCard>
+            )}
+          </View>
+        </View>
 
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnRefresh,
-              pressed && commonStyles.buttonPressed,
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
             ]}
             onPress={loadUser}
             disabled={isDeactivating}
           >
-            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnBack,
-              pressed && commonStyles.buttonPressed,
+              styles.btnBack,
+              pressed && styles.buttonPressed,
             ]}
             onPress={() => router.back()}
             disabled={isDeactivating}
           >
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -524,7 +463,29 @@ export default function AdminUserDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Status banner (específico de esta pantalla)
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
   statusBanner: {
     borderRadius: 14,
     borderWidth: 1,
@@ -563,8 +524,59 @@ const styles = StyleSheet.create({
   statusBannerTextInactive: {
     color: colors.warning,
   },
-
-  // Role badge (específico de users)
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    minHeight: 56,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: fontWeight.extrabold,
+    color: colors.text,
+  },
+  cardHeaderIcon: {
+    fontSize: fontSize.xxl,
+    color: colors.textSubtle,
+    opacity: 0.5,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 18,
+  },
+  detailRow: {
+    gap: 5,
+  },
+  detailLabel: {
+    fontSize: 11,
+    fontWeight: fontWeight.extrabold,
+    color: colors.textSubtle,
+    letterSpacing: 0.8,
+  },
+  detailValue: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+    lineHeight: 21,
+  },
+  activeValue: {
+    color: colors.primary,
+  },
+  inactiveValue: {
+    color: colors.warning,
+  },
   roleBadge: {
     alignSelf: "flex-start",
     borderRadius: radius.pill,
@@ -577,68 +589,73 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.extrabold,
     color: "#173bab",
   },
-
-  // Valores de estado específicos
-  activeValue: {
-    color: colors.primary,
+  inactiveHelpText: {
+    fontSize: fontSize.base,
+    lineHeight: 20,
+    color: colors.textMuted,
   },
-  inactiveValue: {
-    color: colors.warning,
-  },
-
-  // Monthly hours navigation y metrics
-  monthNavigation: {
+  actions: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 8,
+    gap: 10,
+    paddingTop: 4,
   },
-  monthNavButton: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
+  btnDanger: {
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnDangerText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.danger,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: colors.secondarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.secondaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: colors.borderStrong,
     backgroundColor: colors.surface,
     alignItems: "center",
     justifyContent: "center",
   },
-  monthNavButtonText: {
-    fontSize: 20,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  monthLabel: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.extrabold,
-    color: colors.text,
-  },
-  hoursMetric: {
-    gap: 5,
-  },
-  hoursLabel: {
-    fontSize: 11,
-    fontWeight: fontWeight.extrabold,
-    color: colors.textSubtle,
-    letterSpacing: 0.8,
-  },
-  hoursValue: {
-    fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    lineHeight: 26,
-  },
-
-  // Misc
-  inactiveHelpText: {
+  btnBackText: {
     fontSize: fontSize.base,
-    lineHeight: 20,
+    fontWeight: fontWeight.extrabold,
     color: colors.textMuted,
   },
-  loadingText: {
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
     fontSize: fontSize.base,
-    color: colors.textMuted,
-    textAlign: "center",
-    paddingVertical: 12,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

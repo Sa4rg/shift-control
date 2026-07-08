@@ -16,7 +16,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { createIncident } from "@/src/api/incidents";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import type { IncidentSeverity, IncidentType } from "@/src/types/api";
 
 const INCIDENT_TYPES: IncidentType[] = [
@@ -82,7 +82,7 @@ function TypeOption({
       style={({ pressed }) => [
         styles.typeOption,
         selected && styles.typeOptionSelected,
-        pressed && !disabled && commonStyles.buttonPressed,
+        pressed && !disabled && styles.buttonPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -119,7 +119,7 @@ function SeverityOption({
       style={({ pressed }) => [
         styles.severityOption,
         selected && styles.severityOptionSelected,
-        pressed && !disabled && commonStyles.buttonPressed,
+        pressed && !disabled && styles.buttonPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -191,7 +191,7 @@ export default function NewIncidentScreen() {
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
@@ -199,13 +199,13 @@ export default function NewIncidentScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>New incident</Text>
-            <Text style={commonStyles.pageSubtitle}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>New incident</Text>
+            <Text style={styles.pageSubtitle}>
               Register issues or notes for administrative review.
             </Text>
           </View>
@@ -225,9 +225,9 @@ export default function NewIncidentScreen() {
             </View>
           )}
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionTitle}>TYPE</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>TYPE</Text>
 
               <View style={styles.typeGrid}>
                 {INCIDENT_TYPES.map((option) => (
@@ -243,9 +243,9 @@ export default function NewIncidentScreen() {
             </View>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionTitle}>SEVERITY</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>SEVERITY</Text>
 
               <View style={styles.severitySegment}>
                 {INCIDENT_SEVERITIES.map((option) => (
@@ -261,14 +261,14 @@ export default function NewIncidentScreen() {
             </View>
           </View>
 
-          <View style={commonStyles.card}>
-            <View style={commonStyles.cardBody}>
-              <Text style={commonStyles.sectionTitle}>DETAILS</Text>
+          <View style={styles.card}>
+            <View style={styles.cardBody}>
+              <Text style={styles.sectionTitle}>DETAILS</Text>
 
-              <View style={commonStyles.inputGroup}>
-                <Text style={commonStyles.inputLabel}>Title</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Title</Text>
                 <TextInput
-                  style={commonStyles.input}
+                  style={styles.input}
                   value={title}
                   onChangeText={setTitle}
                   placeholder="e.g., Shortfall in register 1"
@@ -279,8 +279,8 @@ export default function NewIncidentScreen() {
                 />
               </View>
 
-              <View style={commonStyles.inputGroup}>
-                <Text style={commonStyles.inputLabel}>Description</Text>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Description</Text>
                 <TextInput
                   style={styles.descriptionInput}
                   value={description}
@@ -303,17 +303,17 @@ export default function NewIncidentScreen() {
             </View>
           ) : null}
 
-          <View style={commonStyles.actions}>
+          <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [
-                commonStyles.primaryButton,
-                !canSubmit && commonStyles.buttonDisabled,
-                pressed && canSubmit && commonStyles.buttonPressed,
+                styles.btnPrimary,
+                !canSubmit && styles.btnDisabled,
+                pressed && canSubmit && styles.buttonPressed,
               ]}
               onPress={handleSubmit}
               disabled={!canSubmit}
             >
-              <Text style={commonStyles.primaryButtonText}>
+              <Text style={styles.btnPrimaryText}>
                 {isSubmitting ? "Creating…" : "Create incident"}
               </Text>
             </Pressable>
@@ -321,7 +321,7 @@ export default function NewIncidentScreen() {
             <Pressable
               style={({ pressed }) => [
                 styles.btnCancel,
-                pressed && commonStyles.buttonPressed,
+                pressed && styles.buttonPressed,
               ]}
               onPress={() => router.back()}
               disabled={isSubmitting}
@@ -336,8 +336,31 @@ export default function NewIncidentScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    lineHeight: 22,
+    color: colors.textMuted,
   },
   contextCard: {
     minHeight: 50,
@@ -379,6 +402,24 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     lineHeight: 19,
     color: colors.warning,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 14,
+  },
+  sectionTitle: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.extrabold,
+    color: colors.textSubtle,
+    letterSpacing: 1.2,
   },
   typeGrid: {
     flexDirection: "row",
@@ -447,6 +488,24 @@ const styles = StyleSheet.create({
   severityOptionTextSelected: {
     color: colors.surface,
   },
+  inputGroup: {
+    gap: 7,
+  },
+  inputLabel: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  input: {
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceSoft,
+    paddingHorizontal: 14,
+    fontSize: fontSize.base,
+    color: colors.text,
+  },
   descriptionInput: {
     minHeight: 116,
     borderRadius: radius.md,
@@ -465,6 +524,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff8f7",
     padding: 14,
   },
+  actions: {
+    gap: 12,
+    paddingTop: 6,
+  },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnDisabled: {
+    backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+  },
   btnCancel: {
     height: 44,
     alignItems: "center",
@@ -474,5 +555,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
     color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

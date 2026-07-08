@@ -28,7 +28,7 @@ import type {
 } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 import { shareShiftClosureSummary } from "@/src/features/closures/shareShiftClosureSummary";
 
@@ -194,15 +194,15 @@ export default function ShiftHistoryDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         <AppTopBar variant="back" />
-        <ScrollView contentContainerStyle={commonStyles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
           <ErrorMessage message={state.errorMessage} />
-          <Pressable style={commonStyles.outlineButton} onPress={loadShiftHistory}>
-            <Text style={commonStyles.outlineButtonText}>Try again</Text>
+          <Pressable style={styles.btnOutline} onPress={loadShiftHistory}>
+            <Text style={styles.btnOutlineText}>Try again</Text>
           </Pressable>
-          <Pressable style={commonStyles.btnBack} onPress={() => router.back()}>
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+          <Pressable style={styles.btnBack} onPress={() => router.back()}>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </ScrollView>
       </SafeAreaView>
@@ -213,7 +213,7 @@ export default function ShiftHistoryDetailScreen() {
   const closureStatus = closure?.status ?? null;
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       {/* Status banner */}
@@ -224,7 +224,7 @@ export default function ShiftHistoryDetailScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Short ID */}
@@ -233,7 +233,7 @@ export default function ShiftHistoryDetailScreen() {
         </Text>
 
         {/* Shift info card */}
-        <View style={commonStyles.card}>
+        <View style={styles.card}>
           <Text style={styles.cardLabel}>SHIFT</Text>
 
           <View style={styles.infoRow}>
@@ -274,7 +274,7 @@ export default function ShiftHistoryDetailScreen() {
         {/* Closure totals card */}
         {closure ? (
           <>
-            <View style={commonStyles.card}>
+            <View style={styles.card}>
               <Text style={styles.cardLabel}>CLOSURE TOTALS</Text>
 
               {/* Total sales — prominent */}
@@ -362,14 +362,14 @@ export default function ShiftHistoryDetailScreen() {
             </View>
 
             {closure.note ? (
-              <View style={commonStyles.card}>
+              <View style={styles.card}>
                 <Text style={styles.cardLabel}>CLOSURE NOTE</Text>
                 <Text style={styles.noteText}>{closure.note}</Text>
               </View>
             ) : null}
           </>
         ) : shift.status === "CLOSED" ? (
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <Text style={styles.cardLabel}>CLOSURE TOTALS</Text>
             <Text style={styles.emptyText}>
               This shift is closed, but its closure data could not be loaded.
@@ -427,25 +427,25 @@ export default function ShiftHistoryDetailScreen() {
         ) : null}
 
         {/* Bottom actions */}
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           {closure ? (
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.outlineButton,
+                  styles.btnOutline,
                   isSharing && styles.btnDisabled,
-                  pressed && !isSharing && commonStyles.buttonPressed,
+                  pressed && !isSharing && styles.btnPressed,
                 ]}
                 onPress={handleShareClosure}
                 disabled={isSharing}
               >
-                <Text style={commonStyles.outlineButtonText}>
+                <Text style={styles.btnOutlineText}>
                   {isSharing ? "Opening share options…" : "Share close summary"}
                 </Text>
               </Pressable>
             ) : null}
 
           <Pressable
-            style={({ pressed }) => [styles.btnIncidents, pressed && commonStyles.buttonPressed]}
+            style={({ pressed }) => [styles.btnIncidents, pressed && styles.btnPressed]}
             onPress={() =>
               router.push({
                 pathname: "/(staff)/incidents/new-incident" as never,
@@ -456,16 +456,16 @@ export default function ShiftHistoryDetailScreen() {
             <Text style={styles.btnIncidentsText}>⚠  Report incident</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [commonStyles.btnRefresh, pressed && commonStyles.buttonPressed]}
+            style={({ pressed }) => [styles.btnRefresh, pressed && styles.btnPressed]}
             onPress={loadShiftHistory}
           >
-            <Text style={commonStyles.btnRefreshText}>⟳  Refresh</Text>
+            <Text style={styles.btnRefreshText}>⟳  Refresh</Text>
           </Pressable>
           <Pressable
-            style={({ pressed }) => [commonStyles.btnBack, pressed && commonStyles.buttonPressed]}
+            style={({ pressed }) => [styles.btnBack, pressed && styles.btnPressed]}
             onPress={() => router.back()}
           >
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -474,6 +474,11 @@ export default function ShiftHistoryDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
   // Status banner
   banner: {
     paddingVertical: 10,
@@ -504,6 +509,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
   },
 
+  // Scroll
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 40,
+    gap: 16,
+  },
+
   // Short ID
   shortId: {
     fontSize: fontSize.md,
@@ -512,6 +524,16 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
 
+  // Card
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 16,
+    gap: 12,
+    ...shadows.card,
+  },
   cardLabel: {
     fontSize: 11,
     fontWeight: fontWeight.bold,
@@ -581,6 +603,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
+    ...shadows.card,
     padding: 16,
     gap: 8,
   },
@@ -654,7 +677,11 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.regular,
   },
 
-  // Screen-specific buttons
+  // Actions
+  actions: {
+    gap: 10,
+    marginTop: 4,
+  },
   btnIncidents: {
     height: 48,
     backgroundColor: colors.primary,
@@ -667,6 +694,46 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.surface,
     letterSpacing: 0.3,
+  },
+  btnRefresh: {
+    height: 48,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
+  },
+  btnBack: {
+    height: 48,
+    backgroundColor: colors.borderSoft,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
+  },
+  btnOutline: {
+    height: 44,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
 
   shareErrorCard: {

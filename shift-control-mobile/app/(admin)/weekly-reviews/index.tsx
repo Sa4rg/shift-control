@@ -29,7 +29,7 @@ import type {
   WeeklyAdminReviewStatus,
 } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 type ReviewsState =
   | {
@@ -120,7 +120,7 @@ function StatusChip({
       style={({ pressed }) => [
         styles.statusChip,
         selected && styles.statusChipActive,
-        pressed && commonStyles.buttonPressed,
+        pressed && styles.buttonPressed,
       ]}
       onPress={onPress}
     >
@@ -150,7 +150,7 @@ function FilterChip({
       style={({ pressed }) => [
         styles.filterChip,
         selected && styles.filterChipActive,
-        pressed && commonStyles.buttonPressed,
+        pressed && styles.buttonPressed,
       ]}
       onPress={onPress}
     >
@@ -424,7 +424,7 @@ export default function AdminWeeklyReviewsScreen() {
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
@@ -432,31 +432,31 @@ export default function AdminWeeklyReviewsScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Weekly reviews</Text>
-            <Text style={commonStyles.pageSubtitle}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Weekly reviews</Text>
+            <Text style={styles.pageSubtitle}>
               Manage and audit store performance logs for the current cycle.
             </Text>
           </View>
 
           {referenceDataState.status === "error" ? (
-            <View style={commonStyles.card}>
-              <View style={commonStyles.cardBody}>
-                <Text style={commonStyles.sectionTitle}>Could not load filters</Text>
+            <View style={styles.card}>
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load filters</Text>
                 <ErrorMessage message={referenceDataState.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.outlineButton,
-                    pressed && commonStyles.buttonPressed,
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
                   ]}
                   onPress={loadReferenceData}
                 >
-                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                  <Text style={styles.btnOutlineText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
@@ -505,7 +505,7 @@ export default function AdminWeeklyReviewsScreen() {
                   </ScrollView>
 
                   {selectedStore ? (
-                    <Text style={commonStyles.helpText}>
+                    <Text style={styles.helperText}>
                       Selected store: {selectedStore.name}
                     </Text>
                   ) : null}
@@ -536,7 +536,7 @@ export default function AdminWeeklyReviewsScreen() {
                   </ScrollView>
 
                   {selectedStaff ? (
-                    <Text style={commonStyles.helpText}>
+                    <Text style={styles.helperText}>
                       Selected staff: {selectedStaff.fullName}
                     </Text>
                   ) : null}
@@ -561,20 +561,20 @@ export default function AdminWeeklyReviewsScreen() {
 
             <Pressable
               style={({ pressed }) => [
-                commonStyles.primaryButton,
+                styles.btnPrimary,
                 !canLoadReviews && styles.btnDisabled,
-                pressed && canLoadReviews && commonStyles.buttonPressed,
+                pressed && canLoadReviews && styles.buttonPressed,
               ]}
               onPress={loadReviews}
               disabled={!canLoadReviews}
             >
-              <Text style={commonStyles.primaryButtonText}>⟳ Load reviews</Text>
+              <Text style={styles.btnPrimaryText}>⟳ Load reviews</Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
                 styles.btnClear,
-                pressed && commonStyles.buttonPressed,
+                pressed && styles.buttonPressed,
               ]}
               onPress={handleClearFilters}
             >
@@ -590,19 +590,19 @@ export default function AdminWeeklyReviewsScreen() {
           </View>
 
           {state.status === "error" ? (
-            <View style={commonStyles.card}>
-              <View style={commonStyles.cardBody}>
-                <Text style={commonStyles.sectionTitle}>Could not load reviews</Text>
+            <View style={styles.card}>
+              <View style={styles.cardBody}>
+                <Text style={styles.sectionTitle}>Could not load reviews</Text>
                 <ErrorMessage message={state.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.outlineButton,
-                    pressed && commonStyles.buttonPressed,
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
                   ]}
                   onPress={loadReviews}
                 >
-                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                  <Text style={styles.btnOutlineText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
@@ -638,36 +638,36 @@ export default function AdminWeeklyReviewsScreen() {
             </View>
           ) : null}
 
-          <View style={commonStyles.actions}>
+          <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [
-                commonStyles.primaryButton,
-                pressed && commonStyles.buttonPressed,
+                styles.btnPrimary,
+                pressed && styles.buttonPressed,
               ]}
               onPress={() => router.push("/(admin)/weekly-reviews/new-review")}
             >
-              <Text style={commonStyles.primaryButtonText}>+ New review</Text>
+              <Text style={styles.btnPrimaryText}>+ New review</Text>
             </Pressable>
 
             <View style={styles.actionRow}>
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.btnRefresh,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnRefresh,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={loadReviews}
               >
-                <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
+                <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.btnBack,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={commonStyles.btnBackText}>← Back</Text>
+                <Text style={styles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -678,8 +678,31 @@ export default function AdminWeeklyReviewsScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
   },
   filterCard: {
     backgroundColor: colors.surface,
@@ -688,6 +711,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 16,
     gap: 14,
+    ...shadows.card,
   },
   filterGroup: {
     gap: 8,
@@ -747,6 +771,11 @@ const styles = StyleSheet.create({
   filterChipTextActive: {
     color: colors.primary,
   },
+  helperText: {
+    fontSize: fontSize.sm,
+    color: colors.textSubtle,
+    lineHeight: 18,
+  },
   validationText: {
     fontSize: fontSize.sm,
     color: colors.danger,
@@ -779,6 +808,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
+    ...shadows.card,
   },
   reviewRow: {
     minHeight: 112,
@@ -892,6 +922,25 @@ const styles = StyleSheet.create({
   incidentsBadgeTextWarning: {
     color: "#653e00",
   },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
   emptyCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
@@ -910,12 +959,29 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.textMuted,
   },
+  actions: {
+    gap: 10,
+    paddingTop: 4,
+  },
   actionRow: {
     flexDirection: "row",
     gap: 10,
   },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
   btnDisabled: {
     backgroundColor: colors.primaryDisabled,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
   },
   btnClear: {
     height: 34,
@@ -927,5 +993,49 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.primary,
   },
-
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: "#89f5e7",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
+  },
 });

@@ -25,7 +25,7 @@ import type {
 } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 
 import {
   getShiftDifferenceRows,
@@ -83,9 +83,9 @@ function DetailRow({
   }
 
   return (
-    <View style={commonStyles.detailRow}>
-      <Text style={commonStyles.detailLabel}>{label}</Text>
-      <Text style={[commonStyles.detailValue, valueStyle]}>{value}</Text>
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
@@ -278,39 +278,39 @@ export default function AdminShiftDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         {appBar}
 
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={commonStyles.cardTitle}>Could not load shift</Text>
+              <Text style={styles.cardTitle}>Could not load shift</Text>
             </View>
 
-            <View style={commonStyles.cardBody}>
+            <View style={styles.cardBody}>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.outlineButton,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnOutline,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={loadShiftDetail}
               >
-                <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                <Text style={styles.btnOutlineText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  commonStyles.btnBack,
-                  pressed && commonStyles.buttonPressed,
+                  styles.btnBack,
+                  pressed && styles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={commonStyles.btnBackText}>← Back</Text>
+                <Text style={styles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -328,11 +328,11 @@ export default function AdminShiftDetailScreen() {
   const incidentSummary = getShiftIncidentSummary(shift);
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       {appBar}
 
       <ScrollView
-        contentContainerStyle={commonStyles.scrollContent}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.shiftHeader}>
@@ -358,13 +358,13 @@ export default function AdminShiftDetailScreen() {
           </View>
         ) : null}
 
-        <View style={commonStyles.card}>
+        <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderIcon}>◷</Text>
-            <Text style={commonStyles.cardTitle}>Shift</Text>
+            <Text style={styles.cardTitle}>Shift</Text>
           </View>
 
-          <View style={commonStyles.cardBody}>
+          <View style={styles.cardBody}>
             <DetailRow label="Type" value={shift.type} />
             <DetailRow
               label="Status"
@@ -387,15 +387,15 @@ export default function AdminShiftDetailScreen() {
 
         {closure ? (
           <>
-            <View style={[commonStyles.card, styles.closureCard]}>
+            <View style={[styles.card, styles.closureCard]}>
               <View style={styles.cardHeader}>
                 <Text style={styles.cardHeaderIcon}>▣</Text>
-                <Text style={commonStyles.cardTitle}>Closure totals</Text>
+                <Text style={styles.cardTitle}>Closure totals</Text>
               </View>
 
-              <View style={commonStyles.cardBody}>
+              <View style={styles.cardBody}>
                 <View style={styles.totalSalesRow}>
-                  <Text style={commonStyles.detailLabel}>Total sales</Text>
+                  <Text style={styles.detailLabel}>Total sales</Text>
                   <Text style={styles.totalSalesValue}>
                     {formatMoney(closure.totalSales)}
                   </Text>
@@ -498,24 +498,24 @@ export default function AdminShiftDetailScreen() {
             </View>
 
             {closure.note ? (
-              <View style={commonStyles.card}>
+              <View style={styles.card}>
                 <View style={styles.cardHeader}>
-                  <Text style={commonStyles.cardTitle}>Closure note</Text>
+                  <Text style={styles.cardTitle}>Closure note</Text>
                 </View>
 
-                <View style={commonStyles.cardBody}>
+                <View style={styles.cardBody}>
                   <Text style={styles.bodyText}>{closure.note}</Text>
                 </View>
               </View>
             ) : null}
           </>
         ) : shift.status === "CLOSED" ? (
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Text style={commonStyles.cardTitle}>Closure not available</Text>
+              <Text style={styles.cardTitle}>Closure not available</Text>
             </View>
 
-            <View style={commonStyles.cardBody}>
+            <View style={styles.cardBody}>
               <Text style={styles.bodyText}>
                 This shift is closed, but its closure could not be loaded.
               </Text>
@@ -523,11 +523,11 @@ export default function AdminShiftDetailScreen() {
           </View>
         ) : null}
 
-        <View style={commonStyles.card}>
+        <View style={styles.card}>
           <View style={styles.salesHeader}>
             <View style={styles.salesHeaderLeft}>
               <Text style={styles.cardHeaderIcon}>▤</Text>
-              <Text style={commonStyles.cardTitle}>Sales</Text>
+              <Text style={styles.cardTitle}>Sales</Text>
             </View>
 
             <View style={styles.salesCountPill}>
@@ -538,7 +538,7 @@ export default function AdminShiftDetailScreen() {
           </View>
 
           {sales.length === 0 ? (
-            <View style={commonStyles.cardBody}>
+            <View style={styles.cardBody}>
               <Text style={styles.bodyText}>
                 No sales registered for this shift.
               </Text>
@@ -559,7 +559,7 @@ export default function AdminShiftDetailScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.viewAllButton,
-                    pressed && commonStyles.buttonPressed,
+                    pressed && styles.buttonPressed,
                   ]}
                   onPress={() => router.push(`/(admin)/sales?shiftId=${shift.id}` as never)}
                 >
@@ -570,25 +570,25 @@ export default function AdminShiftDetailScreen() {
           )}
         </View>
 
-        <View style={commonStyles.actions}>
+        <View style={styles.actions}>
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnRefresh,
-              pressed && commonStyles.buttonPressed,
+              styles.btnRefresh,
+              pressed && styles.buttonPressed,
             ]}
             onPress={loadShiftDetail}
           >
-            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              commonStyles.btnBack,
-              pressed && commonStyles.buttonPressed,
+              styles.btnBack,
+              pressed && styles.buttonPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={commonStyles.btnBackText}>← Back</Text>
+            <Text style={styles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -597,6 +597,15 @@ export default function AdminShiftDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
   shiftHeader: {
     gap: 8,
   },
@@ -639,7 +648,14 @@ const styles = StyleSheet.create({
   shiftStatusPillTextWithIncident: {
     color: colors.warning,
   },
-
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
   closureCard: {
     backgroundColor: colors.surface,
   },
@@ -657,6 +673,37 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     color: colors.primary,
     fontWeight: fontWeight.bold,
+  },
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 12,
+  },
+  detailRow: {
+    minHeight: 34,
+    paddingBottom: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  detailLabel: {
+    flex: 1,
+    fontSize: fontSize.base,
+    color: colors.textMuted,
+  },
+  detailValue: {
+    flex: 1,
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    textAlign: "right",
   },
   primaryValue: {
     color: colors.primary,
@@ -855,6 +902,56 @@ const styles = StyleSheet.create({
   },
   rowPressed: {
     backgroundColor: colors.surfaceMuted,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    paddingTop: 4,
+  },
+  btnRefresh: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    backgroundColor: colors.secondarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.secondaryDark,
+  },
+  btnBack: {
+    flex: 1,
+    height: 48,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.bold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
   incidentSummaryCard: {
     backgroundColor: colors.warningSoft,

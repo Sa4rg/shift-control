@@ -17,7 +17,7 @@ import { listStores } from "@/src/api/stores";
 import { createStaff } from "@/src/api/users";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Store } from "@/src/types/api";
 
@@ -147,7 +147,7 @@ export default function NewStaffScreen() {
   }
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
@@ -155,46 +155,46 @@ export default function NewStaffScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Create staff</Text>
-            <Text style={commonStyles.pageSubtitle}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Create staff</Text>
+            <Text style={styles.pageSubtitle}>
               Enter details to create a new staff account.
             </Text>
           </View>
 
           {storesState.status === "error" ? (
-            <View style={commonStyles.card}>
-              <View style={commonStyles.cardHeader}>
-                <Text style={commonStyles.cardTitle}>Could not load stores</Text>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>Could not load stores</Text>
               </View>
 
-              <View style={commonStyles.cardBody}>
+              <View style={styles.cardBody}>
                 <ErrorMessage message={storesState.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.outlineButton,
-                    pressed && commonStyles.buttonPressed,
+                    styles.btnOutline,
+                    pressed && styles.buttonPressed,
                   ]}
                   onPress={loadStores}
                 >
-                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
+                  <Text style={styles.btnOutlineText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
           ) : null}
 
           {storesState.status === "ready" && storesState.stores.length === 0 ? (
-            <View style={commonStyles.card}>
-              <View style={commonStyles.cardHeader}>
-                <Text style={commonStyles.cardTitle}>No active stores</Text>
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.cardTitle}>No active stores</Text>
               </View>
 
-              <View style={commonStyles.cardBody}>
+              <View style={styles.cardBody}>
                 <Text style={styles.bodyText}>
                   Create or activate a store before creating staff users.
                 </Text>
@@ -204,14 +204,14 @@ export default function NewStaffScreen() {
 
           {storesState.status === "ready" && storesState.stores.length > 0 ? (
             <>
-              <View style={commonStyles.card}>
-                <View style={commonStyles.cardBody}>
-                  <Text style={commonStyles.sectionLabel}>Account details</Text>
+              <View style={styles.card}>
+                <View style={styles.cardBody}>
+                  <Text style={styles.sectionTitle}>Account details</Text>
 
-                  <View style={commonStyles.inputGroup}>
-                    <Text style={commonStyles.inputLabel}>Full name</Text>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Full name</Text>
                     <TextInput
-                      style={commonStyles.input}
+                      style={styles.input}
                       value={fullName}
                       onChangeText={setFullName}
                       placeholder="e.g. Maria Silva"
@@ -222,10 +222,10 @@ export default function NewStaffScreen() {
                     />
                   </View>
 
-                  <View style={commonStyles.inputGroup}>
-                    <Text style={commonStyles.inputLabel}>Username</Text>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>Username</Text>
                     <TextInput
-                      style={commonStyles.input}
+                      style={styles.input}
                       value={username}
                       onChangeText={setUsername}
                       placeholder="e.g. msilva"
@@ -236,10 +236,10 @@ export default function NewStaffScreen() {
                     />
                   </View>
 
-                  <View style={commonStyles.inputGroup}>
-                    <Text style={commonStyles.inputLabel}>PIN</Text>
+                  <View style={styles.inputGroup}>
+                    <Text style={styles.inputLabel}>PIN</Text>
                     <TextInput
-                      style={[commonStyles.input, styles.pinInput]}
+                      style={[styles.input, styles.pinInput]}
                       value={pin}
                       onChangeText={handlePinChange}
                       placeholder="••••••"
@@ -252,16 +252,16 @@ export default function NewStaffScreen() {
                   </View>
 
                   {pin.length > 0 && !isValidPin(pin) ? (
-                    <Text style={commonStyles.helpText}>
+                    <Text style={styles.helpText}>
                       PIN must be exactly 6 digits.
                     </Text>
                   ) : null}
                 </View>
               </View>
 
-              <View style={commonStyles.card}>
-                <View style={commonStyles.cardBody}>
-                  <Text style={commonStyles.sectionLabel}>Store assignment</Text>
+              <View style={styles.card}>
+                <View style={styles.cardBody}>
+                  <Text style={styles.sectionTitle}>Store assignment</Text>
 
                   <View style={styles.storeList}>
                     {storesState.stores.map((store) => {
@@ -273,7 +273,7 @@ export default function NewStaffScreen() {
                           style={({ pressed }) => [
                             styles.storeOption,
                             isSelected && styles.storeOptionSelected,
-                            pressed && commonStyles.buttonPressed,
+                            pressed && styles.buttonPressed,
                           ]}
                           onPress={() => setSelectedStoreId(store.id)}
                           disabled={isSubmitting}
@@ -306,7 +306,7 @@ export default function NewStaffScreen() {
                   </View>
 
                   {selectedStore ? (
-                    <Text style={commonStyles.helpText}>
+                    <Text style={styles.helpText}>
                       Selected store: {selectedStore.name}
                     </Text>
                   ) : null}
@@ -315,30 +315,30 @@ export default function NewStaffScreen() {
 
               {errorMessage ? <ErrorMessage message={errorMessage} /> : null}
 
-              <View style={commonStyles.actions}>
+              <View style={styles.actions}>
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.primaryButton,
-                    !canSubmit && commonStyles.buttonDisabled,
-                    pressed && canSubmit && commonStyles.buttonPressed,
+                    styles.btnPrimary,
+                    !canSubmit && styles.btnDisabled,
+                    pressed && canSubmit && styles.buttonPressed,
                   ]}
                   onPress={handleSubmit}
                   disabled={!canSubmit}
                 >
-                  <Text style={commonStyles.primaryButtonText}>
+                  <Text style={styles.btnPrimaryText}>
                     {isSubmitting ? "Creating…" : "Create staff"}
                   </Text>
                 </Pressable>
 
                 <Pressable
                   style={({ pressed }) => [
-                    commonStyles.textButton,
-                    pressed && commonStyles.buttonPressed,
+                    styles.btnCancel,
+                    pressed && styles.buttonPressed,
                   ]}
                   onPress={() => router.back()}
                   disabled={isSubmitting}
                 >
-                  <Text style={commonStyles.textButtonText}>Cancel</Text>
+                  <Text style={styles.btnCancelText}>Cancel</Text>
                 </Pressable>
               </View>
             </>
@@ -350,11 +350,87 @@ export default function NewStaffScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   keyboardView: {
     flex: 1,
   },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 48,
+    gap: 16,
+  },
+  pageHeader: {
+    gap: 5,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.4,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: "hidden",
+    ...shadows.card,
+  },
+  cardHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSoft,
+  },
+  cardTitle: {
+    fontSize: fontSize.xxl,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+  },
+  cardBody: {
+    padding: 16,
+    gap: 14,
+  },
+  sectionTitle: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  inputGroup: {
+    gap: 7,
+  },
+  inputLabel: {
+    fontSize: fontSize.md,
+    fontWeight: fontWeight.bold,
+    color: colors.textMuted,
+  },
+  input: {
+    height: 48,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surfaceSoft,
+    paddingHorizontal: 14,
+    fontSize: fontSize.lg,
+    color: colors.text,
+  },
   pinInput: {
     letterSpacing: 3,
+  },
+  helpText: {
+    fontSize: fontSize.md,
+    lineHeight: 19,
+    color: colors.textMuted,
   },
   bodyText: {
     fontSize: fontSize.lg,
@@ -410,5 +486,54 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     fontWeight: fontWeight.extrabold,
     color: colors.surface,
+  },
+  actions: {
+    gap: 12,
+    paddingTop: 6,
+  },
+  btnPrimary: {
+    height: 52,
+    borderRadius: radius.pill,
+    backgroundColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnDisabled: {
+    backgroundColor: colors.primaryDisabled,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+  },
+  btnCancel: {
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnCancelText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+  },
+  btnOutline: {
+    height: 46,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderColor: "#00685f",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.surface,
+  },
+  btnOutlineText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.primary,
+  },
+  buttonPressed: {
+    opacity: 0.72,
   },
 });

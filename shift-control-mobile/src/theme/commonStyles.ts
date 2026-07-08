@@ -132,11 +132,6 @@ export const commonStyles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.text,
   },
-  helpText: {
-    fontSize: fontSize.md,
-    lineHeight: 19,
-    color: colors.textMuted,
-  },
 
   // ─── Buttons ──────────────────────────────────────────────────────────────
   primaryButton: {
@@ -151,12 +146,6 @@ export const commonStyles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.extrabold,
     color: colors.surface,
-    letterSpacing: 0.3,
-  },
-  buttonDisabled: {
-    backgroundColor: colors.primaryDisabled,
-    shadowOpacity: 0,
-    elevation: 0,
   },
   outlineButton: {
     height: 48,
@@ -169,7 +158,7 @@ export const commonStyles = StyleSheet.create({
   },
   outlineButtonText: {
     fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
+    fontWeight: fontWeight.bold,
     color: colors.primary,
   },
   secondaryButton: {
@@ -185,31 +174,6 @@ export const commonStyles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-  },
-  dangerButton: {
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.danger,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  dangerButtonText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    color: colors.danger,
-    letterSpacing: 0.05,
-  },
-  textButton: {
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  textButtonText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.extrabold,
-    color: colors.primary,
   },
   buttonPressed: {
     opacity: 0.72,
@@ -265,135 +229,24 @@ export const commonStyles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  // ─── Detail rows (label + value pattern) ──────────────────────────────────
+  // ─── Detail rows ──────────────────────────────────────────────────────────
   detailRow: {
-    gap: 5,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
   },
   detailLabel: {
-    fontSize: 11,
-    fontWeight: fontWeight.extrabold,
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
     color: colors.textSubtle,
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   detailValue: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
     color: colors.text,
-    lineHeight: 21,
-  },
-
-  // ─── Status badges (pequeños, para active/inactive) ───────────────────────
-  statusBadge: {
-    borderRadius: radius.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  statusBadgeActive: {
-    backgroundColor: colors.primaryMuted,
-  },
-  statusBadgeInactive: {
-    backgroundColor: "#dae2fd",
-  },
-  statusBadgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.extrabold,
-    letterSpacing: 0.4,
-  },
-  statusBadgeTextActive: {
-    color: colors.primaryDark,
-  },
-  statusBadgeTextInactive: {
-    color: colors.textMuted,
-  },
-
-  // ─── List cards (cards con múltiples rows) ────────────────────────────────
-  listCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  listRow: {
-    minHeight: 88,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  listRowLast: {
-    borderBottomWidth: 0,
-  },
-  listRowInactive: {
-    opacity: 0.72,
-  },
-  rowPressed: {
-    backgroundColor: colors.surfaceMuted,
-  },
-
-  // ─── Section containers ───────────────────────────────────────────────────
-  section: {
-    gap: 10,
-  },
-  sectionLabel: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.extrabold,
-    color: colors.textSubtle,
-    letterSpacing: 1,
-  },
-
-  // ─── Action buttons (refresh, back, etc.) ─────────────────────────────────
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 4,
-  },
-  btnRefresh: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: "#89f5e7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnRefreshText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primaryDark,
-  },
-  btnBack: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-
-  // ─── Filter card ──────────────────────────────────────────────────────────
-  filterCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    gap: 12,
-    ...shadows.card,
-  },
-  filterOptions: {
-    flexDirection: "row",
-    gap: 8,
+    lineHeight: 20,
   },
 });

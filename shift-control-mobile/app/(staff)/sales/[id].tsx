@@ -17,7 +17,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { cancelSale, getSaleById, markSaleAsInvoiced } from "@/src/api/sales";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
+import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Sale } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -175,22 +175,22 @@ export default function SaleDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={commonStyles.safeArea}>
+      <SafeAreaView style={styles.safeArea}>
         <AppTopBar variant="back" />
-        <ScrollView contentContainerStyle={commonStyles.scrollContent}>
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Sale detail</Text>
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Sale detail</Text>
           </View>
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <ErrorMessage message={state.errorMessage} />
             <Pressable
-              style={commonStyles.primaryButton}
+              style={styles.btnPrimary}
               onPress={() => void loadSale()}
             >
-              <Text style={commonStyles.primaryButtonText}>Try again</Text>
+              <Text style={styles.btnPrimaryText}>Try again</Text>
             </Pressable>
-            <Pressable style={commonStyles.btnBack} onPress={() => router.back()}>
-              <Text style={commonStyles.btnBackText}>Back</Text>
+            <Pressable style={styles.btnBack} onPress={() => router.back()}>
+              <Text style={styles.btnBackText}>Back</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -206,7 +206,7 @@ export default function SaleDetailScreen() {
   const canCancelSale = sale.status === "ACTIVE";
 
   return (
-    <SafeAreaView style={commonStyles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       {/* AppBar */}
       <AppTopBar variant="back" />
 
@@ -215,20 +215,20 @@ export default function SaleDetailScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={commonStyles.scrollContent}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Page header */}
-          <View style={commonStyles.pageHeader}>
-            <Text style={commonStyles.pageTitle}>Sale detail</Text>
-            <Text style={commonStyles.pageSubtitle}>
+          <View style={styles.pageHeader}>
+            <Text style={styles.pageTitle}>Sale detail</Text>
+            <Text style={styles.pageSubtitle}>
               #{sale.id.slice(0, 8).toUpperCase()}
             </Text>
           </View>
 
           {/* Summary card */}
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <View style={styles.summaryTopRow}>
               <View style={styles.badgeRow}>
                 <View
@@ -318,7 +318,7 @@ export default function SaleDetailScreen() {
           </View>
 
           {/* Items card */}
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <Text style={styles.sectionLabel}>ITEMS</Text>
             <View style={styles.listContainer}>
               {sale.items.map((item, index) => (
@@ -345,7 +345,7 @@ export default function SaleDetailScreen() {
 
           {/* Discounts card */}
           {sale.discounts.length > 0 ? (
-            <View style={commonStyles.card}>
+            <View style={styles.card}>
               <Text style={styles.sectionLabel}>DISCOUNTS</Text>
               <View style={styles.listContainer}>
                 {sale.discounts.map((discount, index) => (
@@ -374,7 +374,7 @@ export default function SaleDetailScreen() {
           ) : null}
 
           {/* Payments card */}
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             <Text style={styles.sectionLabel}>PAYMENTS</Text>
             <View style={styles.listContainer}>
               {sale.payments.map((payment, index) => (
@@ -401,7 +401,7 @@ export default function SaleDetailScreen() {
           </View>
 
           {/* Invoice action card */}
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             {sale.invoiceStatus === "INVOICED" ? (
               <Text style={styles.bodyText}>
                 This sale is already invoiced.
@@ -425,7 +425,7 @@ export default function SaleDetailScreen() {
                 <ErrorMessage message={invoiceErrorMessage} />
                 <Pressable
                   style={[
-                    commonStyles.primaryButton,
+                    styles.btnPrimary,
                     isMarkingInvoiced && styles.btnDisabled,
                   ]}
                   onPress={() => void handleMarkAsInvoiced()}
@@ -434,7 +434,7 @@ export default function SaleDetailScreen() {
                   {isMarkingInvoiced ? (
                     <ActivityIndicator color="#ffffff" />
                   ) : (
-                    <Text style={commonStyles.primaryButtonText}>Mark as invoiced</Text>
+                    <Text style={styles.btnPrimaryText}>Mark as invoiced</Text>
                   )}
                 </Pressable>
               </>
@@ -442,7 +442,7 @@ export default function SaleDetailScreen() {
           </View>
 
           {/* Cancel sale card */}
-          <View style={commonStyles.card}>
+          <View style={styles.card}>
             {sale.status === "CANCELLED" ? (
               <>
                 <Text style={styles.bodyText}>
@@ -482,7 +482,7 @@ export default function SaleDetailScreen() {
 
                 <Pressable
                   style={[
-                    commonStyles.dangerButton,
+                    styles.btnDanger,
                     (cancelReason.trim().length === 0 || isCancelling) &&
                       styles.btnDisabled,
                   ]}
@@ -492,7 +492,7 @@ export default function SaleDetailScreen() {
                   {isCancelling ? (
                     <ActivityIndicator color="#ba1a1a" />
                   ) : (
-                    <Text style={commonStyles.dangerButtonText}>Cancel sale</Text>
+                    <Text style={styles.btnDangerText}>Cancel sale</Text>
                   )}
                 </Pressable>
               </>
@@ -501,22 +501,22 @@ export default function SaleDetailScreen() {
 
           {/* Note card */}
           {sale.note ? (
-            <View style={commonStyles.card}>
+            <View style={styles.card}>
               <Text style={styles.sectionLabel}>NOTE</Text>
               <Text style={styles.bodyText}>{sale.note}</Text>
             </View>
           ) : null}
 
           {/* Bottom actions */}
-          <View style={commonStyles.actions}>
+          <View style={styles.bottomActions}>
             <Pressable
-              style={commonStyles.btnRefresh}
+              style={styles.btnRefresh}
               onPress={() => void loadSale()}
             >
-              <Text style={commonStyles.btnRefreshText}>Refresh</Text>
+              <Text style={styles.btnRefreshText}>Refresh</Text>
             </Pressable>
-            <Pressable style={commonStyles.btnBack} onPress={() => router.back()}>
-              <Text style={commonStyles.btnBackText}>Back</Text>
+            <Pressable style={styles.btnBack} onPress={() => router.back()}>
+              <Text style={styles.btnBackText}>Back</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -526,8 +526,45 @@ export default function SaleDetailScreen() {
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+
   keyboardView: {
     flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+    gap: 16,
+  },
+
+  // Page header
+  pageHeader: {
+    gap: 4,
+    paddingHorizontal: 4,
+  },
+  pageTitle: {
+    fontSize: fontSize.display,
+    fontWeight: fontWeight.bold,
+    color: colors.text,
+    letterSpacing: -0.5,
+  },
+  pageSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textMuted,
+  },
+
+  // Card
+  card: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.xl,
+    padding: 16,
+    gap: 12,
+    ...shadows.card,
   },
 
   // Summary card — top row
@@ -756,8 +793,67 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  // Buttons (screen-specific)
+  // Buttons
+  btnPrimary: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.primaryButton,
+  },
+  btnPrimaryText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.extrabold,
+    color: colors.surface,
+    letterSpacing: 0.05,
+  },
+  btnDanger: {
+    height: 48,
+    borderWidth: 2,
+    borderColor: colors.danger,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDangerText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.danger,
+    letterSpacing: 0.05,
+  },
   btnDisabled: {
     opacity: 0.5,
+  },
+
+  // Bottom actions
+  bottomActions: {
+    gap: 12,
+    paddingBottom: 24,
+  },
+  btnRefresh: {
+    height: 48,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnRefreshText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.secondary,
+  },
+  btnBack: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: "#6d7a77",
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnBackText: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.text,
   },
 });
