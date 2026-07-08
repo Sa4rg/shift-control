@@ -20,7 +20,7 @@ import type {
   IncidentStatus,
 } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 type IncidentDetailState =
   | {
@@ -110,9 +110,9 @@ function DetailRow({
   }
 
   return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    <View style={commonStyles.detailRow}>
+      <Text style={commonStyles.detailLabel}>{label}</Text>
+      <Text style={[commonStyles.detailValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
@@ -224,36 +224,36 @@ export default function IncidentDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={commonStyles.safeArea}>
         <AppTopBar variant="back" />
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.card}>
-            <View style={styles.cardBody}>
-              <Text style={styles.sectionTitle}>Could not load incident</Text>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardBody}>
+              <Text style={commonStyles.sectionTitle}>Could not load incident</Text>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnOutline,
-                  pressed && styles.buttonPressed,
+                  commonStyles.outlineButton,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={loadIncident}
               >
-                <Text style={styles.btnOutlineText}>Try again</Text>
+                <Text style={commonStyles.outlineButtonText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnBack,
-                  pressed && styles.buttonPressed,
+                  commonStyles.btnBack,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={styles.btnBackText}>← Back</Text>
+                <Text style={commonStyles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -267,11 +267,11 @@ export default function IncidentDetailScreen() {
   const statusCopy = getStatusCopy(incident.status);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <View
@@ -317,24 +317,24 @@ export default function IncidentDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardBody}>
+        <View style={commonStyles.card}>
+          <View style={commonStyles.cardBody}>
             <Text style={styles.incidentTitle}>{incident.title}</Text>
             <Text style={styles.description}>{incident.description}</Text>
           </View>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardBody}>
-            <Text style={styles.sectionTitle}>Details</Text>
+        <View style={commonStyles.card}>
+          <View style={commonStyles.cardBody}>
+            <Text style={commonStyles.sectionTitle}>Details</Text>
 
             <DetailRow
               label="Type"
               value={formatIncidentText(incident.type)}
             />
 
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Severity</Text>
+            <View style={commonStyles.detailRow}>
+              <Text style={commonStyles.detailLabel}>Severity</Text>
               <SeverityBadge severity={incident.severity} />
             </View>
 
@@ -362,9 +362,9 @@ export default function IncidentDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardBody}>
-            <Text style={styles.sectionTitle}>Related context</Text>
+        <View style={commonStyles.card}>
+          <View style={commonStyles.cardBody}>
+            <Text style={commonStyles.sectionTitle}>Related context</Text>
 
             {incident.shiftId || incident.closureId || incident.saleId ? (
               <View style={styles.contextList}>
@@ -430,9 +430,9 @@ export default function IncidentDetailScreen() {
         ) : null}
 
         {incident.resolutionNote ? (
-          <View style={styles.card}>
-            <View style={styles.cardBody}>
-              <Text style={styles.sectionTitle}>Resolution note</Text>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardBody}>
+              <Text style={commonStyles.sectionTitle}>Resolution note</Text>
               <View style={styles.noteBlock}>
                 <Text style={styles.noteText}>{incident.resolutionNote}</Text>
               </View>
@@ -440,32 +440,32 @@ export default function IncidentDetailScreen() {
           </View>
         ) : null}
 
-        <View style={styles.actions}>
+        <View style={commonStyles.actions}>
           <Pressable
             style={({ pressed }) => [
-              styles.btnRefresh,
-              pressed && styles.buttonPressed,
+              commonStyles.btnRefresh,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={loadIncident}
           >
-            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              styles.btnBack,
-              pressed && styles.buttonPressed,
+              commonStyles.btnBack,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={styles.btnBackText}>← Back</Text>
+            <Text style={commonStyles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
 
         <Pressable
           style={({ pressed }) => [
             styles.btnDashboard,
-            pressed && styles.buttonPressed,
+            pressed && commonStyles.buttonPressed,
           ]}
           onPress={() => router.replace("/(staff)/home")}
         >
@@ -477,15 +477,6 @@ export default function IncidentDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
   statusBanner: {
     marginHorizontal: -20,
     marginTop: -20,
@@ -538,18 +529,6 @@ const styles = StyleSheet.create({
   statusBannerTextResolved: {
     color: colors.primary,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  cardBody: {
-    padding: 16,
-    gap: 14,
-  },
   incidentTitle: {
     fontSize: fontSize.xxl,
     fontWeight: fontWeight.bold,
@@ -560,35 +539,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     lineHeight: 24,
     color: colors.textMuted,
-  },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: "900",
-    color: colors.primary,
-    letterSpacing: 0.7,
-  },
-  detailRow: {
-    minHeight: 34,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  detailLabel: {
-    flex: 1,
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.textSubtle,
-  },
-  detailValue: {
-    flex: 1,
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    textAlign: "right",
   },
   primaryValue: {
     color: colors.primary,
@@ -729,39 +679,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.textMuted,
   },
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 4,
-  },
-  btnRefresh: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: "#89f5e7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnRefreshText: {
-    fontSize: fontSize.base,
-    fontWeight: "900",
-    color: colors.primaryDark,
-  },
-  btnBack: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: "900",
-    color: colors.textMuted,
-  },
   btnDashboard: {
     height: 48,
     borderRadius: radius.pill,
@@ -776,22 +693,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: "900",
     color: colors.primary,
-  },
-  btnOutline: {
-    height: 46,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: "#00685f",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: "900",
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
   },
 });

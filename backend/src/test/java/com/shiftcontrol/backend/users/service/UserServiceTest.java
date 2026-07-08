@@ -2,10 +2,15 @@ package com.shiftcontrol.backend.users.service;
 
 import com.shiftcontrol.backend.shared.exception.BusinessException;
 import com.shiftcontrol.backend.shared.exception.NotFoundException;
+import com.shiftcontrol.backend.shifts.model.Shift;
+import com.shiftcontrol.backend.shifts.model.ShiftStatus;
+import com.shiftcontrol.backend.shifts.model.ShiftType;
+import com.shiftcontrol.backend.shifts.repository.ShiftRepository;
 import com.shiftcontrol.backend.stores.model.Store;
 import com.shiftcontrol.backend.stores.repository.StoreRepository;
 import com.shiftcontrol.backend.users.dto.CreateAdminRequest;
 import com.shiftcontrol.backend.users.dto.CreateStaffRequest;
+import com.shiftcontrol.backend.users.dto.MonthlyWorkHoursResponse;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.model.User;
 import com.shiftcontrol.backend.users.repository.UserRepository;
@@ -16,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -39,6 +45,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private ShiftRepository shiftRepository;
 
     @InjectMocks
     private UserService userService;
@@ -413,5 +422,196 @@ class UserServiceTest {
                 .hasMessage("User is already inactive");
 
         verify(userRepository, never()).save(any());
+    }
+
+    // -------------------------------------------------------------------------
+    // getMonthlyWorkHours tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void should_calculate_monthly_work_hours_for_staff_with_two_closed_shifts() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+        User staff = new User();
+        staff.setId(staffId);
+        staff.setFullName("Ana Costa");
+        staff.setRole(Role.STAFF);
+        staff.setActive(true);
+
+        Store store = new Store();
+        store.setId(UUID.randomUUID());
+
+        // Shift 1: July 6, 2026 08:00 - 17:00 UTC = 9 hours = 540 minutes
+        Shift shift1 = new Shift();
+        shift1.setStaff(staff);
+        shift1.setStore(store);
+        shift1.setType(ShiftType.DAY);
+        shift1.setStatus(ShiftStatus.CLOSED);
+        shift1.setOpenedAt(Instant.parse("2026-07-06T08:00:00Z"));
+        shift1.setClosedAt(Instant.parse("2026-07-06T17:00:00Z"));
+
+        // Shift 2: July 7, 2026 08:00 - 12:30 UTC = 4.5 hours = 270 minutes
+        Shift shift2 = new Shift();
+        shift2.setStaff(staff);
+        shift2.setStore(store);
+        shift2.setType(ShiftType.DAY);
+        shift2.setStatus(ShiftStatus.CLOSED);
+        shift2.setOpenedAt(Instant.parse("2026-07-07T08:00:00Z"));
+        shift2.setClosedAt(Instant.parse("2026-07-07T12:30:00Z"));
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findClosedShiftsByStaffAndMonth(
+                staffId,
+                Instant.parse("2026-07-01T00:00:00Z"),
+                Instant.parse("2026-08-01T00:00:00Z")
+        )).thenReturn(List.of(shift1, shift2));
+
+        // Act
+        MonthlyWorkHoursResponse result = userService.getMonthlyWorkHours(staffId, 2026, 7);
+
+        // Assert
+        assertThat(result.staffId()).isEqualTo(staffId);
+        assertThat(result.staffName()).isEqualTo("Ana Costa");
+        assertThat(result.year()).isEqualTo(2026);
+        assertThat(result.month()).isEqualTo(7);
+        assertThat(result.totalMinutes()).isEqualTo(810); // 540 + 270
+        assertThat(result.closedShiftCount()).isEqualTo(2);
+    }
+
+    @Test
+    void should_ignore_open_shifts_when_calculating_monthly_work_hours() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+        User staff = new User();
+        staff.setId(staffId);
+        staff.setFullName("Ana Costa");
+        staff.setRole(Role.STAFF);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findClosedShiftsByStaffAndMonth(
+                staffId,
+                Instant.parse("2026-07-01T00:00:00Z"),
+                Instant.parse("2026-08-01T00:00:00Z")
+        )).thenReturn(List.of()); // Only closed shifts returned by repository
+
+        // Act
+        MonthlyWorkHoursResponse result = userService.getMonthlyWorkHours(staffId, 2026, 7);
+
+        // Assert
+        assertThat(result.totalMinutes()).isEqualTo(0);
+        assertThat(result.closedShiftCount()).isEqualTo(0);
+    }
+
+    @Test
+    void should_ignore_shifts_outside_selected_month() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+        User staff = new User();
+        staff.setId(staffId);
+        staff.setFullName("Ana Costa");
+        staff.setRole(Role.STAFF);
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findClosedShiftsByStaffAndMonth(
+                staffId,
+                Instant.parse("2026-07-01T00:00:00Z"),
+                Instant.parse("2026-08-01T00:00:00Z")
+        )).thenReturn(List.of()); // Repository filters by date range
+
+        // Act
+        MonthlyWorkHoursResponse result = userService.getMonthlyWorkHours(staffId, 2026, 7);
+
+        // Assert
+        assertThat(result.totalMinutes()).isEqualTo(0);
+        assertThat(result.closedShiftCount()).isEqualTo(0);
+    }
+
+    @Test
+    void should_count_only_overlapping_minutes_for_overnight_shift_crossing_month_boundary() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+        User staff = new User();
+        staff.setId(staffId);
+        staff.setFullName("Ana Costa");
+        staff.setRole(Role.STAFF);
+
+        Store store = new Store();
+        store.setId(UUID.randomUUID());
+
+        // Shift crosses July 31 23:00 to Aug 1 03:00 UTC = 4 hours total
+        // July overlap: 60 minutes (23:00-00:00)
+        Shift overnightShift = new Shift();
+        overnightShift.setStaff(staff);
+        overnightShift.setStore(store);
+        overnightShift.setType(ShiftType.NIGHT);
+        overnightShift.setStatus(ShiftStatus.CLOSED);
+        overnightShift.setOpenedAt(Instant.parse("2026-07-31T23:00:00Z"));
+        overnightShift.setClosedAt(Instant.parse("2026-08-01T03:00:00Z"));
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.of(staff));
+        when(shiftRepository.findClosedShiftsByStaffAndMonth(
+                staffId,
+                Instant.parse("2026-07-01T00:00:00Z"),
+                Instant.parse("2026-08-01T00:00:00Z")
+        )).thenReturn(List.of(overnightShift));
+
+        // Act
+        MonthlyWorkHoursResponse result = userService.getMonthlyWorkHours(staffId, 2026, 7);
+
+        // Assert
+        assertThat(result.totalMinutes()).isEqualTo(60); // Only July portion
+        assertThat(result.closedShiftCount()).isEqualTo(1);
+    }
+
+    @Test
+    void should_throw_business_exception_when_requesting_monthly_hours_for_admin_user() {
+        // Arrange
+        UUID adminId = UUID.randomUUID();
+        User admin = new User();
+        admin.setId(adminId);
+        admin.setFullName("Carlos Admin");
+        admin.setRole(Role.ADMIN);
+
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+
+        // Act + Assert
+        assertThatThrownBy(() -> userService.getMonthlyWorkHours(adminId, 2026, 7))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Monthly work hours are only available for STAFF users");
+    }
+
+    @Test
+    void should_throw_business_exception_when_month_is_invalid_below_range() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+
+        // Act + Assert
+        assertThatThrownBy(() -> userService.getMonthlyWorkHours(staffId, 2026, 0))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Month must be between 1 and 12");
+    }
+
+    @Test
+    void should_throw_business_exception_when_month_is_invalid_above_range() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+
+        // Act + Assert
+        assertThatThrownBy(() -> userService.getMonthlyWorkHours(staffId, 2026, 13))
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("Month must be between 1 and 12");
+    }
+
+    @Test
+    void should_throw_not_found_when_user_does_not_exist() {
+        // Arrange
+        UUID staffId = UUID.randomUUID();
+
+        when(userRepository.findById(staffId)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThatThrownBy(() -> userService.getMonthlyWorkHours(staffId, 2026, 7))
+                .isInstanceOf(NotFoundException.class)
+                .hasMessage("User not found");
     }
 }

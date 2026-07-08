@@ -3,6 +3,7 @@ package com.shiftcontrol.backend.users.controller;
 import com.shiftcontrol.backend.shared.response.ApiResponse;
 import com.shiftcontrol.backend.users.dto.CreateAdminRequest;
 import com.shiftcontrol.backend.users.dto.CreateStaffRequest;
+import com.shiftcontrol.backend.users.dto.MonthlyWorkHoursResponse;
 import com.shiftcontrol.backend.users.dto.UserResponse;
 import com.shiftcontrol.backend.users.model.Role;
 import com.shiftcontrol.backend.users.service.UserService;
@@ -76,5 +77,15 @@ public class UserController {
     public ApiResponse<UserResponse> createAdmin(@Valid @RequestBody CreateAdminRequest request) {
         UserResponse response = UserResponse.fromEntity(userService.createAdmin(request));
         return ApiResponse.ok("Admin user created successfully", response);
+    }
+
+    @GetMapping("/{id}/work-hours/monthly")
+    public ApiResponse<MonthlyWorkHoursResponse> getMonthlyWorkHours(
+            @PathVariable UUID id,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        MonthlyWorkHoursResponse response = userService.getMonthlyWorkHours(id, year, month);
+        return ApiResponse.ok("Monthly work hours retrieved successfully", response);
     }
 }

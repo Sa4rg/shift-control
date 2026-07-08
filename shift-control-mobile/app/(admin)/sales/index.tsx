@@ -17,7 +17,7 @@ import { LoadingState } from "@/src/components/LoadingState";
 import type { InvoiceStatus, Sale, SaleStatus } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 type SalesState =
   | {
@@ -174,39 +174,39 @@ export default function AdminSalesListScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={commonStyles.safeArea}>
         {appBar}
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Could not load sales</Text>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardHeader}>
+              <Text style={commonStyles.cardTitle}>Could not load sales</Text>
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={commonStyles.cardBody}>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnOutline,
-                  pressed && styles.buttonPressed,
+                  commonStyles.outlineButton,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={loadSales}
               >
-                <Text style={styles.btnOutlineText}>Try again</Text>
+                <Text style={commonStyles.outlineButtonText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnBack,
-                  pressed && styles.buttonPressed,
+                  commonStyles.btnBack,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={styles.btnBackText}>← Back</Text>
+                <Text style={commonStyles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -218,16 +218,16 @@ export default function AdminSalesListScreen() {
   const { sales } = state;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       {appBar}
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Shift transactions</Text>
-          <Text style={styles.pageSubtitle}>
+        <View style={commonStyles.pageHeader}>
+          <Text style={commonStyles.pageTitle}>Shift transactions</Text>
+          <Text style={commonStyles.pageSubtitle}>
             All sales registered during this shift
           </Text>
           <View style={styles.salesCountPill}>
@@ -238,15 +238,15 @@ export default function AdminSalesListScreen() {
         </View>
 
         {sales.length === 0 ? (
-          <View style={styles.card}>
-            <View style={styles.cardBody}>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardBody}>
               <Text style={styles.emptyText}>
                 No sales registered for this shift.
               </Text>
             </View>
           </View>
         ) : (
-          <View style={styles.card}>
+          <View style={commonStyles.card}>
             <View style={styles.salesList}>
               {sales.map((sale, index) => (
                 <SaleRow key={sale.id} sale={sale} isLast={index === sales.length - 1} />
@@ -255,25 +255,25 @@ export default function AdminSalesListScreen() {
           </View>
         )}
 
-        <View style={styles.actions}>
+        <View style={commonStyles.actions}>
           <Pressable
             style={({ pressed }) => [
-              styles.btnRefresh,
-              pressed && styles.buttonPressed,
+              commonStyles.btnRefresh,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={loadSales}
           >
-            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              styles.btnBack,
-              pressed && styles.buttonPressed,
+              commonStyles.btnBack,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={styles.btnBackText}>← Back</Text>
+            <Text style={commonStyles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -282,28 +282,6 @@ export default function AdminSalesListScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 8,
-  },
-  pageTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.base,
-    color: colors.textMuted,
-    lineHeight: 20,
-  },
   salesCountPill: {
     alignSelf: "flex-start",
     borderRadius: radius.pill,
@@ -316,30 +294,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: fontWeight.bold,
     color: colors.textMuted,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  cardHeader: {
-    minHeight: 52,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  cardBody: {
-    padding: 16,
-    gap: 12,
   },
   emptyText: {
     fontSize: fontSize.lg,
@@ -426,55 +380,5 @@ const styles = StyleSheet.create({
   },
   rowPressed: {
     backgroundColor: colors.surfaceMuted,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 4,
-  },
-  btnRefresh: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: colors.secondarySoft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnRefreshText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.secondaryDark,
-  },
-  btnBack: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  btnOutline: {
-    height: 46,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
   },
 });

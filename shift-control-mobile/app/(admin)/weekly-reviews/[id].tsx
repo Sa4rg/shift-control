@@ -17,7 +17,7 @@ import { LoadingState } from "@/src/components/LoadingState";
 import type { WeeklyAdminReview } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
 import { formatMoney } from "@/src/utils/money";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 type ReviewDetailState =
   | {
@@ -50,9 +50,9 @@ function DetailRow({
   }
 
   return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={[styles.detailValue, valueStyle]}>{value}</Text>
+    <View style={commonStyles.detailRow}>
+      <Text style={commonStyles.detailLabel}>{label}</Text>
+      <Text style={[commonStyles.detailValue, valueStyle]}>{value}</Text>
     </View>
   );
 }
@@ -141,36 +141,36 @@ export default function AdminWeeklyReviewDetailScreen() {
 
   if (state.status === "error") {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={commonStyles.safeArea}>
         {appBar}
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.card}>
-            <View style={styles.cardBody}>
-              <Text style={styles.sectionTitle}>Could not load review</Text>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardBody}>
+              <Text style={commonStyles.sectionTitle}>Could not load review</Text>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnOutline,
-                  pressed && styles.buttonPressed,
+                  commonStyles.outlineButton,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={loadReview}
               >
-                <Text style={styles.btnOutlineText}>Try again</Text>
+                <Text style={commonStyles.outlineButtonText}>Try again</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnBack,
-                  pressed && styles.buttonPressed,
+                  commonStyles.btnBack,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
               >
-                <Text style={styles.btnBackText}>← Back</Text>
+                <Text style={commonStyles.btnBackText}>← Back</Text>
               </Pressable>
             </View>
           </View>
@@ -183,16 +183,16 @@ export default function AdminWeeklyReviewDetailScreen() {
   const statusCopy = getReviewStatusCopy(review);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       {appBar}
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Weekly review detail</Text>
-          <Text style={styles.pageSubtitle}>
+        <View style={commonStyles.pageHeader}>
+          <Text style={commonStyles.pageTitle}>Weekly review detail</Text>
+          <Text style={commonStyles.pageSubtitle}>
             REVIEW ID: #{review.id.slice(0, 8).toUpperCase()}
           </Text>
         </View>
@@ -240,13 +240,13 @@ export default function AdminWeeklyReviewDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={commonStyles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderIcon}>ⓘ</Text>
-            <Text style={styles.cardTitle}>Review context</Text>
+            <Text style={commonStyles.cardTitle}>Review context</Text>
           </View>
 
-          <View style={styles.cardBody}>
+          <View style={commonStyles.cardBody}>
             <DetailRow label="Store" value={review.storeName} />
             <DetailRow label="Staff member" value={review.staffName} />
             <DetailRow label="Reviewed by" value={review.reviewedByName} />
@@ -261,13 +261,13 @@ export default function AdminWeeklyReviewDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={commonStyles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderIcon}>↗</Text>
-            <Text style={styles.cardTitle}>Sales totals</Text>
+            <Text style={commonStyles.cardTitle}>Sales totals</Text>
           </View>
 
-          <View style={styles.cardBody}>
+          <View style={commonStyles.cardBody}>
             <View style={styles.totalSalesBlock}>
               <Text style={styles.totalSalesLabel}>Total sales</Text>
               <Text style={styles.totalSalesValue}>
@@ -305,13 +305,13 @@ export default function AdminWeeklyReviewDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={commonStyles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardHeaderIcon}>△</Text>
-            <Text style={styles.cardTitle}>Closures and incidents</Text>
+            <Text style={commonStyles.cardTitle}>Closures and incidents</Text>
           </View>
 
-          <View style={styles.cardBody}>
+          <View style={commonStyles.cardBody}>
             <View style={styles.metricsGrid}>
               <MetricBox label="Closures" value={String(review.closuresCount)} />
               <MetricBox label="Incidents" value={String(review.incidentCount)} />
@@ -342,13 +342,13 @@ export default function AdminWeeklyReviewDetailScreen() {
         </View>
 
         {review.note ? (
-          <View style={styles.card}>
+          <View style={commonStyles.card}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardHeaderIcon}>≡</Text>
-              <Text style={styles.cardTitle}>Review note</Text>
+              <Text style={commonStyles.cardTitle}>Review note</Text>
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={commonStyles.cardBody}>
               <View style={styles.noteBlock}>
                 <Text style={styles.noteText}>{review.note}</Text>
               </View>
@@ -356,25 +356,25 @@ export default function AdminWeeklyReviewDetailScreen() {
           </View>
         ) : null}
 
-        <View style={styles.actions}>
+        <View style={commonStyles.actions}>
           <Pressable
             style={({ pressed }) => [
-              styles.btnRefresh,
-              pressed && styles.buttonPressed,
+              commonStyles.btnRefresh,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={loadReview}
           >
-            <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+            <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
-              styles.btnBack,
-              pressed && styles.buttonPressed,
+              commonStyles.btnBack,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={styles.btnBackText}>← Back</Text>
+            <Text style={commonStyles.btnBackText}>← Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -383,35 +383,6 @@ export default function AdminWeeklyReviewDetailScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 5,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.extrabold,
-    color: colors.textMuted,
-    letterSpacing: 0.8,
-  },
-  sectionTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.extrabold,
-    color: colors.text,
-  },
   statusBanner: {
     borderRadius: 14,
     borderWidth: 1,
@@ -470,14 +441,6 @@ const styles = StyleSheet.create({
   statusBannerBodyIncident: {
     color: colors.warning,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
   cardHeader: {
     minHeight: 52,
     paddingHorizontal: 16,
@@ -492,39 +455,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.bold,
     color: colors.primary,
-  },
-  cardTitle: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  cardBody: {
-    padding: 16,
-    gap: 12,
-  },
-  detailRow: {
-    minHeight: 34,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-  },
-  detailLabel: {
-    flex: 1,
-    fontSize: fontSize.base,
-    color: colors.textMuted,
-  },
-  detailValue: {
-    flex: 1,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.extrabold,
-    color: colors.text,
-    textAlign: "right",
   },
   primaryValue: {
     color: colors.primary,
@@ -601,55 +531,5 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     color: colors.textMuted,
     fontStyle: "italic",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 4,
-  },
-  btnRefresh: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: "#89f5e7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnRefreshText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primaryDark,
-  },
-  btnBack: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  btnOutline: {
-    height: 46,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
   },
 });

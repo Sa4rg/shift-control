@@ -35,7 +35,7 @@ import type {
   Store,
   WeeklyAdminReviewStatus,
 } from "@/src/types/api";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 type ReferenceDataState =
   | {
@@ -92,7 +92,7 @@ function StoreOption({
       style={({ pressed }) => [
         styles.storeOption,
         selected && styles.storeOptionSelected,
-        pressed && !disabled && styles.buttonPressed,
+        pressed && !disabled && commonStyles.buttonPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -137,7 +137,7 @@ function StaffChip({
       style={({ pressed }) => [
         styles.staffChip,
         selected && styles.staffChipSelected,
-        pressed && !disabled && styles.buttonPressed,
+        pressed && !disabled && commonStyles.buttonPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -172,7 +172,7 @@ function StatusOption({
       style={({ pressed }) => [
         styles.statusOption,
         selected && styles.statusOptionSelected,
-        pressed && !disabled && styles.buttonPressed,
+        pressed && !disabled && commonStyles.buttonPressed,
       ]}
       onPress={onPress}
       disabled={disabled}
@@ -415,43 +415,43 @@ export default function NewWeeklyReviewScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.pageHeader}>
-            <Text style={styles.pageTitle}>New weekly review</Text>
-            <Text style={styles.pageSubtitle}>
+          <View style={commonStyles.pageHeader}>
+            <Text style={commonStyles.pageTitle}>New weekly review</Text>
+            <Text style={commonStyles.pageSubtitle}>
               Create a new performance audit for a store and staff member.
             </Text>
           </View>
 
           {referenceDataState.status === "error" ? (
-            <View style={styles.card}>
+            <View style={commonStyles.card}>
               <View style={styles.cardBody}>
-                <Text style={styles.sectionTitle}>Could not load data</Text>
+                <Text style={commonStyles.sectionTitle}>Could not load data</Text>
                 <ErrorMessage message={referenceDataState.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    styles.btnOutline,
-                    pressed && styles.buttonPressed,
+                    commonStyles.outlineButton,
+                    pressed && commonStyles.buttonPressed,
                   ]}
                   onPress={loadReferenceData}
                 >
-                  <Text style={styles.btnOutlineText}>Try again</Text>
+                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
           ) : null}
 
           {referenceDataState.status === "ready" && activeStores.length === 0 ? (
-            <View style={styles.card}>
+            <View style={commonStyles.card}>
               <View style={styles.cardBody}>
-                <Text style={styles.sectionTitle}>No active stores</Text>
+                <Text style={commonStyles.sectionTitle}>No active stores</Text>
                 <Text style={styles.bodyText}>
                   Create or activate a store before creating weekly reviews.
                 </Text>
@@ -461,9 +461,9 @@ export default function NewWeeklyReviewScreen() {
 
           {referenceDataState.status === "ready" && activeStores.length > 0 ? (
             <>
-              <View style={styles.card}>
+              <View style={commonStyles.card}>
                 <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>Store</Text>
+                  <Text style={commonStyles.sectionTitle}>Store</Text>
 
                   <View style={styles.storeList}>
                     {activeStores.map((store) => (
@@ -478,16 +478,16 @@ export default function NewWeeklyReviewScreen() {
                   </View>
 
                   {selectedStore ? (
-                    <Text style={styles.helperText}>
+                    <Text style={commonStyles.helpText}>
                       Selected store: {selectedStore.name}
                     </Text>
                   ) : null}
                 </View>
               </View>
 
-              <View style={styles.card}>
+              <View style={commonStyles.card}>
                 <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>Staff member</Text>
+                  <Text style={commonStyles.sectionTitle}>Staff member</Text>
 
                   {staffForSelectedStore.length === 0 ? (
                     <Text style={styles.bodyText}>
@@ -508,16 +508,16 @@ export default function NewWeeklyReviewScreen() {
                   )}
 
                   {selectedStaff ? (
-                    <Text style={styles.helperText}>
+                    <Text style={commonStyles.helpText}>
                       Selected staff: {selectedStaff.fullName}
                     </Text>
                   ) : null}
                 </View>
               </View>
 
-              <View style={styles.card}>
+              <View style={commonStyles.card}>
                 <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>Week start date</Text>
+                  <Text style={commonStyles.sectionTitle}>Week start date</Text>
 
                   <DatePickerField
                     value={weekStart}
@@ -526,7 +526,7 @@ export default function NewWeeklyReviewScreen() {
                     disabled={isSubmitting}
                   />
 
-                  <Text style={styles.helperText}>
+                  <Text style={commonStyles.helpText}>
                     Select the first day of the reporting week. Monday preferred.
                   </Text>
 
@@ -538,9 +538,9 @@ export default function NewWeeklyReviewScreen() {
                 </View>
               </View>
 
-              <View style={styles.card}>
+              <View style={commonStyles.card}>
                 <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>Review status</Text>
+                  <Text style={commonStyles.sectionTitle}>Review status</Text>
 
                   <View style={styles.statusGrid}>
                     {REVIEW_STATUSES.map((option) => (
@@ -556,9 +556,9 @@ export default function NewWeeklyReviewScreen() {
                 </View>
               </View>
 
-              <View style={styles.card}>
+              <View style={commonStyles.card}>
                 <View style={styles.cardBody}>
-                  <Text style={styles.sectionTitle}>Review note</Text>
+                  <Text style={commonStyles.sectionTitle}>Review note</Text>
 
                   <TextInput
                     style={styles.noteInput}
@@ -581,17 +581,17 @@ export default function NewWeeklyReviewScreen() {
                 </View>
               ) : null}
 
-              <View style={styles.actions}>
+              <View style={commonStyles.actions}>
                 <Pressable
                   style={({ pressed }) => [
-                    styles.btnPrimary,
+                    commonStyles.primaryButton,
                     !canSubmit && styles.btnDisabled,
-                    pressed && canSubmit && styles.buttonPressed,
+                    pressed && canSubmit && commonStyles.buttonPressed,
                   ]}
                   onPress={handleSubmit}
                   disabled={!canSubmit}
                 >
-                  <Text style={styles.btnPrimaryText}>
+                  <Text style={commonStyles.primaryButtonText}>
                     {isSubmitting ? "Creating…" : "✓ Create review"}
                   </Text>
                 </Pressable>
@@ -599,7 +599,7 @@ export default function NewWeeklyReviewScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.btnCancel,
-                    pressed && styles.buttonPressed,
+                    pressed && commonStyles.buttonPressed,
                   ]}
                   onPress={() => router.back()}
                   disabled={isSubmitting}
@@ -615,47 +615,10 @@ export default function NewWeeklyReviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
 
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 5,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.extrabold,
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
   cardBody: {
     padding: 16,
     gap: 14,
-  },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: "900",
-    color: colors.textMuted,
-    letterSpacing: 0.9,
   },
   storeList: {
     gap: 8,
@@ -732,11 +695,6 @@ const styles = StyleSheet.create({
   },
   staffChipTextSelected: {
     color: colors.primary,
-  },
-  helperText: {
-    fontSize: fontSize.sm,
-    lineHeight: 18,
-    color: colors.textSubtle,
   },
   validationText: {
     fontSize: fontSize.sm,
@@ -821,27 +779,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff8f7",
     padding: 14,
   },
-  actions: {
-    gap: 12,
-    paddingTop: 6,
-  },
-  btnPrimary: {
-    height: 52,
-    borderRadius: radius.lg,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.primaryButton,
-  },
   btnDisabled: {
     backgroundColor: colors.primaryDisabled,
     shadowOpacity: 0,
     elevation: 0,
-  },
-  btnPrimaryText: {
-    fontSize: fontSize.base,
-    fontWeight: "900",
-    color: colors.surface,
   },
   btnCancel: {
     height: 44,
@@ -852,22 +793,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.extrabold,
     color: colors.textMuted,
-  },
-  btnOutline: {
-    height: 46,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: "#00685f",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: "900",
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
   },
 });
