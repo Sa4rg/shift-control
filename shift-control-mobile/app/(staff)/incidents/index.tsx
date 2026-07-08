@@ -14,7 +14,7 @@ import { listIncidents } from "@/src/api/incidents";
 import { getCurrentShift } from "@/src/api/shifts";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Incident, IncidentSeverity, IncidentStatus } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
@@ -126,42 +126,42 @@ export default function IncidentsIndexScreen() {
   const newIncidentPath = "/(staff)/incidents/new-incident" as never;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Page header */}
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>My incidents</Text>
-          <Text style={styles.pageSubtitle}>
+        <View style={commonStyles.pageHeader}>
+          <Text style={commonStyles.pageTitle}>My incidents</Text>
+          <Text style={commonStyles.pageSubtitle}>
             Incidents reported by you or related to your operational context.
           </Text>
         </View>
 
         {/* Error state */}
         {state.status === "error" ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Could not load incidents</Text>
+          <View style={commonStyles.card}>
+            <Text style={commonStyles.cardTitle}>Could not load incidents</Text>
             <ErrorMessage message={state.errorMessage} />
-            <Pressable style={styles.btnOutline} onPress={loadIncidents}>
-              <Text style={styles.btnOutlineText}>Try again</Text>
+            <Pressable style={commonStyles.outlineButton} onPress={loadIncidents}>
+              <Text style={commonStyles.outlineButtonText}>Try again</Text>
             </Pressable>
           </View>
         ) : null}
 
         {/* Empty state */}
         {state.status === "ready" && state.incidents.length === 0 ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>No incidents yet</Text>
+          <View style={commonStyles.card}>
+            <Text style={commonStyles.cardTitle}>No incidents yet</Text>
             <Text style={styles.emptyBody}>
               You have not reported any incidents.
             </Text>
             {effectiveShiftId ? (
               <Pressable
-                style={styles.btnPrimary}
+                style={commonStyles.primaryButton}
                 onPress={() =>
                   router.push({
                     pathname: newIncidentPath,
@@ -169,7 +169,7 @@ export default function IncidentsIndexScreen() {
                   })
                 }
               >
-                <Text style={styles.btnPrimaryText}>+ New incident</Text>
+                <Text style={commonStyles.primaryButtonText}>+ New incident</Text>
               </Pressable>
             ) : null}
           </View>
@@ -177,7 +177,7 @@ export default function IncidentsIndexScreen() {
 
         {/* Incidents list */}
         {state.status === "ready" && state.incidents.length > 0 ? (
-          <View style={styles.listCard}>
+          <View style={commonStyles.listCard}>
             {state.incidents.map((incident, index) => (
               <View key={incident.id}>
                 {index > 0 && <View style={styles.rowDivider} />}
@@ -212,11 +212,11 @@ export default function IncidentsIndexScreen() {
         ) : null}
 
         {/* Actions */}
-        <View style={styles.actions}>
+        <View style={commonStyles.actions}>
           {effectiveShiftId ? (
             <Pressable
               style={({ pressed }) => [
-                styles.btnPrimary,
+                commonStyles.primaryButton,
                 pressed && styles.btnPressed,
               ]}
               onPress={() =>
@@ -226,7 +226,7 @@ export default function IncidentsIndexScreen() {
                 })
               }
             >
-              <Text style={styles.btnPrimaryText}>+ New incident</Text>
+              <Text style={commonStyles.primaryButtonText}>+ New incident</Text>
             </Pressable>
           ) : (
             <View style={styles.infoCard}>
@@ -238,12 +238,12 @@ export default function IncidentsIndexScreen() {
           )}
           <Pressable
             style={({ pressed }) => [
-              styles.btnBack,
+              commonStyles.btnBack,
               pressed && styles.btnPressed,
             ]}
             onPress={() => router.back()}
           >
-            <Text style={styles.btnBackText}>Back</Text>
+            <Text style={commonStyles.btnBackText}>Back</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -252,49 +252,6 @@ export default function IncidentsIndexScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  // Scroll
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 20,
-  },
-
-  // Page header
-  pageHeader: {
-    gap: 8,
-    marginBottom: 4,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-
-  // Generic card (error / empty)
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 20,
-    gap: 12,
-    ...shadows.card,
-  },
-  cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
   emptyBody: {
     fontSize: fontSize.lg,
     color: colors.textMuted,
@@ -302,14 +259,6 @@ const styles = StyleSheet.create({
   },
 
   // Incidents list card
-  listCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
   rowDivider: {
     height: 1,
     backgroundColor: "#f1f5f9",
@@ -387,51 +336,8 @@ const styles = StyleSheet.create({
   },
 
   // Action buttons
-  actions: {
-    gap: 12,
-    marginTop: 8,
-  },
-  btnPrimary: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.primaryButton,
-  },
-  btnPrimaryText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.extrabold,
-    color: colors.surface,
-    letterSpacing: 0.3,
-  },
-  btnBack: {
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    color: colors.primary,
-  },
-  btnOutline: {
-    height: 44,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.semibold,
-    color: colors.text,
-  },
   btnPressed: {
     opacity: 0.8,
   },
 });
+

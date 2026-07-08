@@ -14,8 +14,9 @@ import { listUsers } from "@/src/api/users";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
+import { Section, StatusBadge } from "@/src/components/ui";
 import type { AdminUser } from "@/src/types/api";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 type UsersState =
   | {
@@ -54,43 +55,21 @@ function getUserStoreLabel(user: AdminUser): string {
   return "No store assigned";
 }
 
-function UserStatusBadge({ active }: { active: boolean }) {
-  return (
-    <View
-      style={[
-        styles.statusBadge,
-        active ? styles.statusBadgeActive : styles.statusBadgeInactive,
-      ]}
-    >
-      <Text
-        style={[
-          styles.statusBadgeText,
-          active
-            ? styles.statusBadgeTextActive
-            : styles.statusBadgeTextInactive,
-        ]}
-      >
-        {active ? "ACTIVE" : "INACTIVE"}
-      </Text>
-    </View>
-  );
-}
-
 function UserRow({ user, isLast }: { user: AdminUser; isLast: boolean }) {
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.userRow,
-        isLast && styles.userRowLast,
-        !user.active && styles.userRowInactive,
-        pressed && styles.rowPressed,
+        commonStyles.listRow,
+        isLast && commonStyles.listRowLast,
+        !user.active && commonStyles.listRowInactive,
+        pressed && commonStyles.rowPressed,
       ]}
       onPress={() => router.push(`/(admin)/users/${user.id}`)}
     >
       <View style={styles.userMain}>
         <View style={styles.userTitleRow}>
           <Text style={styles.userTitle}>{user.fullName}</Text>
-          <UserStatusBadge active={user.active} />
+          <StatusBadge active={user.active} />
         </View>
 
         <Text style={styles.userMeta}>
@@ -179,33 +158,33 @@ export default function AdminUsersScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Users</Text>
-          <Text style={styles.pageSubtitle}>
+        <View style={commonStyles.pageHeader}>
+          <Text style={commonStyles.pageTitle}>Users</Text>
+          <Text style={commonStyles.pageSubtitle}>
             Review admin and staff accounts.
           </Text>
         </View>
 
-        <View style={styles.filterCard}>
-          <View style={styles.filterOptions}>
+        <View style={commonStyles.filterCard}>
+          <View style={commonStyles.filterOptions}>
             <Pressable
               style={[
-                styles.filterChip,
-                !includeInactiveUsers && styles.filterChipActive,
+                commonStyles.chip,
+                !includeInactiveUsers && commonStyles.chipActive,
               ]}
               onPress={() => setIncludeInactiveUsers(false)}
             >
               <Text
                 style={[
-                  styles.filterChipText,
-                  !includeInactiveUsers && styles.filterChipTextActive,
+                  commonStyles.chipText,
+                  !includeInactiveUsers && commonStyles.chipTextActive,
                 ]}
               >
                 Active only
@@ -214,15 +193,15 @@ export default function AdminUsersScreen() {
 
             <Pressable
               style={[
-                styles.filterChip,
-                includeInactiveUsers && styles.filterChipActive,
+                commonStyles.chip,
+                includeInactiveUsers && commonStyles.chipActive,
               ]}
               onPress={() => setIncludeInactiveUsers(true)}
             >
               <Text
                 style={[
-                  styles.filterChipText,
-                  includeInactiveUsers && styles.filterChipTextActive,
+                  commonStyles.chipText,
+                  includeInactiveUsers && commonStyles.chipTextActive,
                 ]}
               >
                 Include inactive
@@ -238,41 +217,39 @@ export default function AdminUsersScreen() {
         </View>
 
         {state.status === "error" ? (
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.cardTitle}>Could not load users</Text>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardHeader}>
+              <Text style={commonStyles.cardTitle}>Could not load users</Text>
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={commonStyles.cardBody}>
               <ErrorMessage message={state.errorMessage} />
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnOutline,
-                  pressed && styles.buttonPressed,
+                  commonStyles.outlineButton,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={loadUsers}
               >
-                <Text style={styles.btnOutlineText}>Try again</Text>
+                <Text style={commonStyles.outlineButtonText}>Try again</Text>
               </Pressable>
             </View>
           </View>
         ) : null}
 
         {state.status === "ready" && state.users.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>No users found</Text>
-            <Text style={styles.emptyText}>
+          <View style={commonStyles.emptyCard}>
+            <Text style={commonStyles.emptyTitle}>No users found</Text>
+            <Text style={commonStyles.emptyText}>
               There are no users matching the current visibility filter.
             </Text>
           </View>
         ) : null}
 
         {adminUsers.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>ADMINS</Text>
-
-            <View style={styles.listCard}>
+          <Section title="ADMINS">
+            <View style={commonStyles.listCard}>
               {adminUsers.map((adminUser, index) => (
                 <UserRow
                   key={adminUser.id}
@@ -281,14 +258,12 @@ export default function AdminUsersScreen() {
                 />
               ))}
             </View>
-          </View>
+          </Section>
         ) : null}
 
         {staffUsers.length > 0 ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>STAFF</Text>
-
-            <View style={styles.listCard}>
+          <Section title="STAFF">
+            <View style={commonStyles.listCard}>
               {staffUsers.map((staffUser, index) => (
                 <UserRow
                   key={staffUser.id}
@@ -297,39 +272,39 @@ export default function AdminUsersScreen() {
                 />
               ))}
             </View>
-          </View>
+          </Section>
         ) : null}
 
-        <View style={styles.actions}>
+        <View style={commonStyles.actions}>
           <Pressable
             style={({ pressed }) => [
-              styles.btnPrimary,
-              pressed && styles.buttonPressed,
+              commonStyles.primaryButton,
+              pressed && commonStyles.buttonPressed,
             ]}
             onPress={() => router.push("/(admin)/users/new-staff")}
           >
-            <Text style={styles.btnPrimaryText}>♙ Create staff</Text>
+            <Text style={commonStyles.primaryButtonText}>♙ Create staff</Text>
           </Pressable>
 
-          <View style={styles.actionRow}>
+          <View style={commonStyles.actions}>
             <Pressable
               style={({ pressed }) => [
-                styles.btnRefresh,
-                pressed && styles.buttonPressed,
+                commonStyles.btnRefresh,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={loadUsers}
             >
-              <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+              <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
-                styles.btnBack,
-                pressed && styles.buttonPressed,
+                commonStyles.btnBack,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={() => router.back()}
             >
-              <Text style={styles.btnBackText}>← Back</Text>
+              <Text style={commonStyles.btnBackText}>← Back</Text>
             </Pressable>
           </View>
         </View>
@@ -339,100 +314,14 @@ export default function AdminUsersScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 5,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-  filterCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    gap: 12,
-    ...shadows.card,
-  },
-  filterOptions: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  filterChip: {
-    borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    backgroundColor: colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: colors.borderSoft,
-  },
-  filterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: "#00685f",
-  },
-  filterChipText: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  filterChipTextActive: {
-    color: colors.surface,
-  },
+  // Summary text específico de filter
   userSummary: {
     fontSize: fontSize.md,
     color: colors.textMuted,
     lineHeight: 18,
   },
-  section: {
-    gap: 10,
-  },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.extrabold,
-    color: colors.textSubtle,
-    letterSpacing: 1,
-  },
-  listCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  userRow: {
-    minHeight: 88,
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  userRowLast: {
-    borderBottomWidth: 0,
-  },
-  userRowInactive: {
-    opacity: 0.72,
-  },
+
+  // UserRow específico (detalles internos del row)
   userMain: {
     flex: 1,
     gap: 5,
@@ -457,28 +346,6 @@ const styles = StyleSheet.create({
     color: colors.textSubtle,
     fontWeight: fontWeight.semibold,
   },
-  statusBadge: {
-    borderRadius: radius.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  statusBadgeActive: {
-    backgroundColor: colors.primaryMuted,
-  },
-  statusBadgeInactive: {
-    backgroundColor: "#dae2fd",
-  },
-  statusBadgeText: {
-    fontSize: fontSize.xs,
-    fontWeight: fontWeight.extrabold,
-    letterSpacing: 0.4,
-  },
-  statusBadgeTextActive: {
-    color: colors.primaryDark,
-  },
-  statusBadgeTextInactive: {
-    color: colors.textMuted,
-  },
   userActionGroup: {
     flexDirection: "row",
     alignItems: "center",
@@ -494,114 +361,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: -1,
   },
-  rowPressed: {
-    backgroundColor: colors.surfaceMuted,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  cardHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  cardBody: {
-    padding: 16,
-    gap: 12,
-  },
-  emptyCard: {
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: 16,
-    gap: 6,
-  },
-  emptyTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  emptyText: {
-    fontSize: fontSize.base,
-    lineHeight: 20,
-    color: colors.textMuted,
-  },
-  actions: {
-    gap: 10,
-    paddingTop: 6,
-  },
-  actionRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  btnPrimary: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.primaryButton,
-  },
-  btnPrimaryText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.extrabold,
-    color: colors.surface,
-    letterSpacing: 0.2,
-  },
-  btnRefresh: {
-    flex: 1,
-    height: 48,
-    backgroundColor: "#89f5e7",
-    borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnRefreshText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primaryDark,
-  },
-  btnBack: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  btnOutline: {
-    height: 44,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
-  },
+
+  // Container local para el botón Create + actions row
 });

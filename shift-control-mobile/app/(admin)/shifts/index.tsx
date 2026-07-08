@@ -21,7 +21,7 @@ import { LoadingState } from "@/src/components/LoadingState";
 import { DatePickerField } from "@/src/components/DatePickerField";
 import type { AdminUser, Shift, ShiftStatus, Store } from "@/src/types/api";
 import { formatDateTime } from "@/src/utils/dates";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 import {
   getShiftDifferenceRows,
@@ -132,7 +132,7 @@ function FilterChip({
       style={({ pressed }) => [
         styles.filterChip,
         selected && styles.filterChipActive,
-        pressed && styles.buttonPressed,
+        pressed && commonStyles.buttonPressed,
       ]}
       onPress={onPress}
     >
@@ -162,7 +162,7 @@ function StatusSegment({
       style={({ pressed }) => [
         styles.statusSegment,
         selected && styles.statusSegmentActive,
-        pressed && styles.buttonPressed,
+        pressed && commonStyles.buttonPressed,
       ]}
       onPress={onPress}
     >
@@ -413,7 +413,7 @@ export default function AdminShiftsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
@@ -421,34 +421,34 @@ export default function AdminShiftsScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.pageHeader}>
-            <Text style={styles.pageTitle}>Shifts</Text>
-            <Text style={styles.pageSubtitle}>
+          <View style={commonStyles.pageHeader}>
+            <Text style={commonStyles.pageTitle}>Shifts</Text>
+            <Text style={commonStyles.pageSubtitle}>
               Filter and review all shift records.
             </Text>
           </View>
 
           {referenceDataState.status === "error" ? (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Could not load filters</Text>
+            <View style={commonStyles.card}>
+              <View style={commonStyles.cardHeader}>
+                <Text style={commonStyles.cardTitle}>Could not load filters</Text>
               </View>
 
-              <View style={styles.cardBody}>
+              <View style={commonStyles.cardBody}>
                 <ErrorMessage message={referenceDataState.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    styles.btnOutline,
-                    pressed && styles.buttonPressed,
+                    commonStyles.outlineButton,
+                    pressed && commonStyles.buttonPressed,
                   ]}
                   onPress={loadReferenceData}
                 >
-                  <Text style={styles.btnOutlineText}>Try again</Text>
+                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
@@ -480,7 +480,7 @@ export default function AdminShiftsScreen() {
               </ScrollView>
 
               {selectedStore ? (
-                <Text style={styles.helperText}>
+                <Text style={commonStyles.helpText}>
                   Selected store: {selectedStore.name}
                 </Text>
               ) : null}
@@ -511,7 +511,7 @@ export default function AdminShiftsScreen() {
               </ScrollView>
 
               {selectedStaff ? (
-                <Text style={styles.helperText}>
+                <Text style={commonStyles.helpText}>
                   Selected staff: {selectedStaff.fullName}
                 </Text>
               ) : null}
@@ -569,20 +569,20 @@ export default function AdminShiftsScreen() {
             <View style={styles.filterActions}>
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnPrimary,
+                  commonStyles.primaryButton,
                   !canLoadShifts && styles.btnDisabled,
-                  pressed && canLoadShifts && styles.buttonPressed,
+                  pressed && canLoadShifts && commonStyles.buttonPressed,
                 ]}
                 onPress={loadShifts}
                 disabled={!canLoadShifts}
               >
-                <Text style={styles.btnPrimaryText}>Load shifts</Text>
+                <Text style={commonStyles.primaryButtonText}>Load shifts</Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
                   styles.btnClear,
-                  pressed && styles.buttonPressed,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={handleClearFilters}
               >
@@ -598,22 +598,22 @@ export default function AdminShiftsScreen() {
           </View>
 
           {state.status === "error" ? (
-            <View style={styles.card}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Could not load shifts</Text>
+            <View style={commonStyles.card}>
+              <View style={commonStyles.cardHeader}>
+                <Text style={commonStyles.cardTitle}>Could not load shifts</Text>
               </View>
 
-              <View style={styles.cardBody}>
+              <View style={commonStyles.cardBody}>
                 <ErrorMessage message={state.errorMessage} />
 
                 <Pressable
                   style={({ pressed }) => [
-                    styles.btnOutline,
-                    pressed && styles.buttonPressed,
+                    commonStyles.outlineButton,
+                    pressed && commonStyles.buttonPressed,
                   ]}
                   onPress={loadShifts}
                 >
-                  <Text style={styles.btnOutlineText}>Try again</Text>
+                  <Text style={commonStyles.outlineButtonText}>Try again</Text>
                 </Pressable>
               </View>
             </View>
@@ -641,25 +641,25 @@ export default function AdminShiftsScreen() {
             </View>
           ) : null}
 
-          <View style={styles.actions}>
+          <View style={commonStyles.actions}>
             <Pressable
               style={({ pressed }) => [
-                styles.btnRefresh,
-                pressed && styles.buttonPressed,
+                commonStyles.btnRefresh,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={loadShifts}
             >
-              <Text style={styles.btnRefreshText}>⟳ Refresh</Text>
+              <Text style={commonStyles.btnRefreshText}>⟳ Refresh</Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
-                styles.btnBack,
-                pressed && styles.buttonPressed,
+                commonStyles.btnBack,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={() => router.back()}
             >
-              <Text style={styles.btnBackText}>← Back</Text>
+              <Text style={commonStyles.btnBackText}>← Back</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -669,31 +669,8 @@ export default function AdminShiftsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   keyboardView: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 5,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-    lineHeight: 22,
   },
   filterCard: {
     backgroundColor: colors.surface,
@@ -702,7 +679,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     padding: 16,
     gap: 16,
-    ...shadows.card,
   },
   filterGroup: {
     gap: 8,
@@ -735,11 +711,6 @@ const styles = StyleSheet.create({
   },
   filterChipTextActive: {
     color: colors.surface,
-  },
-  helperText: {
-    fontSize: fontSize.sm,
-    color: colors.textSubtle,
-    lineHeight: 18,
   },
   statusSegments: {
     flexDirection: "row",
@@ -799,19 +770,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.md,
     color: colors.textMuted,
   },
-  btnPrimary: {
-    height: 52,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.primaryButton,
-  },
-  btnPrimaryText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.extrabold,
-    color: colors.surface,
-  },
   btnDisabled: {
     backgroundColor: colors.primaryDisabled,
     shadowOpacity: 0,
@@ -833,7 +791,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
-    ...shadows.card,
   },
   shiftRow: {
     minHeight: 104,
@@ -931,29 +888,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     marginTop: -1,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  cardHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  cardBody: {
-    padding: 16,
-    gap: 12,
-  },
   emptyCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
@@ -977,55 +911,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: colors.textMuted,
     textAlign: "center",
-  },
-  actions: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 4,
-  },
-  btnRefresh: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    backgroundColor: "#89f5e7",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnRefreshText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primaryDark,
-  },
-  btnBack: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnBackText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  btnOutline: {
-    height: 46,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.surface,
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
   },
 });

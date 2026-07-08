@@ -245,6 +245,21 @@ public abstract class IntegrationTestBase {
         return shiftRepository.save(shift);
     }
 
+    protected Shift createClosedShift(User staff, Store store, String openedAtIso, String closedAtIso) {
+        Instant now = Instant.now();
+        Shift shift = new Shift();
+        shift.setStaff(staff);
+        shift.setStore(store);
+        shift.setType(ShiftType.DAY);
+        shift.setStatus(ShiftStatus.CLOSED);
+        shift.setOpenedAt(Instant.parse(openedAtIso));
+        shift.setClosedAt(Instant.parse(closedAtIso));
+        shift.setClosedBy(staff);
+        shift.setCreatedAt(now);
+        shift.setUpdatedAt(now);
+        return shiftRepository.save(shift);
+    }
+
     // =========================================================================
     // Closure helpers
     // =========================================================================

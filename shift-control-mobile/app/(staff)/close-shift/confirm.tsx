@@ -1,4 +1,4 @@
-﻿import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
@@ -18,7 +18,7 @@ import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import type { Shift, ShiftCloseResult } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 import {
   getCurrentWifiSsid,
   type WifiConnectionResult,
@@ -205,11 +205,11 @@ export default function CloseShiftConfirmScreen() {
     const isIncident = result.status === "CLOSED_WITH_INCIDENT";
 
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={commonStyles.safeArea}>
         <AppTopBar variant="back" />
 
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={isIncident ? styles.warningBanner : styles.successBanner}>
@@ -242,12 +242,12 @@ export default function CloseShiftConfirmScreen() {
             )}
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardHeader}>
               <Text style={styles.cardHeaderText}>Closure summary</Text>
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={commonStyles.cardBody}>
               <View style={styles.prominentRow}>
                 <Text style={styles.prominentLabel}>Total sales</Text>
                 <Text style={styles.prominentValue}>
@@ -342,31 +342,31 @@ export default function CloseShiftConfirmScreen() {
             </View>
           ) : null}
 
-          <View style={styles.actions}>
+          <View style={commonStyles.actions}>
             {closedShift ? (
               <Pressable
                 style={({ pressed }) => [
                   styles.btnShare,
-                  isSharing && styles.btnDisabled,
-                  pressed && !isSharing && styles.btnPressed,
+                  isSharing && commonStyles.buttonDisabled,
+                  pressed && !isSharing && commonStyles.buttonPressed,
                 ]}
                 onPress={handleShareClosure}
                 disabled={isSharing}
               >
                 <Text style={styles.btnShareText}>
-                  {isSharing ? "Opening share options…" : "Share close summary"}
+                  {isSharing ? "Opening share options�" : "Share close summary"}
                 </Text>
               </Pressable>
             ) : null}
 
             <Pressable
               style={({ pressed }) => [
-                styles.btnPrimary,
-                pressed && styles.btnPressed,
+                commonStyles.primaryButton,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={() => router.replace("/(staff)/home")}
             >
-              <Text style={styles.btnPrimaryText}>Back to home</Text>
+              <Text style={commonStyles.primaryButtonText}>Back to home</Text>
             </Pressable>
           </View>
         </ScrollView>
@@ -375,7 +375,7 @@ export default function CloseShiftConfirmScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
@@ -383,29 +383,29 @@ export default function CloseShiftConfirmScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.pageHeader}>
-            <Text style={styles.pageTitle}>Close shift</Text>
-            <Text style={styles.pageSubtitle}>
+          <View style={commonStyles.pageHeader}>
+            <Text style={commonStyles.pageTitle}>Close shift</Text>
+            <Text style={commonStyles.pageSubtitle}>
               Enter the physical amounts counted at the register.
             </Text>
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardHeader}>
               <Text style={[styles.cardHeaderText, styles.cardHeaderTeal]}>
                 Register amounts
               </Text>
             </View>
 
-            <View style={styles.cardBody}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>Confirmed cash amount</Text>
+            <View style={commonStyles.cardBody}>
+              <View style={commonStyles.inputGroup}>
+                <Text style={commonStyles.inputLabel}>Confirmed cash amount</Text>
                 <View style={styles.inputRow}>
-                  <Text style={styles.inputPrefix}>€</Text>
+                  <Text style={styles.inputPrefix}>�</Text>
                   <TextInput
                     style={styles.input}
                     value={confirmedCashAmount}
@@ -418,12 +418,12 @@ export default function CloseShiftConfirmScreen() {
                 </View>
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.inputLabel}>
+              <View style={commonStyles.inputGroup}>
+                <Text style={commonStyles.inputLabel}>
                   Confirmed MB/card terminal amount
                 </Text>
                 <View style={styles.inputRow}>
-                  <Text style={styles.inputPrefix}>€</Text>
+                  <Text style={styles.inputPrefix}>�</Text>
                   <TextInput
                     style={styles.input}
                     value={confirmedMbAmount}
@@ -439,11 +439,11 @@ export default function CloseShiftConfirmScreen() {
           </View>
 
           <View style={styles.differencesCard}>
-            <View style={styles.cardHeader}>
+            <View style={commonStyles.cardHeader}>
               <Text style={styles.cardHeaderText}>Differences</Text>
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={commonStyles.cardBody}>
               <View style={styles.diffRow}>
                 <Text style={styles.dataLabel}>Cash difference</Text>
                 <View style={styles.diffValueGroup}>
@@ -461,7 +461,7 @@ export default function CloseShiftConfirmScreen() {
                   >
                     {liveCashDiff !== null
                       ? formatMoney(Math.abs(liveCashDiff))
-                      : "–"}
+                      : "�"}
                   </Text>
                 </View>
               </View>
@@ -485,7 +485,7 @@ export default function CloseShiftConfirmScreen() {
                   >
                     {liveMbDiff !== null
                       ? formatMoney(Math.abs(liveMbDiff))
-                      : "–"}
+                      : "�"}
                   </Text>
                 </View>
               </View>
@@ -497,18 +497,18 @@ export default function CloseShiftConfirmScreen() {
                 <Text style={styles.cashToWithdrawValue}>
                   {cashToWithdrawParam !== null
                     ? formatMoney(cashToWithdrawParam)
-                    : "–"}
+                    : "�"}
                 </Text>
               </View>
             </View>
           </View>
 
-          <View style={styles.card}>
-            <View style={styles.cardHeader}>
+          <View style={commonStyles.card}>
+            <View style={commonStyles.cardHeader}>
               <Text style={styles.cardHeaderText}>Optional note</Text>
             </View>
 
-            <View style={styles.cardBody}>
+            <View style={commonStyles.cardBody}>
               <TextInput
                 style={styles.noteInput}
                 value={note}
@@ -543,25 +543,25 @@ export default function CloseShiftConfirmScreen() {
             </View>
           ) : null}
 
-          <View style={styles.actions}>
+          <View style={commonStyles.actions}>
             <Pressable
               style={({ pressed }) => [
-                styles.btnPrimary,
-                !canSubmit && styles.btnDisabled,
-                pressed && canSubmit && styles.btnPressed,
+                commonStyles.primaryButton,
+                !canSubmit && commonStyles.buttonDisabled,
+                pressed && canSubmit && commonStyles.buttonPressed,
               ]}
               onPress={handleSubmit}
               disabled={!canSubmit}
             >
-              <Text style={styles.btnPrimaryText}>
-                {isSubmitting ? "Closing…" : "Close shift"}
+              <Text style={commonStyles.primaryButtonText}>
+                {isSubmitting ? "Closing�" : "Close shift"}
               </Text>
             </Pressable>
 
             <Pressable
               style={({ pressed }) => [
                 styles.btnBackLink,
-                pressed && styles.btnPressed,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={() => router.back()}
               disabled={isSubmitting}
@@ -576,39 +576,8 @@ export default function CloseShiftConfirmScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   keyboardView: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 6,
-    marginBottom: 4,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.xl,
-    color: colors.textMuted,
-    lineHeight: 24,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
   },
   differencesCard: {
     backgroundColor: colors.surfaceMuted,
@@ -616,13 +585,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: "hidden",
-    ...shadows.card,
-  },
-  cardHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f5f9",
   },
   cardHeaderText: {
     fontSize: fontSize.sm,
@@ -634,22 +596,9 @@ const styles = StyleSheet.create({
   cardHeaderTeal: {
     color: colors.primary,
   },
-  cardBody: {
-    padding: 16,
-    gap: 14,
-  },
   cardDivider: {
     height: 1,
     backgroundColor: "#e8ecef",
-  },
-  inputGroup: {
-    gap: 6,
-  },
-  inputLabel: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: colors.textMuted,
-    letterSpacing: 0.2,
   },
   inputRow: {
     flexDirection: "row",
@@ -812,26 +761,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff8f7",
     padding: 14,
   },
-  actions: {
-    gap: 10,
-    marginTop: 4,
-  },
-  btnPrimary: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnDisabled: {
-    backgroundColor: colors.primaryDisabled,
-  },
-  btnPrimaryText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.surface,
-    letterSpacing: 0.3,
-  },
   btnBackLink: {
     height: 44,
     alignItems: "center",
@@ -841,9 +770,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: fontWeight.semibold,
     color: colors.primary,
-  },
-  btnPressed: {
-    opacity: 0.8,
   },
   btnShare: {
     height: 48,

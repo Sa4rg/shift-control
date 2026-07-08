@@ -15,7 +15,7 @@ import { getStoreById, updateStore } from "@/src/api/stores";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
-import { colors, fontSize, fontWeight, radius, shadows } from "@/src/theme";
+import { colors, commonStyles, fontSize } from "@/src/theme";
 
 type EditStoreLoadState =
   | {
@@ -134,17 +134,17 @@ export default function EditStoreScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Edit store</Text>
-          <Text style={styles.pageSubtitle}>
+        <View style={commonStyles.pageHeader}>
+          <Text style={commonStyles.pageTitle}>Edit store</Text>
+          <Text style={commonStyles.pageSubtitle}>
             Update the store information and Wi-Fi network.
           </Text>
         </View>
@@ -153,16 +153,16 @@ export default function EditStoreScreen() {
           <ErrorMessage message={loadState.errorMessage} />
         ) : (
           <>
-            <View style={styles.card}>
-              <View style={styles.cardBody}>
-                <Text style={styles.sectionTitle}>Store information</Text>
+            <View style={commonStyles.card}>
+              <View style={commonStyles.cardBody}>
+                <Text style={commonStyles.sectionLabel}>Store information</Text>
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Name</Text>
+                <View style={commonStyles.inputGroup}>
+                  <Text style={commonStyles.inputLabel}>Name</Text>
 
                   <TextInput
                     editable={!isSubmitting}
-                    style={styles.input}
+                    style={commonStyles.input}
                     value={name}
                     onChangeText={setName}
                     placeholder="e.g. Main Station"
@@ -172,12 +172,12 @@ export default function EditStoreScreen() {
                   />
                 </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Address</Text>
+                <View style={commonStyles.inputGroup}>
+                  <Text style={commonStyles.inputLabel}>Address</Text>
 
                   <TextInput
                     editable={!isSubmitting}
-                    style={styles.input}
+                    style={commonStyles.input}
                     value={address}
                     onChangeText={setAddress}
                     placeholder="e.g. 123 Business St"
@@ -187,12 +187,12 @@ export default function EditStoreScreen() {
                   />
                 </View>
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Wi-Fi network name</Text>
+                <View style={commonStyles.inputGroup}>
+                  <Text style={commonStyles.inputLabel}>Wi-Fi network name</Text>
 
                   <TextInput
                     editable={!isSubmitting}
-                    style={styles.input}
+                    style={commonStyles.input}
                     value={wifiSsid}
                     onChangeText={setWifiSsid}
                     placeholder="e.g. MEO-4A6DA0"
@@ -209,12 +209,12 @@ export default function EditStoreScreen() {
                   </Text>
                 ) : null}
 
-                <View style={styles.inputGroup}>
-                  <Text style={styles.inputLabel}>Base cash amount</Text>
+                <View style={commonStyles.inputGroup}>
+                  <Text style={commonStyles.inputLabel}>Base cash amount</Text>
 
                   <TextInput
                     editable={!isSubmitting}
-                    style={styles.input}
+                    style={commonStyles.input}
                     value={baseCashAmount}
                     onChangeText={(value) =>
                       setBaseCashAmount(value.replace(/[^\d.,]/g, ""))
@@ -239,31 +239,31 @@ export default function EditStoreScreen() {
               <ErrorMessage message={submitErrorMessage} />
             ) : null}
 
-            <View style={styles.actions}>
+            <View style={commonStyles.actions}>
               <Pressable
                 testID="save-store-button"
                 style={({ pressed }) => [
-                  styles.btnPrimary,
-                  !canSubmit && styles.btnDisabled,
-                  pressed && canSubmit && styles.buttonPressed,
+                  commonStyles.primaryButton,
+                  !canSubmit && commonStyles.buttonDisabled,
+                  pressed && canSubmit && commonStyles.buttonPressed,
                 ]}
                 onPress={handleSubmit}
                 disabled={!canSubmit}
               >
-                <Text style={styles.btnPrimaryText}>
+                <Text style={commonStyles.primaryButtonText}>
                   {isSubmitting ? "Saving…" : "Save changes"}
                 </Text>
               </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnCancel,
-                  pressed && styles.buttonPressed,
+                  commonStyles.textButton,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={() => router.back()}
                 disabled={isSubmitting}
               >
-                <Text style={styles.btnCancelText}>Cancel</Text>
+                <Text style={commonStyles.textButtonText}>Cancel</Text>
               </Pressable>
             </View>
           </>
@@ -274,104 +274,9 @@ export default function EditStoreScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 48,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 5,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  cardBody: {
-    padding: 16,
-    gap: 14,
-  },
-  sectionTitle: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.extrabold,
-    color: colors.primary,
-    letterSpacing: 0.9,
-    textTransform: "uppercase",
-  },
-  inputGroup: {
-    gap: 7,
-  },
-  inputLabel: {
-    fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
-    color: colors.textMuted,
-  },
-  input: {
-    height: 48,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surfaceSoft,
-    paddingHorizontal: 14,
-    fontSize: fontSize.lg,
-    color: colors.text,
-  },
   errorHelpText: {
     fontSize: fontSize.md,
     lineHeight: 19,
     color: colors.danger,
-  },
-  actions: {
-    gap: 12,
-    paddingTop: 6,
-  },
-  btnPrimary: {
-    height: 52,
-    borderRadius: radius.pill,
-    backgroundColor: colors.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    ...shadows.primaryButton,
-  },
-  btnDisabled: {
-    backgroundColor: colors.primaryDisabled,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  btnPrimaryText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.extrabold,
-    color: colors.surface,
-  },
-  btnCancel: {
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnCancelText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.extrabold,
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
   },
 });

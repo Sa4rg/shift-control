@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,4 +57,19 @@ public interface ShiftRepository extends JpaRepository<Shift, UUID>, JpaSpecific
         ORDER BY s.openedAt DESC
     """)
     List<Shift> findAllWithDetailsByIds(@Param("ids") List<UUID> ids);
+
+    @Query("""
+        SELECT s FROM Shift s
+        WHERE s.staff.id = :staffId
+          AND s.status = 'CLOSED'
+          AND s.closedAt IS NOT NULL
+          AND s.openedAt < :monthEnd
+          AND s.closedAt > :monthStart
+        ORDER BY s.openedAt ASC
+    """)
+    List<Shift> findClosedShiftsByStaffAndMonth(
+            @Param("staffId") UUID staffId,
+            @Param("monthStart") Instant monthStart,
+            @Param("monthEnd") Instant monthEnd
+    );
 }

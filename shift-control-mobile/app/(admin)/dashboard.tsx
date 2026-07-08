@@ -17,7 +17,7 @@ import { ErrorMessage } from "@/src/components/ErrorMessage";
 import { LoadingState } from "@/src/components/LoadingState";
 import type { Store } from "@/src/types/api";
 import { formatMoney } from "@/src/utils/money";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius } from "@/src/theme";
 
 type StoresState =
   | {
@@ -146,22 +146,21 @@ export default function AdminDashboardScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="root" />
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={commonStyles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>Admin dashboard</Text>
-          <Text style={styles.pageSubtitle}>Welcome, {displayName}</Text>
+        <View style={commonStyles.pageHeader}>
+          <Text style={commonStyles.pageTitle}>Admin dashboard</Text>
+          <Text style={commonStyles.pageSubtitle}>Welcome, {displayName}</Text>
         </View>
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Admin modules</Text>
-          </View>
+        <View style={commonStyles.card}>
+          <View style={commonStyles.cardHeader}>
+            <Text style={commonStyles.cardTitle}>Admin modules</Text>
 
           <View style={styles.moduleList}>
             {modules.map((module, index) => (
@@ -170,7 +169,7 @@ export default function AdminDashboardScreen() {
                 style={({ pressed }) => [
                   styles.moduleRow,
                   index === modules.length - 1 && styles.moduleRowLast,
-                  pressed && styles.rowPressed,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={module.onPress}
               >
@@ -191,15 +190,16 @@ export default function AdminDashboardScreen() {
             ))}
           </View>
         </View>
+        </View>
 
-        <View style={styles.card}>
+        <View style={commonStyles.card}>
           <View style={styles.storesHeader}>
-            <Text style={styles.cardTitle}>Stores</Text>
+            <Text style={commonStyles.cardTitle}>Stores</Text>
 
             <Pressable
               style={({ pressed }) => [
                 styles.refreshButton,
-                pressed && styles.buttonPressed,
+                pressed && commonStyles.buttonPressed,
               ]}
               onPress={loadStores}
             >
@@ -254,12 +254,12 @@ export default function AdminDashboardScreen() {
               <ErrorMessage message={storesState.errorMessage} />
               <Pressable
                 style={({ pressed }) => [
-                  styles.btnOutline,
-                  pressed && styles.buttonPressed,
+                  commonStyles.outlineButton,
+                  pressed && commonStyles.buttonPressed,
                 ]}
                 onPress={loadStores}
               >
-                <Text style={styles.btnOutlineText}>Try again</Text>
+                <Text style={commonStyles.outlineButtonText}>Try again</Text>
               </Pressable>
             </View>
           ) : null}
@@ -344,48 +344,7 @@ export default function AdminDashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  pageHeader: {
-    gap: 4,
-  },
-  pageTitle: {
-    fontSize: fontSize.display,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-    letterSpacing: -0.4,
-  },
-  pageSubtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textMuted,
-    lineHeight: 22,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-    ...shadows.card,
-  },
-  cardHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSoft,
-  },
-  cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
-  },
+
   moduleList: {
     backgroundColor: colors.surface,
   },
@@ -425,9 +384,6 @@ const styles = StyleSheet.create({
   chevron: {
     fontSize: 24,
     color: colors.textMuted,
-  },
-  rowPressed: {
-    backgroundColor: colors.surfaceMuted,
   },
   storesHeader: {
     paddingHorizontal: 16,
@@ -565,29 +521,12 @@ const styles = StyleSheet.create({
     fontWeight: fontWeight.bold,
     color: colors.primary,
   },
-  btnOutline: {
-    height: 44,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: "#00685f",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnOutlineText: {
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.bold,
-    color: colors.primary,
-  },
-  buttonPressed: {
-    opacity: 0.72,
-  },
   logoutCard: {
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.xl,
     overflow: "hidden",
-    ...shadows.card,
   },
   logoutRow: {
     minHeight: 58,

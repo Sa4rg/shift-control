@@ -1,4 +1,4 @@
-﻿import { router } from "expo-router";
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,7 +17,7 @@ import { getApiErrorMessage } from "@/src/api/errors";
 import { createSale } from "@/src/api/sales";
 import { AppTopBar } from "@/src/components/AppTopBar";
 import { ErrorMessage } from "@/src/components/ErrorMessage";
-import { colors, fontWeight, fontSize, shadows, radius } from "@/src/theme";
+import { colors, commonStyles, fontWeight, fontSize, radius, } from "@/src/theme";
 import {
   buildDiscounts,
   calculateDiscountAmount,
@@ -252,7 +252,7 @@ export default function NewSaleScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={commonStyles.safeArea}>
       <AppTopBar variant="back" />
 
       <KeyboardAvoidingView
@@ -260,13 +260,13 @@ export default function NewSaleScreen() {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={commonStyles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
           {/* Item details card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Item details</Text>
+          <View style={commonStyles.card}>
+            <Text style={commonStyles.cardTitle}>Item details</Text>
 
             {items.map((item, index) => (
               <View key={index}>
@@ -346,10 +346,10 @@ export default function NewSaleScreen() {
             </Pressable>
           </View>
 
-          {/* Discount card — collapsed by default */}
-          <View style={styles.card}>
+          {/* Discount card � collapsed by default */}
+          <View style={commonStyles.card}>
             <View style={styles.cardHeaderRow}>
-              <Text style={styles.cardTitle}>Discount</Text>
+              <Text style={commonStyles.cardTitle}>Discount</Text>
               <Pressable
                 onPress={() => setIsDiscountExpanded(!isDiscountExpanded)}
               >
@@ -413,7 +413,7 @@ export default function NewSaleScreen() {
                   })}
                 </View>
 
-                <Text style={styles.helpText}>
+                <Text style={commonStyles.helpText}>
                   {DISCOUNT_HELP[selectedDiscount]}
                 </Text>
 
@@ -488,12 +488,12 @@ export default function NewSaleScreen() {
             )}
           </View>
 
-          {/* Totals — always visible */}
+          {/* Totals � always visible */}
           <View style={styles.totalsCard}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
               <Text style={styles.summaryValue}>
-                {subtotal !== null ? formatMoney(subtotal) : "—"}
+                {subtotal !== null ? formatMoney(subtotal) : "�"}
               </Text>
             </View>
 
@@ -518,14 +518,14 @@ export default function NewSaleScreen() {
               >
                 {discountAmount !== null && discountAmount > 0
                   ? `-${formatMoney(discountAmount)}`
-                  : "—"}
+                  : "�"}
               </Text>
             </View>
 
             <View style={[styles.summaryRow, styles.summaryRowFinal]}>
               <Text style={styles.finalLabel}>Final total</Text>
               <Text style={styles.finalValue}>
-                {finalTotal !== null ? formatMoney(finalTotal) : "—"}
+                {finalTotal !== null ? formatMoney(finalTotal) : "�"}
               </Text>
             </View>
 
@@ -537,8 +537,8 @@ export default function NewSaleScreen() {
           </View>
 
           {/* Payment method card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Payment method</Text>
+          <View style={commonStyles.card}>
+            <Text style={commonStyles.cardTitle}>Payment method</Text>
 
             {/* Segmented control */}
             <View style={styles.segmentedControl}>
@@ -606,7 +606,7 @@ export default function NewSaleScreen() {
                   })}
                 </View>
 
-                <Text style={styles.helpText}>
+                <Text style={commonStyles.helpText}>
                   {PAYMENT_METHOD_HELP[paymentMethod]}
                 </Text>
 
@@ -615,7 +615,7 @@ export default function NewSaleScreen() {
                   <Text style={styles.summaryValue}>
                     {finalTotal !== null && finalTotal > 0
                       ? formatMoney(finalTotal)
-                      : "—"}
+                      : "�"}
                   </Text>
                 </View>
               </>
@@ -664,7 +664,7 @@ export default function NewSaleScreen() {
 
                 {splitPaymentVariant === "GLOVO_ONLINE_ONLY" ? (
                   <>
-                    <Text style={styles.helpText}>
+                    <Text style={commonStyles.helpText}>
                       Glovo online is not combined with register payments. The
                       full final total will be assigned to GLOVO_ONLINE.
                     </Text>
@@ -676,13 +676,13 @@ export default function NewSaleScreen() {
                       <Text style={styles.summaryValue}>
                         {finalTotal !== null && finalTotal > 0
                           ? formatMoney(finalTotal)
-                          : "—"}
+                          : "�"}
                       </Text>
                     </View>
                   </>
                 ) : (
                   <>
-                    <Text style={styles.helpText}>
+                    <Text style={commonStyles.helpText}>
                       Enter the amount received by each method. Leave unused
                       methods empty.
                     </Text>
@@ -754,7 +754,7 @@ export default function NewSaleScreen() {
                       <Text style={styles.summaryValue}>
                         {splitRemaining !== null
                           ? formatMoney(splitRemaining)
-                          : "—"}
+                          : "�"}
                       </Text>
                     </View>
 
@@ -772,9 +772,9 @@ export default function NewSaleScreen() {
           </View>
 
           {/* Invoice status card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Invoice status</Text>
-            <Text style={styles.helpText}>
+          <View style={commonStyles.card}>
+            <Text style={commonStyles.cardTitle}>Invoice status</Text>
+            <Text style={commonStyles.helpText}>
               Mark as &quot;Already invoiced&quot; only if a physical invoice was issued to the customer immediately.
             </Text>
 
@@ -806,8 +806,8 @@ export default function NewSaleScreen() {
           </View>
 
           {/* Notes card */}
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>Notes</Text>
+          <View style={commonStyles.card}>
+            <Text style={commonStyles.cardTitle}>Notes</Text>
             <TextInput
               style={[styles.textInput, styles.notesInput]}
               value={note}
@@ -824,7 +824,7 @@ export default function NewSaleScreen() {
           <ErrorMessage message={errorMessage} />
 
           {/* Bottom actions */}
-          <View style={styles.actions}>
+          <View style={commonStyles.actions}>
             <Pressable
               style={[styles.btnPrimary, !canSubmit && styles.btnDisabled]}
               onPress={() => void handleSubmit()}
@@ -852,34 +852,8 @@ export default function NewSaleScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
   keyboardView: {
     flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 16,
-  },
-
-  // Card
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.xl,
-    padding: 16,
-    gap: 12,
-    ...shadows.card,
-  },
-  cardTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: fontWeight.bold,
-    color: colors.text,
   },
   cardHeaderRow: {
     flexDirection: "row",
@@ -1014,12 +988,6 @@ const styles = StyleSheet.create({
   pillTextDisabled: {
     color: "#9aaba8",
   },
-
-  helpText: {
-    fontSize: fontSize.base,
-    color: colors.textMuted,
-    lineHeight: 20,
-  },
   warningText: {
     fontSize: fontSize.md,
     color: colors.warning,
@@ -1058,7 +1026,6 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     paddingHorizontal: 16,
     paddingVertical: 4,
-    ...shadows.card,
   },
   summaryRow: {
     flexDirection: "row",
@@ -1130,7 +1097,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 
-  // Payment method grid (2×2)
+  // Payment method grid (2�2)
   methodGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1170,17 +1137,12 @@ const styles = StyleSheet.create({
   },
 
   // Actions
-  actions: {
-    gap: 12,
-    paddingBottom: 40,
-  },
   btnPrimary: {
     height: 52,
     backgroundColor: colors.primary,
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    ...shadows.primaryButton,
   },
   btnDisabled: {
     opacity: 0.5,
@@ -1236,3 +1198,4 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 });
+
